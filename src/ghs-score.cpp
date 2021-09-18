@@ -9,10 +9,11 @@
  * We're missing a few optimizations:
  * # Optimization 1:
  * We can test outgoing edges (IN_PART) one at a time, instead of all at once.
- * To do this, set waiting == # of edges that are unknown, then send in_part
- * msgs from smallest weight to largest. In the checK_search() routine, if you
- * receive a NACK_PART message, you can rest assured its along the lowest
- * outgoing edge. If you receive a ACK_PART, then you need to try the next edge
+ * To do this, set waiting == 0, and use it to count up to # of edges that are
+ * unknown. Sending in-Part msgs from smallest weight to largest. In the
+ * checK_search() routine, if you receive a NACK_PART message, you can rest
+ * assured its along the lowest outgoing edge. If you receive a ACK_PART, then
+ * you need to try the next edge
  * 
  * Optimization 2:
  * Leader election can be optimized so it just runs on one of the two nodes
