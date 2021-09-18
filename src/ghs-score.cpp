@@ -23,7 +23,7 @@ typedef struct
 		JOIN_US,
 		ELECTION,
 		NOT_IT,
-		NEW_LEADER
+		NEW_SHERIFF
 	} type;
 	int to, from;
 	std::vector<int> data;
@@ -56,16 +56,15 @@ struct Edge
 
 enum EdgeClass
 {
-	IAM_ROOT = -1,
 	UNKNOWN_EDGE = 0,
 	DISCARDED = -1,
 	MST = 1
 };
 
 struct Nodes{
-	Nodes(int num_agents)
+	Nodes(int n)
 	{
-
+		num_agents=n;
 		connectivity_matrix = std::vector<std::vector<double>>(num_agents, std::vector<double>(num_agents, 0.0));
 		edge_class = std::vector<std::vector<int>>(num_agents, std::vector<int>(num_agents, UNKNOWN_EDGE));
 		parent = std::vector<int>(num_agents);
@@ -74,6 +73,11 @@ struct Nodes{
 		best_edge = std::vector<Edge>(num_agents);
 	}
 
+	bool is_root(int nid){
+		return parent[nid]==nid;
+	}
+
+	int num_agents;
 	//Here's the node memories. Each i^th row is the memory for the i^th node
 	std::vector<std::vector<double>> connectivity_matrix;
 	//what do I know about my neighbors comms links?
@@ -87,32 +91,54 @@ struct Nodes{
 	std::vector<Edge> best_edge;
 };
 
+
 void check_search(int nid, Nodes& nodes)
 {
+	//while pretending to be nid,
+	//are we waiting for any incoming ACK/NACK msgs? 
+	assert(nodes.waiting_for[nid]>=0); //ask me why I know this is a fail case
+	cout<<"Node: "<< nid << " waiting for: "<<nodes.waiting_for[nid]<<endl;
 	if (nodes.waiting_for[nid] == 0)
 	{
+		//nope not waiting
 		cout << "Node: " << nid << " got all respones" << endl; 
 		auto best_edge = nodes.best_edge[nid];
 		auto parent_link = nodes.parent[nid];
-		comms::send(Msg::Type::SRCH_RET, parent_link, nid, {best_edge.to, best_edge.from, best_edge.weight});
+		if ( ! nodes.is_root(nid))
+		{
+			cout<<"Node: "<< nid <<" is NOT root, sending data back to "<<parent_link<<endl;
+			comms::send(Msg::Type::SRCH_RET, parent_link, nid, {best_edge.to, best_edge.from, best_edge.weight});
+		}
+		else if (best_edge.from == nid){
+			int node_to_add = best_edge.to;
+			cout<<"Node: "<< nid <<" is root and leaf! Adding edge."<<endl;
+			nodes.edge_class[nid][node_to_add]=MST;
+			comms::send(Msg::Type::JOIN_US,node_to_add,nid, {best_edge.to,best_edge.from,best_edge.weight});
+		} else {
+			cout<<"Node: "<< nid <<" is root and not leaf, broadcasting edge choice"<<endl;
+			for (int i =0;i<nodes.num_agents;i++){
+				if (nodes.edge_class[nid][i]==MST){
+					comms::send(Msg::Type::JOIN_US,i,nid, {best_edge.to,best_edge.from,best_edge.weight});
+				}
+			}
+		}
 	}
 }
 
 int main(int argc, char *argv[]) 
 {
 	
-	int num_agents = 10;
-	Nodes nodes(num_agents);
+	Nodes nodes(10);
 
-	for (int i = 0; i < num_agents; i++)
+	for (int i = 0; i < nodes.num_agents; i++)
 	{
 		//which partition is each node part of?
 		nodes.part_leader[i] = i; //own partition so far:w
 		//who is parent in the MST?
-		nodes.parent[i] = IAM_ROOT; //no parent so far
+		nodes.parent[i] = i; //i_am_root!
 	}
 
-	for (int i = 0; i < num_agents; i++)
+	for (int i = 0; i < nodes.num_agents; i++)
 	{
 		comms::send(Msg::Type::SRCH, i, i, {});
 	}
@@ -126,7 +152,7 @@ int main(int argc, char *argv[])
 			case (Msg::Type::SRCH):
 			{
 				nodes.best_edge[nid] = Edge{0, 0, std::numeric_limits<int>::max()};
-				for (int i = 0; i < num_agents; i++)
+				for (int i = 0; i < nodes.num_agents; i++)
 				{
 					if (i == nid) { continue; }
 					switch (nodes.edge_class[nid][i])
@@ -153,6 +179,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			}
+
 			case Msg::Type::IN_PART:
 			{
 				auto qpart = m.data[0];
@@ -167,6 +194,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			}
+
 			case Msg::Type::ACK_PART:
 			{
 				cout << "Node: " << nid << " received from " << sender << ", discarding edge" << endl;
@@ -175,21 +203,31 @@ int main(int argc, char *argv[])
 				check_search(nid,nodes);
 				break;
 			}
+
 			case Msg::Type::NACK_PART:
 			{
 				cout << "Node: " << nid << " received from " << sender << " NACK_PART" << endl;
 				nodes.waiting_for[nid]--;
-				int connection_to_them = nodes.connectivity_matrix[nid][sender];
-				cout << "Node: " << nid << " received from " << m.from << " NACK_PART" << endl;
-				nodes.waiting_for[nid]--;
-				//save weight here
-				if (nodes.waiting_for[nid] == 0)
-				{
-					cout << "Node: " << nid << " got all respones" << endl;
-					check_search(nid,nodes);
+				int to=nodes.best_edge[nid].to;
+				int from=nodes.best_edge[nid].from;
+				int best_weight=nodes.best_edge[nid].weight;
+				int proposed_weight = nodes.connectivity_matrix[nid][sender];
+
+				if (best_weight > proposed_weight){
+					nodes.best_edge[nid].to=sender;
+					nodes.best_edge[nid].from=nid;
+					nodes.best_edge[nid].weight=proposed_weight;
 				}
+
+				check_search(nid,nodes);
 				break;
 			}
+
+			case Msg::Type::JOIN_US:
+			{
+				cout << "Node: " << nid << " received from " << sender << " JOIN_US (" << m.data[0]<<","<<m.data[1]<<")"<<endl;
+			}
+
 		}// switch m.type
 	}// while comms::waiting()
 	cerr << "Done, " << comms::amt_sent << " sent.";
