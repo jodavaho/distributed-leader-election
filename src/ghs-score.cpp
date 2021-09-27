@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <assert.h>
+#include <fstream>
 #include <math.h>
 #include <deque>
 
@@ -39,9 +40,10 @@ typedef struct
 {
 	enum Type
 	{
-		SRCH = 0,
-		SRCH_RET, //MWOE
-		IN_PART,  //part_id
+		NOOP = 0,
+		SRCH,
+		SRCH_RET, 
+		IN_PART,  
 		ACK_PART,
 		NACK_PART,
 		JOIN_US,
@@ -53,6 +55,37 @@ typedef struct
 	std::vector<int> data;
 } Msg;
 
+std::string to_string(const Msg::Type &type){
+	switch (type){
+		case Msg::Type::SRCH:{return "SRCH";}
+		case Msg::Type::SRCH_RET:{return "SRCH_RET";}
+		case Msg::Type::IN_PART:{return "IN_PART";}
+		case Msg::Type::ACK_PART:{return "ACK_PART";}
+		case Msg::Type::NACK_PART:{return "NACK_PART";}
+		case Msg::Type::JOIN_US:{return "JOIN_US";}
+		case Msg::Type::ELECTION:{return "ELECTION";}
+		case Msg::Type::NOT_IT:{return "NOT_IT";}
+		case Msg::Type::NEW_SHERIFF:{return "NEW_SHERIFF";}
+		default: {return "??";};
+	}
+}
+
+std::ostream& operator << ( std::ostream& outs, const Msg::Type & type )
+{
+  return outs << to_string(type);
+}
+
+
+std::ostream& operator << ( std::ostream& outs, const Msg & m)
+{
+  outs << "("<<m.from<<"-->"<< m.to<<") "<< m.type<<" {";
+  for (const auto data: m.data){
+	  outs<<" "<<data;
+  }
+  outs<<" }";
+  return outs;
+}
+
 //system stuff / simulate comms
 namespace comms
 {
@@ -61,7 +94,11 @@ namespace comms
 	int amt_sent(0);
 	void send(Msg::Type type, int to, int from, std::vector<int> data = {})
 	{
-		msg_q.emplace_back(Msg{type, to, from, data});
+		std::ofstream ofile("msgs.csv",std::fstream::out | std::fstream::app);
+		Msg m {type, to, from, data};
+		ofile<<m<<endl;
+		cerr<<"(++"<<msg_q.size()<<")"<<"Sending: "<<m<<endl;
+		msg_q.emplace_back(m);
 		msgs_sent++;
 		amt_sent += data.size() + 2;
 	}
@@ -69,6 +106,7 @@ namespace comms
 	Msg get()
 	{
 		Msg r = msg_q.front();
+		cerr<<"(--"<<msg_q.size()<<")"<<"Processing: "<<r<<endl;
 		msg_q.pop_front();
 		return r;
 	}
@@ -136,8 +174,8 @@ void check_search(int nid, Nodes& nodes)
 			comms::send(Msg::Type::SRCH_RET, parent_link, nid, {best_edge.to, best_edge.from, best_edge.weight});
 		}
 
-		//we know we're root, but what if we're also the node on the edge to add?
 		else if (best_edge.from == nid){
+		//we know we're root, but what if we're also the node on the edge to add?
 			int node_to_add = best_edge.to;
 
 			if (best_edge.weight == std::numeric_limits<int>::max()){
@@ -239,7 +277,7 @@ int main(int argc, char *argv[])
 								cerr << "Unknown edge found to "<<i<<endl;
 								cerr << " node "<<nid<<" now waiting for "<<nodes.waiting_for[nid]<<endl;
 								//let's ask if he's in our partition
-								comms::send(Msg::Type::IN_PART, i, nid, {nodes.part_leader[m.to]});
+								comms::send(Msg::Type::IN_PART, i, nid, {nodes.part_leader[nid]});
 								break;
 							}
 
@@ -271,32 +309,32 @@ int main(int argc, char *argv[])
 
 				case Msg::Type::SRCH_RET:
 				{
-					cerr << "Node: " << nid << " received from " << sender << ", SRCH_RET" << endl;
 					nodes.waiting_for[nid]--;
 					cerr << " node "<<nid<<" now waiting for "<<nodes.waiting_for[nid]<<endl;
 					//we got a return from our children!
 					check_search(nid,nodes);
+					break;
 
 				}
 
 				case Msg::Type::IN_PART:
 				{
 					auto qpart = m.data[0];
-					cerr << "Node: " << nid << " received from " << sender << " 'IN_PART " << qpart << "?'" << endl;
 					if (qpart == nodes.part_leader[nid])
 					{
-						comms::send(Msg::Type::ACK_PART, sender, nid);
+						cerr << " node "<<nid<<" is part of "<<qpart<<endl;
+						comms::send(Msg::Type::ACK_PART, sender, nid, {qpart});
 					}
 					else
 					{
-						comms::send(Msg::Type::NACK_PART, sender, nid);
+						cerr << " node "<<nid<<" is NOT part of "<<qpart<<endl;
+						comms::send(Msg::Type::NACK_PART, sender, nid, {qpart});
 					}
 					break;
 				}
 
 				case Msg::Type::ACK_PART:
 				{
-					cerr << "Node: " << nid << " received from " << sender << ", discarding edge" << endl;
 					nodes.edge_class[nid][sender] = DISCARDED;
 					nodes.waiting_for[nid]--;
 					cerr << " node "<<nid<<" now waiting for "<<nodes.waiting_for[nid]<<endl;
@@ -306,7 +344,6 @@ int main(int argc, char *argv[])
 
 				case Msg::Type::NACK_PART:
 				{
-					cerr << "Node: " << nid << " received from " << sender << " NACK_PART" << endl;
 					nodes.waiting_for[nid]--;
 					cerr << " node "<<nid<<" now waiting for "<<nodes.waiting_for[nid]<<endl;
 					int to=nodes.best_edge[nid].to;
@@ -326,7 +363,6 @@ int main(int argc, char *argv[])
 
 				case Msg::Type::JOIN_US:
 				{
-					cerr << "Node: " << nid << " received from " << sender << " JOIN_US (to:" << m.data[0]<<", from:"<<m.data[1]<<", cand_leader:"<<m.data[3]<<")"<<endl;
 					int cand_leader = m.data[3];
 
 					//TODO (Optimization 2, above)
