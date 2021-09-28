@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <unordered_map>
 #include <random>
 #include <vector>
@@ -120,10 +121,6 @@ struct Edge
 	int weight;
 };
 
-bool operator==(const Edge& lhs, const Edge& rhs){
-	return (lhs.to == rhs.to) && (lhs.from==rhs.from);
-}
-
 enum EdgeClass
 {
 	UNKNOWN_EDGE = 0,
@@ -143,6 +140,7 @@ struct Nodes{
 		parent = std::vector<int>(num_agents);
 		part_leader = std::vector<int>(num_agents,0);
 		part_level = std::vector<int>(num_agents,0);
+		edge_list = std::vector<std::vector<Edge>>(num_agents,std::vector<Edge>(num_agents,{0,0,std::numeric_limits<int>::max()}));
 
 		//local algorithm step memory
 		waiting_for = std::vector<int>(num_agents,0);
@@ -152,6 +150,7 @@ struct Nodes{
 	int num_agents;
 	//Here's the node memories. Each i^th row is the memory for the i^th node
 	std::vector<std::vector<double>> connectivity_matrix;
+	std::vector<std::vector<Edge>> edge_list;
 	//what do I know about my neighbors comms links?
 	std::vector<std::vector<EdgeClass>> edge_class;
 	//who do I talk through to the leader?
@@ -162,6 +161,7 @@ struct Nodes{
 	std::vector<int> part_level;
 	//how many IN_PART msgs are we waiting for?
 	std::vector<int> waiting_for;
+	//what's the best edge I've seen?
 	std::vector<Edge> best_edge;
 };
 
@@ -182,18 +182,25 @@ int main(int argc, char *argv[])
  
 		for (int j=i+1;j<nodes.num_agents;j++){
 
-			//int r = rand() % 100 + 1; 
-			int r = .1;
+			//int r = 1;
+			int r = rand() % 100 + 1; 
 			nodes.connectivity_matrix[i][j] = r;
 			nodes.connectivity_matrix[j][i] = r;
-
+			Edge e{i,j,r};
+			Edge e2{j,i,r};
+			nodes.edge_list[i][j]=e;
+			nodes.edge_list[j][i]=e2;
 		}
-
+		std::sort(std::begin(nodes.edge_list[i]), std::end(nodes.edge_list[i]),
+				[] (const Edge& lhs, const Edge& rhs) {
+			return lhs.weight < rhs.weight;
+		});
 	}
 
-
+	bool converged = false;
 	//for now, hard-code N rounds (far, far too many, but whatever)
-	for (int round=0;round<nodes.num_agents;round++){
+	main_loop: 
+	for (int round=0;round<nodes.num_agents && !converged;round++){
 
 		for (int i=0;i<nodes.num_agents;i++){
 			if (nodes.waiting_for[i] > 0){
@@ -223,6 +230,7 @@ int main(int argc, char *argv[])
 
 			//some implementation sanity checks for this node:
 			assert(nodes.waiting_for[nid]>=0);
+			assert(nodes.waiting_for[nid]<=nodes.num_agents);
 
 			switch (m.type)
 			{
@@ -403,9 +411,9 @@ int main(int argc, char *argv[])
 							cerr << "Node: "<< nid << " is leader, broadcasting new join_us .. maybe"<<endl;
 							if (best_edge.weight ==  std::numeric_limits<int>::max()){
 								cerr << "Node: "<< nid << " is leader, but found no suitable edge, algorithm can terminate! "<<endl;
-								cerr << "Node: "<< nid << " is leader, but found no suitable edge, algorithm can terminate! "<<endl;
-								cerr << "Node: "<< nid << " is leader, but found no suitable edge, algorithm can terminate! "<<endl;
-								cerr << "Node: "<< nid << " is leader, but found no suitable edge, algorithm can terminate! "<<endl;
+								//rust, I pine for your oxidization:
+								//break main_loop; 	
+								converged=true;
 							}
 							else
 							{
