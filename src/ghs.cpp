@@ -214,9 +214,8 @@ int GHS_State::process_srch_ret(  AgentID from, std::vector<int> data, std::dequ
   //
   assert(data.size()==3);
   Edge theirs;
-  theirs.root        =  data[0];
-  theirs.peer        =  data[1];
-  theirs.status      =  UNKNOWN;
+  theirs.peer        =  data[0];
+  theirs.root        =  data[1];
   theirs.metric_val  =  data[2];
 
   if (theirs.metric_val < best_edge.metric_val){
@@ -225,30 +224,30 @@ int GHS_State::process_srch_ret(  AgentID from, std::vector<int> data, std::dequ
     best_edge.metric_val  =  theirs.metric_val;
   }
 
-  size_t sent = 0;
-  if (waiting_count() == 0){
-
-    //Who's in charge?
-    if ( my_part.leader == my_id ){
-      //I'm in charge
-      if (best_edge.metric_val == ghs_worst_possible_edge().metric_val){
-        //no edge found, MST complete, time to pass the baton
-        sent += mst_broadcast( Msg::Type::ELECTION, {}, buf);
-      } else {
-        //add the found edge
-        sent += mst_broadcast( Msg::Type::JOIN_US, {best_edge.root, best_edge.peer}, buf);
-      }
-    } else {
-      //I'm not in charge, relay results
-      sent += mst_convergecast( Msg::Type::SRCH_RET, {best_edge.root, best_edge.peer, (int) best_edge.status, best_edge.metric_val} , buf);
-    }
-  }
-  return sent;
+  return check_search_status(buf);
 }
 
 int GHS_State::process_in_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
 {
-  return 0;
+  //let them know if we're in their partition or not. Easy.
+  assert(data.size()==2);
+  int part_id = data[0];
+  //int level   = data[1];
+  //
+  if (!get_edge(from)){
+    //we don't have an edge to them. That's a warning condition, but not clear what to do. 
+  }
+  if (part_id == this->my_part.leader){
+    buf->push_back ( Msg{Msg::Type::ACK_PART,from, my_id, {}});
+    //do not do this: (breaks the contract of IN_PART messages, because
+    //now we don't need a response to the one we must have sent to them.
+    //set_edge_status(from,DELETED);
+    //waiting_for.erase(from);
+    return 1;
+  } else {
+    buf->push_back ( Msg{Msg::Type::NACK_PART,from, my_id, {}});
+    return 1;
+  }
 }
 
 int GHS_State::process_ack_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
@@ -259,12 +258,63 @@ int GHS_State::process_ack_part(  AgentID from, std::vector<int> data, std::dequ
   }
   //@throws:
   set_edge_status(from, DELETED);
+  //@throws:
   waiting_for.erase(from);
-  return 0;
+  return check_search_status(buf);
 }
 
 int GHS_State::process_nack_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
 {
+  //we now know that the sender is in our partition. Mark their edge as deleted
+  if (waiting_for.find(from)==waiting_for.end()){
+    throw std::invalid_argument("We got a IN_PART message from "+std::to_string(from)+" but we weren't waiting for one");
+  }
+  auto their_edge = get_edge(from);
+  if (!their_edge){
+    throw std::invalid_argument("We got a message from "+std::to_string(from)+" but we don't have an edge to them");
+  }
+  
+  if (best_edge.metric_val > their_edge->metric_val){
+    best_edge = *their_edge;
+  }
+
+  //@throws:
+  waiting_for.erase(from);
+  return check_search_status(buf);
+}
+
+int GHS_State::check_search_status(std::deque<Msg>* buf){
+  
+  if (waiting_count() == 0)
+  {
+
+    auto e = mwoe();
+    bool am_leader      = (my_part.leader == my_id);
+    bool found_new_edge = (e.metric_val < ghs_worst_possible_edge().metric_val);
+    bool its_my_edge    = (mwoe().root == my_id);
+
+    if (!am_leader){
+      //pass on results, no matter how bad
+      return mst_convergecast( Msg::Type::SRCH_RET, {e.peer, e.root, e.metric_val} , buf);
+    }
+
+    if (am_leader && found_new_edge && its_my_edge){
+      //just add the edge
+      this->set_edge_status(e.peer, MST);//@throws
+      buf->push_back(Msg{Msg::Type::JOIN_US, e.peer, my_id, {e.peer, e.root}});
+      return 1;
+    }
+
+    if (am_leader && !found_new_edge ){
+      return mst_broadcast( Msg::Type::ELECTION, {}, buf);
+    }
+
+    if (am_leader && found_new_edge && !its_my_edge){
+      //inform the crew to add the edge
+      return mst_broadcast( Msg::Type::JOIN_US, {e.peer, e.root}, buf);
+    }
+  } 
+
   return 0;
 }
 

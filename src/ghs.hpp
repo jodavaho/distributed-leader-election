@@ -150,6 +150,7 @@ class GHS_State
     int  process_election(    AgentID from, std::vector<int> data, std::deque<Msg>*);
     int  process_new_sheriff( AgentID from, std::vector<int> data, std::deque<Msg>*);
     int  process_not_it(      AgentID from, std::vector<int> data, std::deque<Msg>*);
+    int  check_search_status( std::deque<Msg>*);
 
 
     AgentID                      my_id;

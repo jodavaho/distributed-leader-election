@@ -459,7 +459,7 @@ TEST_CASE("test process_srch_ret, one peer, edge found ")
   
   //pretend node 1 returned a good edge (1-->2, wt=0)
   //send a return message 
-  auto srch_ret_msg = Msg{Msg::Type::SRCH_RET,0,1, {1,2,1} };
+  auto srch_ret_msg = Msg{Msg::Type::SRCH_RET,0,1, {2,1,1} };
 
   CHECK_NOTHROW(s.process( srch_ret_msg, &buf));
 
@@ -499,7 +499,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
   buf.pop_front();
   CHECK_EQ(s.waiting_count(),1);//waiting on node 2
   //pretend node 2 returned a good edge (from 2 to 3 with wt 0) back to node 0
-  auto srch_ret_msg = Msg{Msg::Type::SRCH_RET,0,2, {2,3,1} };
+  auto srch_ret_msg = Msg{Msg::Type::SRCH_RET,0,2, {3,2,1} };
 
   CHECK_NOTHROW(s.process( srch_ret_msg, &buf));
   CHECK_EQ(s.waiting_count(),0);
@@ -604,9 +604,130 @@ TEST_CASE("test process_ack_part, waiting, but not for sender"){
   buf.pop_front(); 
   buf.pop_front(); 
 
-  Msg m{Msg::Type::ACK_PART,0,3,{}};
-  CHECK_NOTHROW( e=s.get_edge(3));
-  CHECK(!e); //<-- no edge
-  CHECK_EQ(m.from,3);//<-- code should modify using "from" field
+  Msg m{Msg::Type::ACK_PART,0,2,{}};
+  CHECK_NOTHROW( e=s.get_edge(2));
+  CHECK(e); //<-- valid edge
+  CHECK_EQ(m.from,2);   //<-- code should modify using "from" field
+  CHECK_NOTHROW(s.process(m,&buf));
+  CHECK_EQ(1,s.waiting_count()); //<-- got data we need from 2
+  //send msg again:
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+}
+
+TEST_CASE("test in_part, happy-path"){
+  GHS_State s(0);
+  std::deque<Msg> buf;
+  std::optional<Edge> e;
+  //are you, node 0, in partition led by agent 1 with level 2? 
+  s.process( Msg{Msg::Type::IN_PART,0,1,{1,2}}, &buf);
+  CHECK_EQ(buf.size(),1);
+  CHECK_EQ(s.waiting_count(),0);
+  //no, I am not
+  CHECK_EQ(buf.front().type, Msg::Type::NACK_PART);
+  buf.pop_front();
+
+  //are you, node 0,  in partition led by agent 0 with level 2? 
+  s.process( Msg{Msg::Type::IN_PART,0,1,{0,2}}, &buf);
+  CHECK_EQ(buf.size(),1);
+  CHECK_EQ(s.waiting_count(),0);
+  //yes, I am
+  CHECK_EQ(buf.front().type, Msg::Type::ACK_PART);
+  buf.pop_front();
+}
+
+TEST_CASE("test process_nack_part, happy-path"){
+
+  GHS_State s(0);
+  std::deque<Msg> buf;
+  Msg m;
+
+  CHECK_NOTHROW(s.set_edge({1,0,UNKNOWN,10}));
+  CHECK_NOTHROW(s.set_edge({2,0,UNKNOWN,20}));
+
+  s.start_round(&buf);
+  CHECK_EQ(buf.size(),2);
+  buf.pop_front();buf.pop_front();
+
+  CHECK_EQ(s.waiting_count(),2);
+  m ={Msg::Type::NACK_PART, 0, 2, {}};
+  s.process(m,&buf);
+  CHECK_EQ(buf.size(),           0);
+  CHECK_EQ(s.waiting_count(),    1);
+  CHECK_EQ(s.mwoe().metric_val, 20);
+  CHECK_EQ(s.mwoe().root,        0);
+  CHECK_EQ(s.mwoe().peer,        2);
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+  CHECK_EQ(buf.size(),0);
+
+  m ={Msg::Type::NACK_PART, 0, 1, {}};
+  s.process(m,&buf);
+  CHECK_EQ(buf.size(),           1);
+  CHECK_EQ(s.waiting_count(),    0);
+  CHECK_EQ(s.mwoe().metric_val,  10);
+  CHECK_EQ(s.mwoe().root,        0);
+  CHECK_EQ(s.mwoe().peer,        1);
+  //response should be to tell the other guy we're joining up
+  CHECK_EQ(buf.front().type,  Msg::Type::JOIN_US);
+  CHECK_EQ(buf.front().to,    s.mwoe().peer);
+  CHECK_EQ(buf.front().from,  s.mwoe().root);
+  CHECK_EQ(buf.front().from,  0);
+  CHECK_EQ(s.get_edge(s.mwoe().peer)->status, MST);
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+  CHECK_EQ(buf.size(),1);
+  
+}
+
+TEST_CASE("test process_nack_part, not-leader"){
+
+  GHS_State s(0);
+  std::deque<Msg> buf;
+  Msg m;
+
+  //add two outgoing unkonwn edges
+  CHECK_NOTHROW(s.set_edge({1,0,UNKNOWN,10}));
+  CHECK_NOTHROW(s.set_edge({2,0,UNKNOWN,20}));
+  //add leader
+  CHECK_NOTHROW(s.set_edge({3,0,MST,20}));
+  CHECK_NOTHROW(s.set_parent_edge({3,0,MST,20}));
+  CHECK_NOTHROW(s.set_partition({3,0}));
+
+  //send the start message
+  CHECK_NOTHROW(s.process(Msg{Msg::Type::SRCH,0,3,{}}, &buf));
+
+  CHECK_EQ(buf.size(),2);
+  buf.pop_front();
+  buf.pop_front();
+
+  CHECK_EQ(s.waiting_count(),2);
+  //send msg from 2 --> not in partition
+  m ={Msg::Type::NACK_PART, 0, 2, {}};
+  s.process(m,&buf);
+  CHECK_EQ(buf.size(),           0);
+  CHECK_EQ(s.waiting_count(),    1);
+  CHECK_EQ(s.mwoe().metric_val, 20);
+  CHECK_EQ(s.mwoe().root,        0);
+  CHECK_EQ(s.mwoe().peer,        2);
+  //check error condition
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+  CHECK_EQ(buf.size(),0);
+
+  //send message from 1 --> not in partition
+  m ={Msg::Type::NACK_PART, 0, 1, {}};
+  s.process(m,&buf);
+  CHECK_EQ(buf.size(),           1);
+  CHECK_EQ(s.waiting_count(),    0);
+  CHECK_EQ(s.mwoe().metric_val,  10);
+  CHECK_EQ(s.mwoe().root,        0);
+  CHECK_EQ(s.mwoe().peer,        1);
+
+  //since we got both respones, but have leader
+  //response should be to tell the boss
+  CHECK_EQ(buf.front().type,  Msg::Type::SRCH_RET);
+  CHECK_EQ(buf.front().to,    s.get_partition().leader);
+  CHECK_EQ(buf.front().from,  0);
+  //should not add edge yet
+  CHECK_EQ(s.get_edge(s.mwoe().peer)->status, UNKNOWN);
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+  CHECK_EQ(buf.size(),1);
+
 }
