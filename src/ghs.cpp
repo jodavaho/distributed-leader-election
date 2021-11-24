@@ -248,6 +248,11 @@ int GHS_State::process_srch_ret(  AgentID from, std::vector<int> data, std::dequ
 
 int GHS_State::process_in_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
 {
+  return 0;
+}
+
+int GHS_State::process_ack_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+{
   //we now know that the sender is in our partition. Mark their edge as deleted
   if (waiting_for.find(from)==waiting_for.end()){
     throw std::invalid_argument("We got a IN_PART message from "+std::to_string(from)+" but we weren't waiting for one");
@@ -255,11 +260,6 @@ int GHS_State::process_in_part(  AgentID from, std::vector<int> data, std::deque
   //@throws:
   set_edge_status(from, DELETED);
   waiting_for.erase(from);
-  return 0;
-}
-
-int GHS_State::process_ack_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
-{
   return 0;
 }
 

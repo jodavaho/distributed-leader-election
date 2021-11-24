@@ -515,7 +515,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
 
 }
 
-TEST_CASE("test process_in_part, happy-path"){
+TEST_CASE("test process_ack_part, happy-path"){
   GHS_State s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -535,7 +535,7 @@ TEST_CASE("test process_in_part, happy-path"){
   CHECK_EQ(buf.size(),1);
   buf.pop_front(); 
 
-  Msg m{Msg::Type::IN_PART,0,1,{}};
+  Msg m{Msg::Type::ACK_PART,0,1,{}};
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   CHECK_NOTHROW(s.process(m,&buf));
   CHECK_NOTHROW( e=s.get_edge(1));
@@ -543,7 +543,7 @@ TEST_CASE("test process_in_part, happy-path"){
   CHECK_EQ(e->status, DELETED);
 }
 
-TEST_CASE("test process_in_part, not waiting for anyone"){
+TEST_CASE("test process_ack_part, not waiting for anyone"){
   GHS_State s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -560,7 +560,7 @@ TEST_CASE("test process_in_part, not waiting for anyone"){
   CHECK_EQ(e->status, UNKNOWN);
 
   CHECK_EQ(0,s.waiting_count());
-  Msg m{Msg::Type::IN_PART,0,1,{}};
+  Msg m{Msg::Type::ACK_PART,0,1,{}};
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
   CHECK_NOTHROW( e=s.get_edge(1));
@@ -568,7 +568,7 @@ TEST_CASE("test process_in_part, not waiting for anyone"){
   CHECK_EQ(e->status, UNKNOWN); //<--unmodified!
 }
 
-TEST_CASE("test process_in_part, no edge"){
+TEST_CASE("test process_ack_part, no edge"){
   GHS_State s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -581,14 +581,14 @@ TEST_CASE("test process_in_part, no edge"){
   CHECK(!e);
   CHECK_EQ(0,s.waiting_count());
 
-  Msg m{Msg::Type::IN_PART,0,1,{}};
+  Msg m{Msg::Type::ACK_PART,0,1,{}};
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
   CHECK_NOTHROW( e=s.get_edge(1));
   CHECK(!e);
 }
 
-TEST_CASE("test process_in_part, waiting, but not for sender"){
+TEST_CASE("test process_ack_part, waiting, but not for sender"){
   GHS_State s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -604,7 +604,7 @@ TEST_CASE("test process_in_part, waiting, but not for sender"){
   buf.pop_front(); 
   buf.pop_front(); 
 
-  Msg m{Msg::Type::IN_PART,0,3,{}};
+  Msg m{Msg::Type::ACK_PART,0,3,{}};
   CHECK_NOTHROW( e=s.get_edge(3));
   CHECK(!e); //<-- no edge
   CHECK_EQ(m.from,3);//<-- code should modify using "from" field
