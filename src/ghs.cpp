@@ -1,26 +1,21 @@
 #include "ghs.hpp"
 #include "msg.hpp"
+#include <algorithm>
 #include <assert.h>
 #include <deque>
 #include <stdexcept>
-#include <algorithm>
+#include <string>
+#include <optional>
 
 GHS_STATUS  GHS_OK(0);
 GHS_STATUS  GHS_ERR(1);
 
-GHS_State::GHS_State(AgentID my_id, int num_agents, std::vector<Edge> edges) noexcept{
-  this->num_agents     =  num_agents;
+GHS_State::GHS_State(AgentID my_id,  std::vector<Edge> edges) noexcept{
   this->my_id          =  my_id;
   this->my_part        =  Partition{my_id,0};
   this->parent         =  -1; //I live alone
   this->waiting_for    =  {};
   this->best_edge      =  ghs_worst_possible_edge();
-
-  this->outgoing_edges.reserve(num_agents);
-
-  for (int i=0;i<num_agents;i++){
-    outgoing_edges[i]=Edge{my_id, i, UNKNOWN, 0};
-  }
 
   for (const auto e: edges){
     this->set_edge(e);
@@ -40,18 +35,35 @@ bool GHS_State::reset() noexcept{
   return true;
 }
 
+std::optional<Edge> GHS_State::get_edge(const AgentID& to) noexcept
+{
+  for (const auto edge: outgoing_edges){
+    if (edge.peer == to){
+      return edge;
+    }
+  }
+  return std::nullopt;
+}
 
-/** 
- *
- * You must set an edge as MST using set_edge, BEFORE you call this method to
- * set that MST edge as a link to parent. 
- *
- * That MST edge's peer is considered parent from now on
- *
- * @throws invalid_argument if edge is not MST or if the edge does not exist in
- * our outgoing edges
- *
- */
+AgentID GHS_State::get_id() const noexcept {
+  return my_id;
+}
+
+Partition GHS_State::get_partition() const noexcept {
+  return my_part; 
+}
+
+void GHS_State::set_edge_status(const AgentID &to, const EdgeStatus &status)
+{
+  for (auto &edge:outgoing_edges){
+    if (edge.peer == to){
+       edge.status=status; 
+       return;
+    }
+  }
+  throw std::invalid_argument("Edge not found to "+std::to_string(to));
+}
+
 void GHS_State::set_parent_edge(const Edge&e) {
 
   if (e.status != MST){
@@ -72,12 +84,11 @@ void GHS_State::set_parent_edge(const Edge&e) {
 
 }
 
-/**
- * Add or update edge. Searches by e.peer.
- *
- * @Return: 0 if edge updated. 1 if it was inserted (it's new)
- */
-int GHS_State::set_edge(const Edge &e) noexcept{
+int GHS_State::set_edge(const Edge &e) {
+
+  if (e.root != my_id){
+    throw std::invalid_argument("Cannot add an edge that is not rooted on current node");
+  }
 
   //Optimization: Use set, tree, or sorted agent ids to speed up this function
   //with large #s of agents.
@@ -91,7 +102,6 @@ int GHS_State::set_edge(const Edge &e) noexcept{
   }
   //if we got this far, we didn't find the peer yet. 
   outgoing_edges.push_back(e);
-  assert(outgoing_edges.size() <= (size_t) num_agents-1 && "Inserted edge created more outgoing agents than expected, given num_agents");
   return 1;
 }
 
@@ -238,7 +248,13 @@ int GHS_State::process_srch_ret(  AgentID from, std::vector<int> data, std::dequ
 
 int GHS_State::process_in_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
 {
-
+  //we now know that the sender is in our partition. Mark their edge as deleted
+  if (waiting_for.find(from)==waiting_for.end()){
+    throw std::invalid_argument("We got a IN_PART message from "+std::to_string(from)+" but we weren't waiting for one");
+  }
+  //@throws:
+  set_edge_status(from, DELETED);
+  waiting_for.erase(from);
   return 0;
 }
 
@@ -276,7 +292,7 @@ size_t GHS_State::typecast(const EdgeStatus& status, const Msg::Type &m, const s
   size_t sent(0);
   for (const auto & e : outgoing_edges){
     assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
-    if (e.status == status && e.peer != parent){
+    if ( e.status == status ){
       sent++;
       buf->push_back( Msg{m, e.peer, my_id, data} );
     }
