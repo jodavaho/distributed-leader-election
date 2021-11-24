@@ -517,14 +517,28 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
 
 TEST_CASE("test process_in_part, happy-path"){
   GHS_State s(0);
+  std::deque<Msg> buf;
+  std::optional<Edge> e;
 
   //create edge to 1
-  CHECK_NOTHROW(s.set_edge( {1,0,UNKNOWN,1} ));
+  int r;
+  Edge e1 = {1,0,UNKNOWN,10};
+  CHECK_EQ(1, e1.peer);
+  CHECK_EQ(0, e1.root);
+  CHECK_NOTHROW(r = s.set_edge( e1 ));
+  CHECK_EQ(1,r);//<-- was it added?
+  CHECK_NOTHROW( e = s.get_edge(1) );
+  CHECK(e);
+  CHECK_EQ(e->status, UNKNOWN);
+  s.start_round(&buf);
+  CHECK_EQ(1,s.waiting_count());
+  CHECK_EQ(buf.size(),1);
+  buf.pop_front(); 
+
   Msg m{Msg::Type::IN_PART,0,1,{}};
-  std::deque<Msg> buf;
+  CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   CHECK_NOTHROW(s.process(m,&buf));
-  std::optional<Edge> e;
-  CHECK_NOTHROW(s.get_edge(1));
+  CHECK_NOTHROW( e=s.get_edge(1));
   CHECK(e);
   CHECK_EQ(e->status, DELETED);
 }
