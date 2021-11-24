@@ -320,6 +320,34 @@ int GHS_State::check_search_status(std::deque<Msg>* buf){
 
 int GHS_State::process_join_us(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
 {
+  //join_us has an edge and a partition as payload
+  //this operates on edges, really.  
+  //
+  //- if neither the root or the peer is us, 
+  //  - assert it was received on an MST link
+  //  - pass the message on (mst_bc)
+  //
+  //- if the root of the passed edge is us, 
+  //  - assert it was received on an MST link
+  //  - we add edge as MST 
+  //  - we pass to peer 
+  //
+  //- if the peer of the passed edge is us
+  //  - assert not received on MST link
+  //  - assert not same partition
+  //  - we add as MST link
+  //  - if our level > theirs, 
+  //    - ABSORB
+  //    - send new sheriff to them (our partition/leader)
+  //  - if our level == theirs.
+  //    - MERGE
+  //    - send new sheriff to them (our partition+1, max(us,them) as leader)
+  //    - send new sheriff mst_cc  (our partition+1, max(us,them) as leader)
+  //  - if our level < theirs
+  //    - ABSORB
+  //    - send new sheriff mst_cc(their partition, their leader)
+  //
+  // 
   return 0;
 }
 
@@ -330,6 +358,14 @@ int GHS_State::process_election(  AgentID from, std::vector<int> data, std::dequ
 
 int GHS_State::process_new_sheriff(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
 {
+  //This is purely an edge reorganization command
+  //If new_sheriff level > ours
+  //- The sender is now our parent
+  //- adopt partition:
+  //- adopt the level
+  //- adtop the new laeder
+  //- send same message to former parent
+  //If not, drop it. It's old news and sender must have received our new-sheriff msg out of order
   return 0;
 }
 
