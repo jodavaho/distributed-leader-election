@@ -543,7 +543,7 @@ TEST_CASE("test process_in_part, happy-path"){
   CHECK_EQ(e->status, DELETED);
 }
 
-TEST_CASE("test process_in_part, not waiting"){
+TEST_CASE("test process_in_part, not waiting for anyone"){
   GHS_State s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -566,4 +566,47 @@ TEST_CASE("test process_in_part, not waiting"){
   CHECK_NOTHROW( e=s.get_edge(1));
   CHECK(e);
   CHECK_EQ(e->status, UNKNOWN); //<--unmodified!
+}
+
+TEST_CASE("test process_in_part, no edge"){
+  GHS_State s(0);
+  std::deque<Msg> buf;
+  std::optional<Edge> e;
+
+  //create edge to 1
+  Edge e1 = {1,0,UNKNOWN,10};
+  CHECK_EQ(1, e1.peer);
+  CHECK_EQ(0, e1.root);
+  CHECK_NOTHROW( e = s.get_edge(1) );
+  CHECK(!e);
+  CHECK_EQ(0,s.waiting_count());
+
+  Msg m{Msg::Type::IN_PART,0,1,{}};
+  CHECK_EQ(m.from,1);//<-- code should modify using "from" field
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+  CHECK_NOTHROW( e=s.get_edge(1));
+  CHECK(!e);
+}
+
+TEST_CASE("test process_in_part, waiting, but not for sender"){
+  GHS_State s(0);
+  std::deque<Msg> buf;
+  std::optional<Edge> e;
+
+  //create edge to 1
+  Edge e1 = {1,0,UNKNOWN,10};
+  Edge e2 = {2,0,UNKNOWN,10};
+  CHECK_NOTHROW(s.set_edge( e1 ));
+  CHECK_NOTHROW(s.set_edge( e2 ));
+  s.start_round(&buf);
+  CHECK_EQ(2,s.waiting_count());
+  CHECK_EQ(buf.size(),2);
+  buf.pop_front(); 
+  buf.pop_front(); 
+
+  Msg m{Msg::Type::IN_PART,0,3,{}};
+  CHECK_NOTHROW( e=s.get_edge(3));
+  CHECK(!e); //<-- no edge
+  CHECK_EQ(m.from,3);//<-- code should modify using "from" field
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
 }
