@@ -542,3 +542,28 @@ TEST_CASE("test process_in_part, happy-path"){
   CHECK(e);
   CHECK_EQ(e->status, DELETED);
 }
+
+TEST_CASE("test process_in_part, not waiting"){
+  GHS_State s(0);
+  std::deque<Msg> buf;
+  std::optional<Edge> e;
+
+  //create edge to 1
+  int r;
+  Edge e1 = {1,0,UNKNOWN,10};
+  CHECK_EQ(1, e1.peer);
+  CHECK_EQ(0, e1.root);
+  CHECK_NOTHROW(r = s.set_edge( e1 ));
+  CHECK_EQ(1,r);//<-- was it added?
+  CHECK_NOTHROW( e = s.get_edge(1) );
+  CHECK(e);
+  CHECK_EQ(e->status, UNKNOWN);
+
+  CHECK_EQ(0,s.waiting_count());
+  Msg m{Msg::Type::IN_PART,0,1,{}};
+  CHECK_EQ(m.from,1);//<-- code should modify using "from" field
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
+  CHECK_NOTHROW( e=s.get_edge(1));
+  CHECK(e);
+  CHECK_EQ(e->status, UNKNOWN); //<--unmodified!
+}
