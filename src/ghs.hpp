@@ -2,17 +2,14 @@
 #define GHS_HPP
 
 #include <unordered_set>
+#include <memory>  //shared_ptr
 #include <set>
 #include <array>
 #include <deque>
 #include "msg.hpp"
 #include <optional>
 
-typedef  int  AgentID;
-typedef  int  GHS_STATUS;
-
-extern GHS_STATUS  GHS_OK;
-extern GHS_STATUS  GHS_ERR;
+typedef size_t AgentID;
 
 typedef enum {
   UNKNOWN = 0,
@@ -25,17 +22,17 @@ typedef struct {
   AgentID    root;//from
   EdgeStatus status;
   //Lower is better
-  int        metric_val;
+  size_t        metric_val;
 } Edge;
 
 Edge ghs_worst_possible_edge();
 
 typedef struct {
   AgentID leader;
-  int     level;
+  size_t     level;
 } Partition;
 
-class GHS_State
+class GhsState
 {
   public:
 
@@ -47,7 +44,7 @@ class GHS_State
      * operation is identical to adding them after initialization
      *
      */
-    GHS_State(AgentID my_id,  std::vector<Edge> edges={}) noexcept;
+    GhsState(AgentID my_id,  std::vector<Edge> edges={}) noexcept;
 
     /**
      * Changes (or adds) an edge to the outgoing edge list.  If the edge you
@@ -60,7 +57,7 @@ class GHS_State
      *
      * @Return: 0 if edge updated. 1 if it was inserted (it's new)
      */
-    int set_edge(const Edge &e);
+    size_t set_edge(const Edge &e);
 
     /**
      * Changes the edge status of the edge connecting this node to the AgentID given
@@ -118,39 +115,39 @@ class GHS_State
      * Sends to MST child links only
      * @return number of messages sent
      */
-    size_t mst_broadcast(const Msg::Type &msgtype, const std::vector<int> data, std::deque<Msg> *buf) const noexcept;
+    size_t mst_broadcast(const Msg::Type &msgtype, const std::vector<size_t> data, std::deque<Msg> *buf) const noexcept;
 
     /**
      * Sends to parent MST link only
      * @return number of mssages sent (it had better be 1 or 0 if this is a root)
      */
-    size_t mst_convergecast(const Msg::Type &msgtype, const std::vector<int>data, std::deque<Msg>*buf)const noexcept;
+    size_t mst_convergecast(const Msg::Type &msgtype, const std::vector<size_t>data, std::deque<Msg>*buf)const noexcept;
 
     /**
      * Filters edges by `msgtype`, and sends outgoing message along those that match.
      * @return number of messages sent
      */
-    size_t typecast(const EdgeStatus& status, const Msg::Type &m, const std::vector<int> data, std::deque<Msg> *buf) const noexcept;
+    size_t typecast(const EdgeStatus& status, const Msg::Type &m, const std::vector<size_t> data, std::deque<Msg> *buf) const noexcept;
 
     //stateful algorithm steps
     void start_round(std::deque<Msg> *outgoing_msgs) noexcept;
-    int process(const Msg &msg, std::deque<Msg> *outgoing_buffer);
+    size_t process(const Msg &msg, std::deque<Msg> *outgoing_buffer);
 
     //reset the algorithm state
     bool reset() noexcept;
 
 
   private:
-    int  process_srch(        AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_srch_ret(    AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_in_part(     AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_ack_part(    AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_nack_part(   AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_join_us(     AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_election(    AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_new_sheriff( AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  process_not_it(      AgentID from, std::vector<int> data, std::deque<Msg>*);
-    int  check_search_status( std::deque<Msg>*);
+    size_t  process_srch(        AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_srch_ret(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_in_part(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_ack_part(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_nack_part(   AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_join_us(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_new_sheriff( AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  check_search_status( std::deque<Msg>*);
 
 
     AgentID                      my_id;

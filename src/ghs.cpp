@@ -7,10 +7,7 @@
 #include <string>
 #include <optional>
 
-GHS_STATUS  GHS_OK(0);
-GHS_STATUS  GHS_ERR(1);
-
-GHS_State::GHS_State(AgentID my_id,  std::vector<Edge> edges) noexcept{
+GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
   this->my_id          =  my_id;
   this->my_part        =  Partition{my_id,0};
   this->parent         =  -1; //I live alone
@@ -25,7 +22,7 @@ GHS_State::GHS_State(AgentID my_id,  std::vector<Edge> edges) noexcept{
 /**
  * Reset the algorithm status completely
  */
-bool GHS_State::reset() noexcept{
+bool GhsState::reset() noexcept{
   waiting_for.clear();
   this->parent = -1;
   this->my_part = Partition{my_id,0};
@@ -35,7 +32,7 @@ bool GHS_State::reset() noexcept{
   return true;
 }
 
-std::optional<Edge> GHS_State::get_edge(const AgentID& to) noexcept
+std::optional<Edge> GhsState::get_edge(const AgentID& to) noexcept
 {
   for (const auto edge: outgoing_edges){
     if (edge.peer == to){
@@ -45,15 +42,15 @@ std::optional<Edge> GHS_State::get_edge(const AgentID& to) noexcept
   return std::nullopt;
 }
 
-AgentID GHS_State::get_id() const noexcept {
+AgentID GhsState::get_id() const noexcept {
   return my_id;
 }
 
-Partition GHS_State::get_partition() const noexcept {
+Partition GhsState::get_partition() const noexcept {
   return my_part; 
 }
 
-void GHS_State::set_edge_status(const AgentID &to, const EdgeStatus &status)
+void GhsState::set_edge_status(const AgentID &to, const EdgeStatus &status)
 {
   for (auto &edge:outgoing_edges){
     if (edge.peer == to){
@@ -64,7 +61,7 @@ void GHS_State::set_edge_status(const AgentID &to, const EdgeStatus &status)
   throw std::invalid_argument("Edge not found to "+std::to_string(to));
 }
 
-void GHS_State::set_parent_edge(const Edge&e) {
+void GhsState::set_parent_edge(const Edge&e) {
 
   if (e.status != MST){
     throw std::invalid_argument("Cannot add non MST edge as parent!");
@@ -84,7 +81,7 @@ void GHS_State::set_parent_edge(const Edge&e) {
 
 }
 
-int GHS_State::set_edge(const Edge &e) {
+size_t GhsState::set_edge(const Edge &e) {
 
   if (e.root != my_id){
     throw std::invalid_argument("Cannot add an edge that is not rooted on current node");
@@ -108,7 +105,7 @@ int GHS_State::set_edge(const Edge &e) {
 /**
  * Set the partition for this guy/gal
  */
-void GHS_State::set_partition(const Partition &p) noexcept{
+void GhsState::set_partition(const Partition &p) noexcept{
   my_part = p;
 }
 
@@ -116,7 +113,7 @@ void GHS_State::set_partition(const Partition &p) noexcept{
  * Queue up the start of the round
  *
  */
-void GHS_State::start_round(std::deque<Msg> *outgoing_buffer) noexcept{
+void GhsState::start_round(std::deque<Msg> *outgoing_buffer) noexcept{
   //If I'm leader, then I need to start the process. Otherwise wait
   if (my_part.leader == my_id){
     //nobody tells us what to do but ourselves
@@ -124,16 +121,16 @@ void GHS_State::start_round(std::deque<Msg> *outgoing_buffer) noexcept{
   }
 }
 
-size_t GHS_State::waiting_count() const noexcept
+size_t GhsState::waiting_count() const noexcept
 {
   return waiting_for.size();
 }
 
-Edge GHS_State::mwoe() const noexcept{
+Edge GhsState::mwoe() const noexcept{
   return best_edge;
 }
 
-int GHS_State::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
+size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
   if (msg.to != my_id){
     throw std::invalid_argument("Tried to process message that was not for me");
   }
@@ -152,7 +149,7 @@ int GHS_State::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
   return true;
 }
 
-int GHS_State::process_srch(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   if (from!=my_part.leader && from!=parent){
     //something is tragically wrong here, one of thes must be true
@@ -194,7 +191,7 @@ int GHS_State::process_srch(  AgentID from, std::vector<int> data, std::deque<Ms
   return srch_sent + part_sent;
 }
 
-int GHS_State::process_srch_ret(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_srch_ret(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
 
   if (waiting_for.size()==0){
@@ -227,12 +224,12 @@ int GHS_State::process_srch_ret(  AgentID from, std::vector<int> data, std::dequ
   return check_search_status(buf);
 }
 
-int GHS_State::process_in_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_in_part(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   //let them know if we're in their partition or not. Easy.
   assert(data.size()==2);
-  int part_id = data[0];
-  //int level   = data[1];
+  size_t part_id = data[0];
+  //size_t level   = data[1];
   //
   if (!get_edge(from)){
     //we don't have an edge to them. That's a warning condition, but not clear what to do. 
@@ -250,7 +247,7 @@ int GHS_State::process_in_part(  AgentID from, std::vector<int> data, std::deque
   }
 }
 
-int GHS_State::process_ack_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_ack_part(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   //we now know that the sender is in our partition. Mark their edge as deleted
   if (waiting_for.find(from)==waiting_for.end()){
@@ -263,7 +260,7 @@ int GHS_State::process_ack_part(  AgentID from, std::vector<int> data, std::dequ
   return check_search_status(buf);
 }
 
-int GHS_State::process_nack_part(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_nack_part(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   //we now know that the sender is in our partition. Mark their edge as deleted
   if (waiting_for.find(from)==waiting_for.end()){
@@ -283,7 +280,7 @@ int GHS_State::process_nack_part(  AgentID from, std::vector<int> data, std::deq
   return check_search_status(buf);
 }
 
-int GHS_State::check_search_status(std::deque<Msg>* buf){
+size_t GhsState::check_search_status(std::deque<Msg>* buf){
   
   if (waiting_count() == 0)
   {
@@ -318,7 +315,7 @@ int GHS_State::check_search_status(std::deque<Msg>* buf){
   return 0;
 }
 
-int GHS_State::process_join_us(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   //join_us has an edge and a partition as payload
   //this operates on edges, really.  
@@ -351,12 +348,12 @@ int GHS_State::process_join_us(  AgentID from, std::vector<int> data, std::deque
   return 0;
 }
 
-int GHS_State::process_election(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_election(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   return 0;
 }
 
-int GHS_State::process_new_sheriff(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   //This is purely an edge reorganization command
   //If new_sheriff level > ours
@@ -369,12 +366,12 @@ int GHS_State::process_new_sheriff(  AgentID from, std::vector<int> data, std::d
   return 0;
 }
 
-int GHS_State::process_not_it(  AgentID from, std::vector<int> data, std::deque<Msg>*buf)
+size_t GhsState::process_not_it(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   return 0;
 }
 
-size_t GHS_State::typecast(const EdgeStatus& status, const Msg::Type &m, const std::vector<int> data, std::deque<Msg> *buf)const noexcept{
+size_t GhsState::typecast(const EdgeStatus& status, const Msg::Type &m, const std::vector<size_t> data, std::deque<Msg> *buf)const noexcept{
   size_t sent(0);
   for (const auto & e : outgoing_edges){
     assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
@@ -387,7 +384,7 @@ size_t GHS_State::typecast(const EdgeStatus& status, const Msg::Type &m, const s
 }
 
 
-size_t GHS_State::mst_broadcast(const Msg::Type &m, const std::vector<int> data, std::deque<Msg> *buf)const noexcept{
+size_t GhsState::mst_broadcast(const Msg::Type &m, const std::vector<size_t> data, std::deque<Msg> *buf)const noexcept{
   size_t sent =0;
   for (const auto & e : outgoing_edges){
     assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
@@ -399,7 +396,7 @@ size_t GHS_State::mst_broadcast(const Msg::Type &m, const std::vector<int> data,
   return sent;
 }
 
-size_t GHS_State::mst_convergecast(const Msg::Type &m, const std::vector<int> data, std::deque<Msg> *buf)const noexcept{
+size_t GhsState::mst_convergecast(const Msg::Type &m, const std::vector<size_t> data, std::deque<Msg> *buf)const noexcept{
   size_t sent(0);
   for (const auto & e : outgoing_edges){
     assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
@@ -417,6 +414,6 @@ Edge ghs_worst_possible_edge(){
   ret.root=-1;
   ret.peer=-1;
   ret.status=UNKNOWN;
-  ret.metric_val=std::numeric_limits<int>::max();
+  ret.metric_val=std::numeric_limits<size_t>::max();
   return ret;
 }

@@ -27,8 +27,8 @@ typedef struct
 		NOT_IT,
 		NEW_SHERIFF
 	} type;
-	int to, from;
-	std::vector<int> data;
+	size_t to, from;
+	std::vector<size_t> data;
 } Msg;
 
 wire_msg to_wire(const Msg&m);

@@ -6,7 +6,7 @@
 #include <optional>
 
 TEST_CASE("test set_edge_status"){
-  GHS_State s(0);
+  GhsState s(0);
   CHECK_EQ(1, s.set_edge( {1,0,DELETED, 1}));
   CHECK_EQ(0, s.set_edge( {1,0,UNKNOWN, 1}));
 
@@ -35,7 +35,7 @@ TEST_CASE("test typecast")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   size_t sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
@@ -83,7 +83,7 @@ TEST_CASE("test mst_broadcast")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   size_t sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
@@ -119,7 +119,7 @@ TEST_CASE("test mst_convergecast")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   size_t sent;
   sent =   s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
   //nobody to send to
@@ -159,7 +159,7 @@ TEST_CASE("test mst_convergecast")
 TEST_CASE("test start_round() on leader, unknown peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,UNKNOWN,1});
   s.set_edge({2, 0,UNKNOWN,1});
@@ -175,7 +175,7 @@ TEST_CASE("test start_round() on leader, unknown peers")
 TEST_CASE("test start_round() on leader, mst peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -194,7 +194,7 @@ TEST_CASE("test start_round() on leader, mst peers")
 TEST_CASE("test start_round() on leader, discarded peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,DELETED,1});
@@ -205,7 +205,7 @@ TEST_CASE("test start_round() on leader, discarded peers")
 TEST_CASE("test start_round() on leader, mixed peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,MST,1});
@@ -233,7 +233,7 @@ TEST_CASE("test start_round() on non-leader")
 {
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
-  GHS_State s(0);
+  GhsState s(0);
   //set leader to 1, level to 0 (ignored)
   s.set_partition({1,0});
 
@@ -252,7 +252,7 @@ TEST_CASE("test process_srch() checks recipient"){
 
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
-  GHS_State s(0);
+  GhsState s(0);
   //set leader to 1, level to 0 (ignored)
   s.set_partition({1,0});
   //from rando
@@ -267,7 +267,7 @@ TEST_CASE("test process_srch() checks recipient"){
 TEST_CASE("test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,UNKNOWN,1});
   s.set_edge({2, 0,UNKNOWN,1});
@@ -283,7 +283,7 @@ TEST_CASE("test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
 TEST_CASE("test process_srch,  mst peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -302,7 +302,7 @@ TEST_CASE("test process_srch,  mst peers")
 TEST_CASE("test process_srch, discarded peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,DELETED,1});
@@ -313,7 +313,7 @@ TEST_CASE("test process_srch, discarded peers")
 TEST_CASE("test process_srch, mixed peers")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,MST,1});
@@ -340,7 +340,7 @@ TEST_CASE("test process_srch, mixed peers")
 TEST_CASE("test process_srch, mixed peers, with parent link")
 {
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   s.set_partition({3,0});
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
@@ -398,7 +398,7 @@ TEST_CASE("test process_srch_ret throws when not waiting")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH_RET,0,1,{}}, &buf), const std::invalid_argument&);
 }
 
@@ -406,7 +406,7 @@ TEST_CASE("test process_srch_ret, one peer, no edge found ")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
 
@@ -441,7 +441,7 @@ TEST_CASE("test process_srch_ret, one peer, edge found ")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
   s.set_partition({0,0});
@@ -481,7 +481,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
 {
 
   std::deque<Msg> buf;
-  GHS_State s(0);
+  GhsState s(0);
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -516,7 +516,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
 }
 
 TEST_CASE("test process_ack_part, happy-path"){
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
 
@@ -544,7 +544,7 @@ TEST_CASE("test process_ack_part, happy-path"){
 }
 
 TEST_CASE("test process_ack_part, not waiting for anyone"){
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
 
@@ -569,7 +569,7 @@ TEST_CASE("test process_ack_part, not waiting for anyone"){
 }
 
 TEST_CASE("test process_ack_part, no edge"){
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
 
@@ -589,7 +589,7 @@ TEST_CASE("test process_ack_part, no edge"){
 }
 
 TEST_CASE("test process_ack_part, waiting, but not for sender"){
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
 
@@ -615,7 +615,7 @@ TEST_CASE("test process_ack_part, waiting, but not for sender"){
 }
 
 TEST_CASE("test in_part, happy-path"){
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
   //are you, node 0, in partition led by agent 1 with level 2? 
@@ -637,7 +637,7 @@ TEST_CASE("test in_part, happy-path"){
 
 TEST_CASE("test process_nack_part, happy-path"){
 
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   Msg m;
 
@@ -679,7 +679,7 @@ TEST_CASE("test process_nack_part, happy-path"){
 
 TEST_CASE("test process_nack_part, not-leader"){
 
-  GHS_State s(0);
+  GhsState s(0);
   std::deque<Msg> buf;
   Msg m;
 
