@@ -96,7 +96,7 @@ class CommunicationsHandler{
 
 };
 
-/// and now, this repo's code, impelemnted for example in in ghs.cpp:
+/// and now, this repo's code, implemented for example in in ghs.cpp:
 
 class GhsState: public MsgHandler{ //but we don't extend it yet
    //...
