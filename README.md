@@ -41,7 +41,15 @@ There is no `install` target configured at this time.
 
 # Implementation
 
-This library provides a class, `GhsState`, which encapsulates the stateful algorithm execution for `GHS MST` calculation and leader - election. It is indended that each agent will instantiate a single `GhsState` class, runtime-initialized with a fixed number of edges to all possible agents in the environment. It supports dynamically resizing the agent pool, but this is mostly for testing purposes. 
+## Algorithm
+
+The algorithm implemented is best understood by reading chapter 15.5 of _Distributed Algorithms_ by Lynch. 
+In short, each agent begins isolated as leaders of their own partition. Each partition finds an outgoing edge to another partition which is of minimum weight, and the two partitions join up. This continues `log(n)` rounds until all are in the same partition. 
+The leader then initiates a search for a new MWOE by all nodes in its partition, and compares returned edges for the minimum weight. The leader broadcasts `JOIN` messages, which are carefully handled by all nodes to ensure that the resulting MST is consistent and correct. The subtleties of this process are elegantly handled, and it's worth reading the chapter to understand what's gong on. 
+
+## Implementation
+
+This library provides a class, `GhsState`, which encapsulates the stateful algorithm execution for `GHS MST` calculation (and leader - election TBD in a new class). It is intended that each agent will instantiate a single `GhsState` class, runtime-static initialized with a fixed number of edges to all possible agents in the environment. It supports dynamically resizing the agent pool, but this is mostly for testing purposes. 
 
 For example, this is the ideal:
 

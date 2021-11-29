@@ -296,13 +296,15 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
     }
 
     if (am_leader && found_new_edge && its_my_edge){
-      //just add the edge
+      //just add the edge and ping them to join us 
+      //(join_us will trigger the broadcast of the new state)
       this->set_edge_status(e.peer, MST);//@throws
       buf->push_back(Msg{Msg::Type::JOIN_US, e.peer, my_id, {e.peer, e.root}});
       return 1;
     }
 
     if (am_leader && !found_new_edge ){
+      //I'm leader, no new edge, let's move on b/c we're done here
       return mst_broadcast( Msg::Type::ELECTION, {}, buf);
     }
 
