@@ -5,14 +5,15 @@
 #include <deque>
 #include <stdexcept>
 #include <string>
-#include <optional>
+#include <optional> //req c++20
 
 GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
-  this->my_id          =  my_id;
-  this->my_part        =  Partition{my_id,0};
-  this->parent         =  -1; //I live alone
-  this->waiting_for    =  {};
-  this->best_edge      =  ghs_worst_possible_edge();
+  this->my_id           =  my_id;
+  this->my_part         =  Partition{my_id,0};
+  this->parent          =  my_id; //I live alone
+  this->waiting_for     =  {};
+  this->respond_later   =  {};
+  this->best_edge       =  ghs_worst_possible_edge();
 
   for (const auto e: edges){
     this->set_edge(e);
@@ -24,7 +25,8 @@ GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
  */
 bool GhsState::reset() noexcept{
   waiting_for.clear();
-  this->parent = -1;
+  respond_later.clear();
+  this->parent = my_id;
   this->my_part = Partition{my_id,0};
   for (size_t i=0;i<outgoing_edges.size();i++){
     outgoing_edges[i].status=UNKNOWN;
@@ -126,11 +128,19 @@ size_t GhsState::waiting_count() const noexcept
   return waiting_for.size();
 }
 
+size_t GhsState::delayed_count() const noexcept
+{
+  return this->respond_later.size();
+}
+
 Edge GhsState::mwoe() const noexcept{
   return best_edge;
 }
 
 size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
+  if (msg.from == my_id ){
+    throw std::invalid_argument("Got a message from ourselves");
+  }
   if (msg.to != my_id){
     throw std::invalid_argument("Tried to process message that was not for me");
   }
@@ -152,7 +162,7 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
 size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   if (from!=my_part.leader && from!=parent){
-    //something is tragically wrong here, one of thes must be true
+    //something is tragically wrong here, one of these must be true
     throw std::invalid_argument("Got a message from someone, not us, not our leader, and not our parent");
   }
 
@@ -229,21 +239,34 @@ size_t GhsState::process_in_part(  AgentID from, std::vector<size_t> data, std::
   //let them know if we're in their partition or not. Easy.
   assert(data.size()==2);
   size_t part_id = data[0];
-  //size_t level   = data[1];
-  //
+
+  //except if they are *ahead* of us in the execution of their algorithm. That is, what if we
+  //don't actually know if we are in their partition or not? This is detectable if their level > ours. 
+  size_t their_level   = data[1];
+  size_t our_level     = my_part.level;
+
   if (!get_edge(from)){
     //we don't have an edge to them. That's a warning condition, but not clear what to do. 
   }
-  if (part_id == this->my_part.leader){
-    buf->push_back ( Msg{Msg::Type::ACK_PART,from, my_id, {}});
-    //do not do this: (breaks the contract of IN_PART messages, because
-    //now we don't need a response to the one we must have sent to them.
-    //set_edge_status(from,DELETED);
-    //waiting_for.erase(from);
-    return 1;
+
+  if (their_level <= our_level){
+    //They aren't behind, so we can respond
+    if (part_id == this->my_part.leader){
+      buf->push_back ( Msg{Msg::Type::ACK_PART,from, my_id, {}});
+      //do not do this: 
+      //waiting_for.erase(from);
+      //set_edge_status(from,DELETED);
+      //(breaks the contract of IN_PART messages, because now we don't need a
+      //response to the one we must have sent to them.
+      return 1;
+    } else {
+      buf->push_back ( Msg{Msg::Type::NACK_PART,from, my_id, {}});
+      return 1;
+    } 
   } else {
-    buf->push_back ( Msg{Msg::Type::NACK_PART,from, my_id, {}});
-    return 1;
+    //They're ahead of us, let's wait until we catch up to see what's going on
+    this->respond_later.push_back(Msg{Msg::Type::IN_PART,my_id,from,data});
+    return 0;
   }
 }
 
@@ -285,7 +308,7 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
   if (waiting_count() == 0)
   {
 
-    auto e = mwoe();
+    auto e              = mwoe();
     bool am_leader      = (my_part.leader == my_id);
     bool found_new_edge = (e.metric_val < ghs_worst_possible_edge().metric_val);
     bool its_my_edge    = (mwoe().root == my_id);
@@ -305,7 +328,7 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
 
     if (am_leader && !found_new_edge ){
       //I'm leader, no new edge, let's move on b/c we're done here
-      return mst_broadcast( Msg::Type::ELECTION, {}, buf);
+      return mst_broadcast( Msg::Type::NOOP, {}, buf);
     }
 
     if (am_leader && found_new_edge && !its_my_edge){
@@ -317,8 +340,61 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
   return 0;
 }
 
+
+size_t GhsState::check_new_level( std::deque<Msg>* buf){
+
+  size_t ret=0;
+  auto my_part_level = my_part.level;
+
+  auto msg_itr = respond_later.begin();
+
+  while(msg_itr != respond_later.end() ){
+    auto their_level = msg_itr->data[1];
+    if (their_level <= my_part_level){
+      //ok to answer, they were waiting for us to catch up
+      ret+=process_in_part(msg_itr->from, msg_itr->data, buf);
+      //req c++11:
+      msg_itr = respond_later.erase(msg_itr);
+    } else {
+      msg_itr ++ ;
+    }
+  }
+
+  return ret;
+}
+
+
 size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
+  // JOIN is tricky. We know (see check_new_level) that we received responses from other partitions, and at the time each partition thought it was not behind our algorithm state. 
+  //
+  // However, there are a bunch of edge cases that need to be considered. I'm doing by mest to paraphrase the Q/A, but see Lynch 15.5 (pg 517-ish in my edition. 
+  //
+  // Q: What if we request that another partition joins us, and they are adding a different edge to yet another parition? 
+  // - A req B join, but B req C join (which implies C req B)
+  // A: That's OK, join, restructure MST, and let the leader-choice uniquely determine next leader for all three
+  // - MST goes A->B in terms of distance from leader, then after B+C, A->B->C. The key is C must make a req, and therefore it must be C->B, which triggers B to contain the leader (see next few cases)
+  // - OR, MST goes B->C, then A->B, but note that means a new_sheriff msg goes B->A, setting B to contain leader as well.
+  //
+  // Q: But, how would we know to wait for the *second* MST restructuring after that?
+  // - A joins B, restructures, and B joins C and broadcasts a second restructure and it might be that A has already start_round()'d? 
+  // A: A join/new-sheriff should over-ride a start_round() or search in progress, obviously, see below  for "receive join".
+  //
+  // Q: What if a join is received from a node that we're waiting on a NACK/ACK_PART msg for?
+  // A: This is especially important to support Merge() operations. When A joins B, with level(A)< level(B), B is stuck waiting on A's response, but A recognizes MWOE leads to B, so it restructures itself *then* responds with ACK_PART.
+  
+  //
+  // Q: But, what if three partitions add eachother in a cycle? 
+  // A: Cannot happen -- A<->B<->C<->A implies that A<->C and A<->B is MWOE for A, similarly for B with A,C, etc
+  //
+  // Q: What if we send a JOIN, but that partition isn't ready to join / still searching?
+  // A: They will handle using opposite of next case
+  //
+  // Q: What if we receive a JOIN but are in the middle of a search?  
+  // - we detect this by check waiting_count(), if >0, we're still searching. 
+  // - we detect this by check leader of incoming partition even if waiting_count==0. It might be another parition, not us. 
+  // A: ??
+  //
   //join_us has an edge and a partition as payload
   //this operates on edges, really.  
   //

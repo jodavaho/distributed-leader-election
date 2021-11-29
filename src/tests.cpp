@@ -253,7 +253,7 @@ TEST_CASE("test process_srch() checks recipient"){
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
   GhsState s(0);
-  //set leader to 1, level to 0 (ignored)
+  //set leader to 1, level to 0 
   s.set_partition({1,0});
   //from rando
   CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,2,{}}, &buf), const std::invalid_argument&);
@@ -287,7 +287,9 @@ TEST_CASE("test process_srch,  mst peers")
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
-  s.process({Msg::Type::SRCH,0,0,{}},&buf);
+  s.set_edge({3, 0,MST,1});
+  s.set_parent_edge({3,0,MST,1});
+  s.process({Msg::Type::SRCH,0,3,{}},&buf);
 
   CHECK_EQ(buf.size(),2);
   auto m = buf.front();
@@ -306,7 +308,9 @@ TEST_CASE("test process_srch, discarded peers")
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,DELETED,1});
-  s.process({Msg::Type::SRCH,0,0,{}},&buf);
+  s.set_edge({3, 0,MST,1});
+  s.set_parent_edge({3,0,MST,1});
+  s.process({Msg::Type::SRCH,0,3,{}},&buf);
   CHECK_EQ(buf.size(),0);
 }
 
@@ -318,7 +322,9 @@ TEST_CASE("test process_srch, mixed peers")
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,MST,1});
   s.set_edge({3, 0,UNKNOWN,1});
-  s.process({Msg::Type::SRCH,0,0,{}},&buf);
+  s.set_edge({4, 0,MST,1});
+  s.set_parent_edge({4,0,MST,1});
+  s.process({Msg::Type::SRCH,0,4,{}},&buf);
 
   CHECK_EQ(buf.size(),2);
 
@@ -391,7 +397,7 @@ TEST_CASE("test ghs_worst_possible_edge()")
   CHECK(y.root== 1);
   CHECK(y.metric_val== 1000);
   y = edge;
-  CHECK_EQ(y.metric_val, std::numeric_limits<int>::max());
+  CHECK_EQ(y.metric_val, std::numeric_limits<size_t>::max());
 }
 
 TEST_CASE("test process_srch_ret throws when not waiting")
@@ -428,7 +434,7 @@ TEST_CASE("test process_srch_ret, one peer, no edge found ")
   //did not accept their edge
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
-  CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<int>::max());
+  CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<size_t>::max());
 
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
@@ -455,7 +461,7 @@ TEST_CASE("test process_srch_ret, one peer, edge found ")
   CHECK_EQ(s.waiting_count(),1);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
-  CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<int>::max());
+  CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<size_t>::max());
   
   //pretend node 1 returned a good edge (1-->2, wt=0)
   //send a return message 
@@ -492,7 +498,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
   s.process({ Msg::Type::SRCH,0,1,{}  }, &buf);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
-  CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<int>::max());
+  CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<size_t>::max());
   CHECK_EQ(buf.size(),1); // SRCH to 2
   CHECK_EQ(buf.front().type, Msg::Type::SRCH);
   CHECK_EQ(buf.front().to, 2);
@@ -618,6 +624,8 @@ TEST_CASE("test in_part, happy-path"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
+  //set partition to led by agent 0 with level 2
+  s.set_partition({0,2});
   //are you, node 0, in partition led by agent 1 with level 2? 
   s.process( Msg{Msg::Type::IN_PART,0,1,{1,2}}, &buf);
   CHECK_EQ(buf.size(),1);
@@ -633,6 +641,13 @@ TEST_CASE("test in_part, happy-path"){
   //yes, I am
   CHECK_EQ(buf.front().type, Msg::Type::ACK_PART);
   buf.pop_front();
+
+  //are you, node 0, in partition led by agent 0 with level 3?
+  s.process( Msg{Msg::Type::IN_PART,0,1,{0,3}}, &buf);
+  //well, I can't say, I'm only level 2
+  CHECK_EQ(buf.size(),0);
+  CHECK_EQ(s.waiting_count(),0);
+  CHECK_EQ(s.delayed_count(),1);
 }
 
 TEST_CASE("test process_nack_part, happy-path"){

@@ -108,6 +108,8 @@ class GhsState
 
     //getters
     size_t waiting_count() const noexcept;
+    size_t delayed_count() const noexcept;
+
     Edge mwoe() const noexcept;
 
     //useful operations
@@ -138,16 +140,31 @@ class GhsState
 
 
   private:
+
+    /* Search stage messages */
+    //each of srch, srch_ret, in_part, ack_part, nack_part are deterministic and straightfoward
     size_t  process_srch(        AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_srch_ret(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_in_part(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_ack_part(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_nack_part(   AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_join_us(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_new_sheriff( AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //This does moderate lifting to determine if the search is complete for the
+    //current node, and if so, returns the results to our leader
     size_t  check_search_status( std::deque<Msg>*);
+
+    /* Join / Merge / Absorb stage message */
+    //join_us does some heavy lifting to determine how partitions should be restructured and joined
+    size_t  process_join_us(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //new_sheriff is the msg that initiates a restructure, and is completely deterministic
+    size_t  process_new_sheriff( AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //After a level change, we may have to do some cleanup responses, this will handle that.
+    size_t  check_new_level( std::deque<Msg>* );
+
+    /* Leader election messages */
+    //these are kept here for completeness, but are only required 
+    size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+
 
 
     AgentID                      my_id;
@@ -155,6 +172,7 @@ class GhsState
     AgentID                      parent;
     std::unordered_set<AgentID>  waiting_for;
     std::vector<Edge>            outgoing_edges;
+    std::vector<Msg>             respond_later;
     Edge                         best_edge;
 
 };
