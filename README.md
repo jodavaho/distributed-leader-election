@@ -109,6 +109,7 @@ As such, you'll notice all the work is done by `GhsState::process(...)`. *Every 
 
 - `start_round()` which is used to trigger a new MST calculation and returns the message to send to trigger all nodes. When this is called is a system implementation detail and is beyond the scope of the class. 
 - `reset()` which is used to completely wipe the current state of the MST calculation. Each node becomes isoated and the class is reverted to its startup state after the constructor was called. 
+- `set_edge(...)` which is to be used (in an as-yet determined way) to set the communications cost between agents)
 
 However, some informative ones for system implementation might be:
 
