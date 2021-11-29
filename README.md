@@ -95,11 +95,19 @@ class CommunicationsHandler{
   // ...
 
 };
+
+/// and now, this repo's code, impelemnted for example in in ghs.cpp:
+
+class GhsState: public MsgHandler{ //but we don't extend it yet
+   //...
+    size_t process(const Msg &msg, std::deque<Msg> *outgoing_buffer);
+   //...
+};
 ```
 
 As such, you'll notice all the work is done by `GhsState::process(...)`. *Every other method is used internally and exposed testing only* with the exception of two:
 
-- `start_round()` which is used to trigger a new MST calculation. When this is called is a system implementation detail. 
+- `start_round()` which is used to trigger a new MST calculation and returns the message to send to trigger all nodes. When this is called is a system implementation detail and is beyond the scope of the class. 
 - `reset()` which is used to completely wipe the current state of the MST calculation. Each node becomes isoated and the class is reverted to its startup state after the constructor was called. 
 
 However, some informative ones for system implementation might be:
