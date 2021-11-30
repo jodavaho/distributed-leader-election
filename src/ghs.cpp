@@ -8,7 +8,8 @@
 #include <optional> //req c++20
 
 GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
-  reset()
+  this->my_id =  my_id;
+  reset();
   for (const auto e: edges){
     this->set_edge(e);
   }
@@ -18,7 +19,6 @@ GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
  * Reset the algorithm status completely
  */
 bool GhsState::reset() noexcept{
-  this->my_id           =  my_id;
   this->my_part         =  Partition{my_id,0};
   this->parent          =  my_id; //I live alone
   this->waiting_for     =  {};
@@ -29,6 +29,7 @@ bool GhsState::reset() noexcept{
   for (size_t i=0;i<outgoing_edges.size();i++){
     outgoing_edges[i].status=UNKNOWN;
   }
+
   return true;
 }
 
@@ -289,7 +290,7 @@ size_t GhsState::process_nack_part(  AgentID from, std::vector<size_t> data, std
   }
   auto their_edge = get_edge(from);
   assert(data.size()==2);
-  auto their_part = {data[0],data[1]};
+  Partition their_part = {data[0],data[1]};
 
   if (!their_edge){
     throw std::invalid_argument("We got a message from "+std::to_string(from)+" but we don't have an edge to them");
@@ -322,7 +323,7 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
 
     if (am_leader && found_new_edge && its_my_edge){
       //just start the process to join up, rather than sending messages
-      return process_join(my_id, {e.peer, e.root, best_partition.leader, best_partition.level}, buf);
+      return process_join_us(my_id, {e.peer, e.root, best_partition.leader, best_partition.level}, buf);
     }
 
     if (am_leader && !found_new_edge ){
@@ -437,7 +438,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   bool in_initiating_partition = (join_root == my_id);
 
   if (not_involved){
-    return mst_broadcast(Msg::Type::JOIN_US, data, buf)
+    return mst_broadcast(Msg::Type::JOIN_US, data, buf);
   }
 
   if (in_initiating_partition){
@@ -463,7 +464,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
     //but what if we were waiting for them?
     if (waiting_for.find(join_root) != waiting_for.end()){
       waiting_for.erase(join_root);
-      check_search_status();
+      check_search_status(buf);
     }
     //we don't even need to tell anyone we got these guys to join up
     return 1 ;
@@ -481,12 +482,12 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   if (new_leader == my_id){
     //if we're leader, then all MST edges are children
     parent=my_id;
-    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level})
+    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
   } else {
     //join_root is a parent, our parent is now a child, other children unaffected, but need to know about the new level. 
     parent = join_root;
-    return mst_convergecast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}) 
-      + mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level})
+    return mst_convergecast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf) 
+      + mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
   }
 
   assert(false && "reached end of function somehow -- programmer error");
@@ -495,13 +496,11 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
 
 size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
-  //after a re-org, we cannot continue with the current state of the search, can we? 
-  waitng_for={};
   assert(data.size()==2);
   auto new_leader = data[0];
   auto new_level  = data[1];
 
-  if (from!=parent && new_leader != my_part.leader){{
+  if (from!=parent && new_leader != my_part.leader){
     //reorg in process!
     parent = from;
   }
@@ -510,7 +509,7 @@ size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, s
 
   check_new_level(buf);
 
-  return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level})
+  return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
 }
 
 size_t GhsState::process_election(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)

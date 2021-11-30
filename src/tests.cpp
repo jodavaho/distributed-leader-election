@@ -439,7 +439,7 @@ TEST_CASE("test process_srch_ret, one peer, no edge found ")
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
   //in this case, we didn't create a good edge, so they assume there's none avail
-  CHECK_EQ(buf.front().type, Msg::Type::ELECTION);
+  CHECK_EQ(buf.front().type, Msg::Type::NOOP);
 
 }
 
@@ -664,7 +664,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   buf.pop_front();buf.pop_front();
 
   CHECK_EQ(s.waiting_count(),2);
-  m ={Msg::Type::NACK_PART, 0, 2, {}};
+  m ={Msg::Type::NACK_PART, 0, 2, {2,0}};
   s.process(m,&buf);
   CHECK_EQ(buf.size(),           0);
   CHECK_EQ(s.waiting_count(),    1);
@@ -674,7 +674,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
   CHECK_EQ(buf.size(),0);
 
-  m ={Msg::Type::NACK_PART, 0, 1, {}};
+  m ={Msg::Type::NACK_PART, 0, 1, {1,0}};
   s.process(m,&buf);
   CHECK_EQ(buf.size(),           1);
   CHECK_EQ(s.waiting_count(),    0);
@@ -682,7 +682,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        1);
   //response should be to tell the other guy we're joining up
-  CHECK_EQ(buf.front().type,  Msg::Type::JOIN_US);
+  CHECK_EQ(buf.front().type,  Msg::Type::NEW_SHERIFF);
   CHECK_EQ(buf.front().to,    s.mwoe().peer);
   CHECK_EQ(buf.front().from,  s.mwoe().root);
   CHECK_EQ(buf.front().from,  0);
@@ -715,7 +715,7 @@ TEST_CASE("test process_nack_part, not-leader"){
 
   CHECK_EQ(s.waiting_count(),2);
   //send msg from 2 --> not in partition
-  m ={Msg::Type::NACK_PART, 0, 2, {}};
+  m ={Msg::Type::NACK_PART, 0, 2, {2,0}};
   s.process(m,&buf);
   CHECK_EQ(buf.size(),           0);
   CHECK_EQ(s.waiting_count(),    1);
@@ -727,7 +727,7 @@ TEST_CASE("test process_nack_part, not-leader"){
   CHECK_EQ(buf.size(),0);
 
   //send message from 1 --> not in partition
-  m ={Msg::Type::NACK_PART, 0, 1, {}};
+  m ={Msg::Type::NACK_PART, 0, 1, {1,0}};
   s.process(m,&buf);
   CHECK_EQ(buf.size(),           1);
   CHECK_EQ(s.waiting_count(),    0);
