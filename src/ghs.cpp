@@ -494,19 +494,33 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   return 0;
 }
 
+//pre-condition: msg contains information about a new leader in a new level greater than ours
+//post-condition: level increases, either by joining an advanced partition, or by merging
 size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   assert(data.size()==2);
   auto new_leader = data[0];
   auto new_level  = data[1];
 
+  //special case, we're nominated
+  if (new_leader == my_id){
+    //I'm so flattered you chose me
+    parent = my_id;
+    set_partition({new_leader,new_level});
+    check_new_level(buf);
+    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
+  }
+
   if (from!=parent && new_leader != my_part.leader){
     //reorg in process!
     parent = from;
   }
+
+  //regardless of reorg, we are advanced by joining
   assert(new_level > my_part.level); //<--something wrong if old new_sheriff msgs are propegating
   my_part = {new_leader, new_level};
 
+  //and must clean up old pending messages
   check_new_level(buf);
 
   return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
@@ -568,4 +582,8 @@ Edge ghs_worst_possible_edge(){
   ret.status=UNKNOWN;
   ret.metric_val=std::numeric_limits<size_t>::max();
   return ret;
+}
+
+AgentID GhsState::get_parent_id() const noexcept{
+  return parent;
 }

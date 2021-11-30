@@ -93,6 +93,11 @@ class GhsState
      */
     AgentID get_id() const noexcept;
 
+    /**
+     * Returns whatever I believe my parent is
+     */
+    AgentID get_parent_id() const noexcept;
+
     /** 
      *
      * You must set an edge as MST using set_edge, BEFORE you call this method to

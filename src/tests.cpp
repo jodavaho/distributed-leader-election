@@ -5,6 +5,50 @@
 #include <deque>
 #include <optional>
 
+GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
+{
+  GhsState s(my_id);
+  AgentID id=1;
+  std::optional<Edge> e;
+  for (size_t i=0;i<n_unknown;i++, id++){
+    REQUIRE_EQ(1, s.set_edge( {id,0,UNKNOWN, id}));
+    REQUIRE_NOTHROW(e = s.get_edge(1));
+    REQUIRE( e ); 
+    REQUIRE_EQ(e->peer,id);
+    REQUIRE_EQ(e->root,0);
+    REQUIRE_EQ(e->status, UNKNOWN);
+    REQUIRE_EQ(e->metric_val, id);
+  }
+  for (size_t i=0;i<n_deleted;i++, id++){
+    REQUIRE_EQ(1, s.set_edge( {id,0,DELETED, id}));
+    REQUIRE_NOTHROW(e = s.get_edge(id));
+    REQUIRE( e ); 
+    REQUIRE_EQ(e->peer,id);
+    REQUIRE_EQ(e->root,0);
+    REQUIRE_EQ(e->status, DELETED);
+    REQUIRE_EQ(e->metric_val, id);
+  }
+  for (size_t i=0;i<n_MST;i++, id++){
+    REQUIRE_EQ(1, s.set_edge( {id,0,MST, id}));
+    REQUIRE_NOTHROW(e = s.get_edge(id));
+    REQUIRE( e ); 
+    REQUIRE_EQ(e->peer,id);
+    REQUIRE_EQ(e->root,0);
+    REQUIRE_EQ(e->status, MST);
+    REQUIRE_EQ(e->metric_val, id);
+  }
+  if (!is_root){
+    //just set the last MST link as the one to the root
+    REQUIRE_NOTHROW(s.set_parent_edge( {id-1,0,MST,id-1} ));
+    REQUIRE_NOTHROW(s.set_partition( {id-1, 0}));
+  }
+  return s;
+}
+
+TEST_CASE("test get_state"){
+  auto s = get_state(0,1,1,1,false,false);
+}
+
 TEST_CASE("test set_edge_status"){
   GhsState s(0);
   CHECK_EQ(1, s.set_edge( {1,0,DELETED, 1}));
@@ -744,5 +788,134 @@ TEST_CASE("test process_nack_part, not-leader"){
   CHECK_EQ(s.get_edge(s.mwoe().peer)->status, UNKNOWN);
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
   CHECK_EQ(buf.size(),1);
+
+}
+
+TEST_CASE("working test of join_us")
+{
+}
+
+TEST_CASE("test new_sheriff happy succession")
+{
+
+  auto s = get_state(0,0,0,1,true,false);
+  CHECK_EQ(s.get_partition().leader,0);
+  CHECK_EQ(s.get_partition().level,0);
+  std::deque<Msg> buf;
+  //happy path: same level+1, leader adjacent from MST link -- should just reorg
+  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {1,1}};
+  CHECK_NOTHROW(s.process(ns,&buf));
+  auto parent_edge = s.get_edge(1);
+  CHECK_EQ(parent_edge->status,MST);
+  CHECK_EQ(s.get_partition().leader,1);
+  CHECK_EQ(s.get_partition().level,1);
+  CHECK_EQ(buf.size(), 0);
+  
+}
+
+TEST_CASE("test new_sheriff happy succession chains down")
+{
+
+  //node 0 has 3 outgoing mst links
+  //node 0(root)->{ node 1, node 2, node 3 }
+  auto s = get_state(0,0,0,3,true,false);
+  //node 0 is the leader
+  CHECK_EQ(s.get_partition().leader,0);
+  CHECK_EQ(s.get_partition().level,0);
+
+  std::deque<Msg> buf;
+  
+  //leader recvs msg
+  //removes itself and tells its (new) children
+  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {1,1}};
+  CHECK_NOTHROW(s.process(ns,&buf));
+  CHECK_EQ(s.get_partition().leader,1);
+  CHECK_EQ(s.get_partition().level,1);
+  //
+  CHECK_EQ(buf.size(), 2);
+  CHECK_EQ(buf.front().to, 2); //hey former child, 2
+  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
+  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
+  CHECK_EQ(buf.front().data[0], 1); //and it's 1
+  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
+  //
+  CHECK_EQ(buf.back().to, 3); //hey former child, 3
+  CHECK_EQ(buf.back().from, 0); //It's your old pal zero
+  CHECK_EQ(buf.back().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
+  CHECK_EQ(buf.back().data[0], 1); //and it's 1
+  CHECK_EQ(buf.back().data[1], 1); //and now we're so advanced
+  //
+  CHECK_EQ(s.get_parent_id(), 1);
+  
+}
+
+TEST_CASE("test new_sheriff happy succession chains up")
+{
+
+  //node 2(root)->node 0->node 1
+  auto s = get_state(0,0,0,2,false,false);
+  //note, 2 is our parent / leader
+  CHECK_EQ(s.get_partition().leader,2);
+  CHECK_EQ(s.get_partition().level,0);
+  std::deque<Msg> buf;
+
+  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {1,1}};
+  CHECK_NOTHROW(s.process(ns,&buf));
+  CHECK_EQ(s.get_partition().leader,1);
+  CHECK_EQ(s.get_partition().level,1);
+  CHECK_EQ(buf.size(), 1);
+  CHECK_EQ(buf.front().to, 2); //hey former leader
+  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
+  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
+  CHECK_EQ(buf.front().data[0], 1); //and it's 1
+  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
+  //chain down will also occur -- reorg works. 
+  CHECK_EQ(s.get_parent_id(), 1);
+
+}
+
+TEST_CASE("test new_sheriff happy children obey")
+{
+  //node 2(root)->node 0->node 1
+  auto s = get_state(0,0,0,2,false,false);
+  //note, 2 is our parent / leader
+  CHECK_EQ(s.get_partition().leader,2);
+  CHECK_EQ(s.get_partition().level,0);
+  std::deque<Msg> buf;
+
+  //who's node 3? never heard of him, but node 1 must be closer to him
+  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {3,1}};
+  CHECK_NOTHROW(s.process(ns,&buf));
+  CHECK_EQ(s.get_partition().leader,3);
+  CHECK_EQ(s.get_partition().level,1);
+  CHECK_EQ(buf.size(), 1);
+  CHECK_EQ(buf.front().to, 2); //hey former leader
+  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
+  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
+  CHECK_EQ(buf.front().data[0], 3); //and it's 3
+  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
+  CHECK_EQ(s.get_parent_id(), 1); // one must be closer, right?
+
+}
+
+TEST_CASE("test new_sheriff is suprised")
+{
+  //node 0(root)->{node 1}
+  auto s = get_state(0,0,0,1,true,false);
+  CHECK_EQ(s.get_partition().leader,0);
+  CHECK_EQ(s.get_partition().level,0);
+  std::deque<Msg> buf;
+
+  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {0,1}};
+  CHECK_NOTHROW(s.process(ns,&buf));
+  CHECK_EQ(s.get_partition().leader,0);
+  CHECK_EQ(s.get_partition().level,1);
+  CHECK_EQ(s.get_parent_id(), 0);   //I'm the root
+  CHECK_EQ(buf.size(), 1);
+  CHECK_EQ(buf.front().to, 1); //hey buddy
+  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
+  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
+  CHECK_EQ(buf.front().data[0], 0); //and just kidding its me 0
+  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
 
 }
