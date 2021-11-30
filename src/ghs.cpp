@@ -8,13 +8,7 @@
 #include <optional> //req c++20
 
 GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
-  this->my_id           =  my_id;
-  this->my_part         =  Partition{my_id,0};
-  this->parent          =  my_id; //I live alone
-  this->waiting_for     =  {};
-  this->respond_later   =  {};
-  this->best_edge       =  ghs_worst_possible_edge();
-
+  reset()
   for (const auto e: edges){
     this->set_edge(e);
   }
@@ -24,10 +18,14 @@ GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
  * Reset the algorithm status completely
  */
 bool GhsState::reset() noexcept{
-  waiting_for.clear();
-  respond_later.clear();
-  this->parent = my_id;
-  this->my_part = Partition{my_id,0};
+  this->my_id           =  my_id;
+  this->my_part         =  Partition{my_id,0};
+  this->parent          =  my_id; //I live alone
+  this->waiting_for     =  {};
+  this->respond_later   =  {};
+  this->best_edge       =  ghs_worst_possible_edge();
+  this->best_partition  =  my_part;
+
   for (size_t i=0;i<outgoing_edges.size();i++){
     outgoing_edges[i].status=UNKNOWN;
   }
@@ -252,7 +250,7 @@ size_t GhsState::process_in_part(  AgentID from, std::vector<size_t> data, std::
   if (their_level <= our_level){
     //They aren't behind, so we can respond
     if (part_id == this->my_part.leader){
-      buf->push_back ( Msg{Msg::Type::ACK_PART,from, my_id, {}});
+      buf->push_back ( Msg{Msg::Type::ACK_PART,from, my_id, {my_part.leader, my_part.level}});
       //do not do this: 
       //waiting_for.erase(from);
       //set_edge_status(from,DELETED);
@@ -260,7 +258,7 @@ size_t GhsState::process_in_part(  AgentID from, std::vector<size_t> data, std::
       //response to the one we must have sent to them.
       return 1;
     } else {
-      buf->push_back ( Msg{Msg::Type::NACK_PART,from, my_id, {}});
+      buf->push_back ( Msg{Msg::Type::NACK_PART,from, my_id, {my_part.leader, my_part.level}});
       return 1;
     } 
   } else {
@@ -290,12 +288,16 @@ size_t GhsState::process_nack_part(  AgentID from, std::vector<size_t> data, std
     throw std::invalid_argument("We got a IN_PART message from "+std::to_string(from)+" but we weren't waiting for one");
   }
   auto their_edge = get_edge(from);
+  assert(data.size()==2);
+  auto their_part = {data[0],data[1]};
+
   if (!their_edge){
     throw std::invalid_argument("We got a message from "+std::to_string(from)+" but we don't have an edge to them");
   }
   
   if (best_edge.metric_val > their_edge->metric_val){
     best_edge = *their_edge;
+    best_partition = their_part;
   }
 
   //@throws:
@@ -319,11 +321,8 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
     }
 
     if (am_leader && found_new_edge && its_my_edge){
-      //just add the edge and ping them to join us 
-      //(join_us will trigger the broadcast of the new state)
-      this->set_edge_status(e.peer, MST);//@throws
-      buf->push_back(Msg{Msg::Type::JOIN_US, e.peer, my_id, {e.peer, e.root}});
-      return 1;
+      //just start the process to join up, rather than sending messages
+      return process_join(my_id, {e.peer, e.root, best_partition.leader, best_partition.level}, buf);
     }
 
     if (am_leader && !found_new_edge ){
@@ -364,9 +363,12 @@ size_t GhsState::check_new_level( std::deque<Msg>* buf){
 }
 
 
-size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
-{
   // JOIN is tricky. We know (see check_new_level) that we received responses from other partitions, and at the time each partition thought it was not behind our algorithm state. 
+  //
+  // In general, 
+  //
+  // - Multiple joins can be processed in any sequence and produce the same result
+  // - JOIN should change the algorithm level, either adopting the level of the leading parition (absorb) or incrementing the level of both partitions (merge)
   //
   // However, there are a bunch of edge cases that need to be considered. I'm doing by mest to paraphrase the Q/A, but see Lynch 15.5 (pg 517-ish in my edition. 
   //
@@ -423,7 +425,92 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   //    - send new sheriff mst_cc(their partition, their leader)
   //
   // 
+size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
+{
+  assert(data.size()==4);
+  auto join_root  = data[0]; // the side of the edge that is in the partition initiating join
+  auto join_peer  = data[1]; // the side of the edge that is in the other partition 
+  auto join_lead  = data[2]; // the leader, as declared during search, of the peer
+  auto join_level = data[3]; // the level of the peer as declared during search
+
+  bool not_involved            = (join_root != my_id && join_peer != my_id);
+  bool in_initiating_partition = (join_root == my_id);
+
+  if (not_involved){
+    return mst_broadcast(Msg::Type::JOIN_US, data, buf)
+  }
+
+  if (in_initiating_partition){
+    assert(join_lead == my_part.leader);
+    assert(join_level == my_part.level);
+    //send a special join message to the peer -- the only time a JOIN_US crosses partitions. 
+    buf->push_back( Msg{Msg::Type::JOIN_US, join_peer, my_id,
+        { join_root, join_peer, my_part.leader, my_part.level}
+        });
+    return 1;
+  }
+
+  assert(join_peer == my_id);
+  assert(join_lead != my_part.leader);
+
+  //not in initating partition
+  //was sent to us, and I'm on their MWOE
+  //meaning they sent their level, not ours
+  if (join_level < my_part.level){
+    //poor laggards, assert the new leader this point as children of me. 
+    buf->push_back( Msg{Msg::Type::NEW_SHERIFF, join_root, my_id, {my_part.leader, my_part.level}} );
+    set_edge_status(join_root, MST);
+    //but what if we were waiting for them?
+    if (waiting_for.find(join_root) != waiting_for.end()){
+      waiting_for.erase(join_root);
+      check_search_status();
+    }
+    //we don't even need to tell anyone we got these guys to join up
+    return 1 ;
+  }
+
+  assert(join_level==my_part.level);
+  //you see, if join_level>my_part.level, I would not have returned a (N)ACK_PART msg;
+
+  //I agree to your join, 
+  set_edge_status(join_root, MST);
+  //and I choose a leader farily from among the two of us
+  auto new_leader = std::max(from, my_id);
+  my_part = {new_leader, my_part.level+1};
+
+  if (new_leader == my_id){
+    //if we're leader, then all MST edges are children
+    parent=my_id;
+    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level})
+  } else {
+    //join_root is a parent, our parent is now a child, other children unaffected, but need to know about the new level. 
+    parent = join_root;
+    return mst_convergecast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}) 
+      + mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level})
+  }
+
+  assert(false && "reached end of function somehow -- programmer error");
   return 0;
+}
+
+size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
+{
+  //after a re-org, we cannot continue with the current state of the search, can we? 
+  waitng_for={};
+  assert(data.size()==2);
+  auto new_leader = data[0];
+  auto new_level  = data[1];
+
+  if (from!=parent && new_leader != my_part.leader){{
+    //reorg in process!
+    parent = from;
+  }
+  assert(new_level > my_part.level); //<--something wrong if old new_sheriff msgs are propegating
+  my_part = {new_leader, new_level};
+
+  check_new_level(buf);
+
+  return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level})
 }
 
 size_t GhsState::process_election(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
@@ -431,18 +518,6 @@ size_t GhsState::process_election(  AgentID from, std::vector<size_t> data, std:
   return 0;
 }
 
-size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
-{
-  //This is purely an edge reorganization command
-  //If new_sheriff level > ours
-  //- The sender is now our parent
-  //- adopt partition:
-  //- adopt the level
-  //- adtop the new laeder
-  //- send same message to former parent
-  //If not, drop it. It's old news and sender must have received our new-sheriff msg out of order
-  return 0;
-}
 
 size_t GhsState::process_not_it(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {

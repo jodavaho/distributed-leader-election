@@ -174,6 +174,7 @@ class GhsState
     std::vector<Edge>            outgoing_edges;
     std::vector<Msg>             respond_later;
     Edge                         best_edge;
+    Partition                    best_partition;
 
 };
 
