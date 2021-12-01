@@ -702,6 +702,7 @@ TEST_CASE("test process_nack_part, happy-path"){
 
   CHECK_NOTHROW(s.set_edge({1,0,UNKNOWN,10}));
   CHECK_NOTHROW(s.set_edge({2,0,UNKNOWN,20}));
+  s.set_partition({0,0});
 
   s.start_round(&buf);
   CHECK_EQ(buf.size(),2);
@@ -725,12 +726,15 @@ TEST_CASE("test process_nack_part, happy-path"){
   CHECK_EQ(s.mwoe().metric_val,  10);
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        1);
+
   //response should be to tell the other guy we're joining up
-  CHECK_EQ(buf.front().type,  Msg::Type::NEW_SHERIFF);
+  CHECK_EQ(buf.front().type,  Msg::Type::JOIN_US);
   CHECK_EQ(buf.front().to,    s.mwoe().peer);
   CHECK_EQ(buf.front().from,  s.mwoe().root);
   CHECK_EQ(buf.front().from,  0);
-  CHECK_EQ(s.get_edge(s.mwoe().peer)->status, MST);
+  std::optional<Edge> e;
+  CHECK_NOTHROW(e = s.get_edge(s.mwoe().peer));
+  CHECK_EQ(e->status, MST);
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
   CHECK_EQ(buf.size(),1);
   
@@ -791,7 +795,58 @@ TEST_CASE("test process_nack_part, not-leader"){
 
 }
 
-TEST_CASE("working test of join_us")
+TEST_CASE("test join_us nodes pass")
+{
+
+  //JOIN us emits new_sheriff messages, cleverly designed. 
+  //2(root) -> 0 -> 1
+  auto s = get_state(0,0,0,2,false,false);
+  //create a join_us that doesn't involve node or any neighbors
+  //note: it's { {edge}, {partition} }
+  //aka        {root, peer, leader, level}
+  Msg m = {Msg::Type::JOIN_US, 0, 2, {4,5,5,0}};
+  std::deque<Msg> buf;
+  CHECK_EQ(m.from,2);
+  CHECK_EQ(m.to,  0);
+  CHECK_NOTHROW(s.process(m,&buf));
+  CHECK_EQ(buf.size(),        1);
+  CHECK_EQ(buf.front().to,    1);
+  CHECK_EQ(buf.front().from,  0);
+  CHECK_EQ(buf.front().type,  Msg::Type::JOIN_US);
+  
+}
+
+TEST_CASE("test join_us root relays to peer")
+{
+  //JOIN us emits new_sheriff messages, cleverly designed. 
+  //2(root) -> 0 <-> 1 <- some other root
+  auto s = get_state(0,0,0,2,false,false);
+  //create a join_us that involves me as root
+  //note: it's { {edge}, {partition} }
+  //aka        {root, peer, leader, level}
+  Msg m = {Msg::Type::JOIN_US, 0, 2, {1,0,2,0}};
+  std::deque<Msg> buf;
+  CHECK_EQ(m.from,2);
+  CHECK_EQ(m.to,  0);
+  CHECK_NOTHROW(s.process(m,&buf));
+  CHECK_EQ(buf.size(),        1);
+  CHECK_EQ(buf.front().to,    1);
+  CHECK_EQ(buf.front().from,  0);
+  CHECK_EQ(buf.front().type,  Msg::Type::JOIN_US);
+  std::optional<Edge> e;
+  CHECK_NOTHROW(e = s.get_edge(1));
+  //he updated edge
+  CHECK_EQ(e->status, MST);
+  //check data payload
+  CHECK_EQ(buf.front().data[0], 1);//edge to
+  CHECK_EQ(buf.front().data[1], 0);//edge from
+  CHECK_EQ(buf.front().data[2], 2);//sender's leader
+  //level not adjusted
+  CHECK_EQ(buf.front().data[3], 0);//sender's level
+
+}
+
+TEST_CASE("test join_us absorb")
 {
 }
 
@@ -917,5 +972,5 @@ TEST_CASE("test new_sheriff is suprised")
   CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
   CHECK_EQ(buf.front().data[0], 0); //and just kidding its me 0
   CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
-
 }
+

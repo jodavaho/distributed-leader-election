@@ -323,7 +323,8 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
 
     if (am_leader && found_new_edge && its_my_edge){
       //just start the process to join up, rather than sending messages
-      return process_join_us(my_id, {e.peer, e.root, best_partition.leader, best_partition.level}, buf);
+      assert(e.peer != e.root); //ask me why I check
+      return process_join_us(my_id, {e.peer, e.root, get_partition().leader, get_partition().level}, buf);
     }
 
     if (am_leader && !found_new_edge ){
@@ -333,7 +334,7 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
 
     if (am_leader && found_new_edge && !its_my_edge){
       //inform the crew to add the edge
-      return mst_broadcast( Msg::Type::JOIN_US, {e.peer, e.root}, buf);
+      return mst_broadcast( Msg::Type::JOIN_US, {e.peer, e.root, get_partition().leader, get_partition().level}, buf);
     }
   } 
 
@@ -364,73 +365,100 @@ size_t GhsState::check_new_level( std::deque<Msg>* buf){
 }
 
 
-  // JOIN is tricky. We know (see check_new_level) that we received responses from other partitions, and at the time each partition thought it was not behind our algorithm state. 
+  // JOIN is tricky. 
+  //
+  // There's really two kinds: Absorb (joiner loses leader, maybe increases its level), Merge (joiner and joinee both form a new leader together).
   //
   // In general, 
   //
   // - Multiple joins can be processed in any sequence and produce the same result
-  // - JOIN should change the algorithm level, either adopting the level of the leading parition (absorb) or incrementing the level of both partitions (merge)
-  //
-  // However, there are a bunch of edge cases that need to be considered. I'm doing by mest to paraphrase the Q/A, but see Lynch 15.5 (pg 517-ish in my edition. 
+  // - Merge joins (which increment level) must occur *only* at an edge connecting two partitions, A and B, where MWOE(A) == MWOE(B). 
+  // - Merge join should change the algorithm level for at least one of the partitions joining.
+  // - [deviation from text] Merge joins are initiated by two absorb actions across the same edge
+  // - The key is that if two partitions join eachother, the edge between them is unique and is now a "Core" edge. The leader is always on the new core edge. 
   //
   // Q: What if we request that another partition joins us, and they are adding a different edge to yet another parition? 
   // - A req B join, but B req C join (which implies C req B)
-  // A: That's OK, join, restructure MST, and let the leader-choice uniquely determine next leader for all three
-  // - MST goes A->B in terms of distance from leader, then after B+C, A->B->C. The key is C must make a req, and therefore it must be C->B, which triggers B to contain the leader (see next few cases)
-  // - OR, MST goes B->C, then A->B, but note that means a new_sheriff msg goes B->A, setting B to contain leader as well.
+  // A: It should play out like this: 
+  // - First, absorb A into B then either:
+  //    1. B absorbs into C, taking A with it; followed by C attempting to absorb into B. This kicks off a merge (A+B,C), and the leader is in B or C as required.
+  //    2. OR, C absorbs into B, Then A absorbs into B, then B attempts to absorb into C, resulting in a Merge(A+B,C)
+  //    3. OR, B and C absorb then merge, followed by A absorbing into B+C.
+  // - Either way, one merge happened (level++), and one absorb. 
   //
-  // Q: But, how would we know to wait for the *second* MST restructuring after that?
-  // - A joins B, restructures, and B joins C and broadcasts a second restructure and it might be that A has already start_round()'d? 
-  // A: A join/new-sheriff should over-ride a start_round() or search in progress, obviously, see below  for "receive join".
-  //
-  // Q: What if a join is received from a node that we're waiting on a NACK/ACK_PART msg for?
-  // A: This is especially important to support Merge() operations. When A joins B, with level(A)< level(B), B is stuck waiting on A's response, but A recognizes MWOE leads to B, so it restructures itself *then* responds with ACK_PART.
-  
+  // Q: What if a join is received (by node B) from a node (A) that has not sent a  NACK/ACK_PART msg yet (to B)?
+  // - This happens when that node (A) makes a decisions about its partitions' MWOE before responding to queries from outside the partition  (e.g., from B)
+  // A: Treat it as absorb A into B, (which means A's leader becomes B's leader), and then have B re-start the MWOE search in A's subtree. 
   //
   // Q: But, what if three partitions add eachother in a cycle? 
-  // A: Cannot happen -- A<->B<->C<->A implies that A<->C and A<->B is MWOE for A, similarly for B with A,C, etc
+  // A: Cannot happen:  A<->B<->C<->A implies that A<->C and A<->B is MWOE for A, which is impossible by the unique weights for each edge (See @Edge structure for how this would be accomplished in the field). Similarly for B with A,C, etc. There's a discussion of this ("Component subgraph") in Lynch. 
   //
   // Q: What if we send a JOIN, but that partition isn't ready to join / still searching?
   // A: They will handle using opposite of next case
   //
   // Q: What if we receive a JOIN but are in the middle of a search?  
-  // - we detect this by check waiting_count(), if >0, we're still searching. 
-  // - we detect this by check leader of incoming partition even if waiting_count==0. It might be another parition, not us. 
-  // A: ??
-  //
+  // A: This is a more general case of the ACK/NACK discussion above. We treat it as an absorb + search.
+  // - Suppose A is searching, and B requests A join B. 
+  // - Then two cases: 
+  //   1. level(A)>=B, in which case B absorb into A + A trigger new MWOE search is OK
+  //   2. level(A)<B, in which case B absorb would lower the level. A may already be in B's partition without knowing it yet. 
+  //   - I say this cannot happen. Why? Well, A would not reply to B's IN_PART request, because it does not know wheter it is in B's partition. So, B would not have enough information to declare edge (A,B) as a MWOE. 
+  //   - Is there a condition that can increase B's level while waiting for search results? No, a MWOE is required to increase level. 
+  //   
   //join_us has an edge and a partition as payload
   //this operates on edges, really.  
   //
   //- if neither the root or the peer is us, 
   //  - assert it was received on an MST link
-  //  - pass the message on (mst_bc)
+  //  - pass the message on (mst_broadcast)
   //
   //- if the root of the passed edge is us, 
+  //  - assert, waiting_count == 0; that's an error condition otherwise
   //  - assert it was received on an MST link
   //  - we add edge as MST 
-  //  - we pass to peer 
+  //  - we pass to peer, they will send a NEW_SHERIFF message.
   //
   //- if the peer of the passed edge is us
-  //  - assert not received on MST link
-  //  - assert not same partition
-  //  - we add as MST link
-  //  - if our level > theirs, 
-  //    - ABSORB
-  //    - send new sheriff to them (our partition/leader)
-  //  - if our level == theirs.
-  //    - MERGE
-  //    - send new sheriff to them (our partition+1, max(us,them) as leader)
-  //    - send new sheriff mst_cc  (our partition+1, max(us,them) as leader)
-  //  - if our level < theirs
-  //    - ABSORB
-  //    - send new sheriff mst_cc(their partition, their leader)
-  //
+  //  - assert(our level >= theirs), otherwise how did they get a response from our partition?
+  //  - if on an MST link, time to MERGE
+  //    - set parent as self
+  //    - send new_sheriff (max(us, them), level+1) across all MST links (mst_broadcast)
+  //  - if not on an MST link, time to ABSORB:
+  //    - we add as MST link
+  //    - send new sheriff to them (our leader, our level)
   // 
+  //
+
+
+size_t GhsState::do_merge(const AgentID& A, const AgentID& B, std::deque<Msg>*buf) noexcept
+{
+  auto new_leader = std::max(A, B);
+  auto new_level  = get_partition().level+1;
+  parent = new_leader; //it's one of us. 
+  if (new_leader == my_id){
+    return mst_broadcast( Msg::Type::NEW_SHERIFF, {new_leader, new_level}, buf);
+  } 
+  //if leader is not me, then it's my parent. I'll hear the new_sheriff in a hot second
+  return 0;
+}
+
+size_t GhsState::do_absorb(const AgentID& A, std::deque<Msg>*buf) noexcept
+{
+  if (waiting_for.find(A) != waiting_for.end()){
+    //we've been waiting for you, dude
+    //tricky ... do we send another SRCH? 
+  }
+  set_edge_status(A, MST);
+  buf->push_back( Msg{Msg::Type::NEW_SHERIFF, A, my_id, {my_part.leader, my_part.level}} );
+  return 1;
+}
+
 size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   assert(data.size()==4);
-  auto join_root  = data[0]; // the side of the edge that is in the partition initiating join
-  auto join_peer  = data[1]; // the side of the edge that is in the other partition 
+
+  auto join_peer  = data[0]; // the side of the edge that is in the other partition 
+  auto join_root  = data[1]; // the side of the edge that is in the partition initiating join
   auto join_lead  = data[2]; // the leader, as declared during search, of the peer
   auto join_level = data[3]; // the level of the peer as declared during search
 
@@ -444,52 +472,45 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   if (in_initiating_partition){
     assert(join_lead == my_part.leader);
     assert(join_level == my_part.level);
-    //send a special join message to the peer -- the only time a JOIN_US crosses partitions. 
+
+    //regardless, let them know about the join
     buf->push_back( Msg{Msg::Type::JOIN_US, join_peer, my_id,
-        { join_root, join_peer, my_part.leader, my_part.level}
+        { join_peer, join_root, my_part.leader, my_part.level}
         });
-    return 1;
+
+    //also, we can anticipate their response if we're already MST buddies
+    auto edge_to_peer = get_edge(join_peer);
+    assert(edge_to_peer);
+    if (edge_to_peer->status == MST)
+    {
+       return 1 + do_merge(join_root, join_peer, buf);
+    }  else {
+      //they'll call do_abosrb
+      set_edge_status(join_peer, MST);
+      return 1;
+    }
   }
 
+  //as of this line, we're in the "other" partition. 
+  assert(! in_initiating_partition );
   assert(join_peer == my_id);
   assert(join_lead != my_part.leader);
+  assert(join_level <= my_part.level);
 
   //not in initating partition
   //was sent to us, and I'm on their MWOE
   //meaning they sent their level, not ours
-  if (join_level < my_part.level){
-    //poor laggards, assert the new leader this point as children of me. 
-    buf->push_back( Msg{Msg::Type::NEW_SHERIFF, join_root, my_id, {my_part.leader, my_part.level}} );
-    set_edge_status(join_root, MST);
-    //but what if we were waiting for them?
-    if (waiting_for.find(join_root) != waiting_for.end()){
-      waiting_for.erase(join_root);
-      check_search_status(buf);
-    }
-    //we don't even need to tell anyone we got these guys to join up
-    return 1 ;
-  }
 
-  assert(join_level==my_part.level);
-  //you see, if join_level>my_part.level, I would not have returned a (N)ACK_PART msg;
+  auto edge_back_to_them = this->get_edge(join_root);
+  assert(edge_back_to_them);
+  assert(edge_back_to_them->status == UNKNOWN || edge_back_to_them->status == MST);
 
-  //I agree to your join, 
-  set_edge_status(join_root, MST);
-  //and I choose a leader farily from among the two of us
-  auto new_leader = std::max(from, my_id);
-  my_part = {new_leader, my_part.level+1};
-
-  if (new_leader == my_id){
-    //if we're leader, then all MST edges are children
-    parent=my_id;
-    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
+  if (edge_back_to_them->status == MST){
+    //MERGE response
+    return do_merge(join_root, join_peer, buf);
   } else {
-    //join_root is a parent, our parent is now a child, other children unaffected, but need to know about the new level. 
-    parent = join_root;
-    return mst_convergecast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf) 
-      + mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
+    return do_absorb(join_root, buf);
   }
-
   assert(false && "reached end of function somehow -- programmer error");
   return 0;
 }
@@ -518,6 +539,7 @@ size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, s
 
   //regardless of reorg, we are advanced by joining
   assert(new_level > my_part.level); //<--something wrong if old new_sheriff msgs are propegating
+  //this might be resolved by choosing std::max(new,old), but is that the right thing to do? No, also need to rebroadcast
   my_part = {new_leader, new_level};
 
   //and must clean up old pending messages
