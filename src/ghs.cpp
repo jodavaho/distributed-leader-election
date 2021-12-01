@@ -455,6 +455,9 @@ size_t GhsState::do_absorb(const AgentID& A, std::deque<Msg>*buf) noexcept
 
 size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
+  if (!get_edge(from)){
+    throw new std::invalid_argument("No edge to "+std::to_string(from)+" found!");
+  }
   assert(data.size()==4);
 
   auto join_peer  = data[0]; // the side of the edge that is in the other partition 
@@ -470,7 +473,10 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   }
 
   if (in_initiating_partition){
-    assert(join_lead == my_part.leader);
+    //these are not valid assertions, since we could have been absorbed before
+    //receiving the message to join (this is how a merge() is triggered). That
+    //absorb changes our leader, but *not* partition level 
+    //assert(join_lead == my_part.leader);
     assert(join_level == my_part.level);
 
     //regardless, let them know about the join
@@ -538,7 +544,7 @@ size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, s
   }
 
   //regardless of reorg, we are advanced by joining
-  assert(new_level > my_part.level); //<--something wrong if old new_sheriff msgs are propegating
+  assert(new_level >= my_part.level); //<--something wrong if old new_sheriff msgs are propegating, but we can technically reorg without a level increase during absorb()
   //this might be resolved by choosing std::max(new,old), but is that the right thing to do? No, also need to rebroadcast
   my_part = {new_leader, new_level};
 

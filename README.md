@@ -45,7 +45,8 @@ There is no `install` target configured at this time.
 
 The algorithm implemented is best understood by reading chapter 15.5 of _Distributed Algorithms_ by Lynch. 
 In short, each agent begins isolated as leaders of their own partition. Each partition finds an outgoing edge to another partition which is of minimum weight, and the two partitions join up. This continues `log(n)` rounds until all are in the same partition. 
-The leader then initiates a search for a new MWOE by all nodes in its partition, and compares returned edges for the minimum weight. The leader broadcasts `JOIN` messages, which are carefully handled by all nodes to ensure that the resulting MST is consistent and correct. The subtleties of this process are elegantly handled, and it's worth reading the chapter to understand what's gong on. 
+
+Each round, the leader initiates a search for a new MWOE by all nodes in its partition, and compares returned edges for the minimum weight. The leader broadcasts `JOIN` messages, which are carefully handled by all nodes to ensure that the resulting MST is consistent and correct. The subtleties of this process are elegantly handled, and it's worth reading the chapter to understand what's gong on. (though I read it many times and may not fully grok all the corner cases yet)
 
 ## Implementation
 
@@ -95,7 +96,7 @@ class CommunicationsHandler{
 
       //error check msgs_ok vs msgs_to_send
 
-      for (const auto *msg: raw_msgs){
+      for (const auto& msg: raw_msgs){
           this->send(msg); //<--over the wire, or enqueue for later transmission
       }
   }
@@ -113,7 +114,7 @@ class GhsState: public MsgHandler{ //but we don't extend it yet
 };
 ```
 
-As such, you'll notice all the work is done by `GhsState::process(...)`. *Every other method is used internally and exposed testing only* with the exception of two:
+As such, you'll notice all the work is done by `GhsState::process(...)`. *Every other method is used internally and exposed testing only* with the exception of :
 
 - `start_round()` which is used to trigger a new MST calculation and returns the message to send to trigger all nodes. When this is called is a system implementation detail and is beyond the scope of the class. 
 - `reset()` which is used to completely wipe the current state of the MST calculation. Each node becomes isoated and the class is reverted to its startup state after the constructor was called. 
@@ -144,9 +145,9 @@ However, some informative ones for system implementation might be:
 - All functions are labeled `noexcept` where the library code will not generate an exception. 
 - All functions are labelled `const` where they will not modify internal state.
 - Input arguments are validated, rather than trusted. 
-- `std::optoonal` is used whenever the caller requests data that may not exist but the caller would not necessarily have known that. This provides a concise way of both retrieving and testing for the existence of a member. 
+- `std::optional` is used whenever the caller requests data that may not exist but the caller would not necessarily have known that. This provides a concise way of both retrieving and testing for the existence of a member. 
 - Each function or constructor specifies (in comments) the assumptions and pre/post conditions. A violation of preconditions or assumptoions on input will generate an Exception.  For example, if the class `A` provides a `size()` method and is list-like, then requesting more than `size()` elements will generate an exception -- it's not possible and caller should have known better.
-- An assertion will trigger to indicate a programmer error that results in an unworkable state, rather than trying to recover ot a partially useable state. 
+- An assertion will trigger to indicate a programmer error that results in an unworkable state, rather than trying to recover to a partially useable state. 
 - More specifically, Assertions are used to check the internal (not user modifyable) state of the library. For example, if the internal state does not support the operation, but the caller provided good data and the library was in a good state prior, then there is nothing to do but crash, as the current object is obviously corrupted. 
 - Return values are used to indicate a side effect has been triggered. For example, returning the number of internal structures added. This is helpful for caller code testing their assumptions. 
 
