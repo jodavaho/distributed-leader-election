@@ -324,6 +324,7 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
     if (am_leader && found_new_edge && its_my_edge){
       //just start the process to join up, rather than sending messages
       assert(e.peer != e.root); //ask me why I check
+
       return process_join_us(my_id, {e.peer, e.root, get_partition().leader, get_partition().level}, buf);
     }
 
@@ -430,32 +431,11 @@ size_t GhsState::check_new_level( std::deque<Msg>* buf){
   //
 
 
-size_t GhsState::do_merge(const AgentID& A, const AgentID& B, std::deque<Msg>*buf) noexcept
-{
-  auto new_leader = std::max(A, B);
-  auto new_level  = get_partition().level+1;
-  parent = new_leader; //it's one of us. 
-  if (new_leader == my_id){
-    return mst_broadcast( Msg::Type::NEW_SHERIFF, {new_leader, new_level}, buf);
-  } 
-  //if leader is not me, then it's my parent. I'll hear the new_sheriff in a hot second
-  return 0;
-}
-
-size_t GhsState::do_absorb(const AgentID& A, std::deque<Msg>*buf) noexcept
-{
-  if (waiting_for.find(A) != waiting_for.end()){
-    //we've been waiting for you, dude
-    //tricky ... do we send another SRCH? 
-  }
-  set_edge_status(A, MST);
-  buf->push_back( Msg{Msg::Type::NEW_SHERIFF, A, my_id, {my_part.leader, my_part.level}} );
-  return 1;
-}
-
 size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
-  if (!get_edge(from)){
+
+  //we preserve the opportunity to trigger our own joins here with from==my_id
+  if (! (get_edge(from) || from==my_id) ){
     throw new std::invalid_argument("No edge to "+std::to_string(from)+" found!");
   }
   assert(data.size()==4);
@@ -469,55 +449,80 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   bool in_initiating_partition = (join_root == my_id);
 
   if (not_involved){
+    if (join_lead != my_part.leader){
+      throw std::invalid_argument("We should never receive a JOIN_US with a different leader, unless we are on the partition boundary");
+    }
+    if (join_level != my_part.level){
+      throw std::invalid_argument("We should never receive a JOIN_US with a different level, unless we are on the partition boundary");
+    }  
     return mst_broadcast(Msg::Type::JOIN_US, data, buf);
   }
 
+  std::optional<Edge> edge_to_other_part;
+
   if (in_initiating_partition){
-    //these are not valid assertions, since we could have been absorbed before
-    //receiving the message to join (this is how a merge() is triggered). That
-    //absorb changes our leader, but *not* partition level 
-    //assert(join_lead == my_part.leader);
-    assert(join_level == my_part.level);
-
-    //regardless, let them know about the join
-    buf->push_back( Msg{Msg::Type::JOIN_US, join_peer, my_id,
-        { join_peer, join_root, my_part.leader, my_part.level}
-        });
-
-    //also, we can anticipate their response if we're already MST buddies
-    auto edge_to_peer = get_edge(join_peer);
-    assert(edge_to_peer);
-    if (edge_to_peer->status == MST)
-    {
-       return 1 + do_merge(join_root, join_peer, buf);
-    }  else {
-      //they'll call do_abosrb
-      set_edge_status(join_peer, MST);
-      return 1;
+    //leader CAN be different, even though we're initating, IF we're on an MST
+    //link to them
+    if (join_lead != my_part.leader && get_edge(join_peer)->status != MST){
+      throw std::invalid_argument("We should never receive a JOIN_US with a different leader when we initiate");
     }
-  }
-
-  //as of this line, we're in the "other" partition. 
-  assert(! in_initiating_partition );
-  assert(join_peer == my_id);
-  assert(join_lead != my_part.leader);
-  assert(join_level <= my_part.level);
-
-  //not in initating partition
-  //was sent to us, and I'm on their MWOE
-  //meaning they sent their level, not ours
-
-  auto edge_back_to_them = this->get_edge(join_root);
-  assert(edge_back_to_them);
-  assert(edge_back_to_them->status == UNKNOWN || edge_back_to_them->status == MST);
-
-  if (edge_back_to_them->status == MST){
-    //MERGE response
-    return do_merge(join_root, join_peer, buf);
+    if (join_level != my_part.level){
+      throw std::invalid_argument("We should never receive a JOIN_US with a different level when we initiate");
+    }  
+    edge_to_other_part = get_edge(join_peer);
   } else {
-    return do_absorb(join_root, buf);
+    if (join_lead == my_part.leader){
+      throw std::invalid_argument("We should never receive a JOIN_US with same leader from a different partition");
+    }
+    //level can be same, lower (from another partition), but not higher (we shouldn't have replied)
+    if (join_level > my_part.level){
+      throw std::invalid_argument("We should never receive a JOIN_US with a higher level when we do not initiate (we shouldnt have replied to their IN_PART)");
+    }  
+    edge_to_other_part = get_edge(join_root);
   }
-  assert(false && "reached end of function somehow -- programmer error");
+
+  if ( edge_to_other_part->status == MST){
+    //we already absorbed once, so now we merge()
+    //find leader, send new_sheriff. If sheriff == other guy, send just to him
+    //(see "surprised sheriff" in process_new_sheriff).
+    auto leader_id = std::max(join_peer, join_root);
+    parent = leader_id;
+    my_part.level++;
+    if (leader_id == my_id){
+      return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_id, my_part.level}, buf);
+    } else {
+      //we initated the second absorb, so let the new sheriff know.
+      buf->push_back( Msg{ Msg::Type::NEW_SHERIFF, parent, my_id, {parent, my_part.level}});
+      return 1;
+    } 
+  }else if (edge_to_other_part->status == UNKNOWN){
+      if (in_initiating_partition ){
+        //requeset abosrb to peer's partition just send it, see what they say
+        //(see next one) btw, because we were able to find a MWOE, we know that
+        //their level >= ours. Otherwise, they would not have responded to our
+        //search (see process_in_part)
+        set_edge_status(join_peer, MST);
+        buf->push_back(Msg{Msg::Type::JOIN_US, join_peer, my_id, data});
+        return 1;
+      } else {
+        //command them to join ours on same level. 
+        //NOTE, if we were waiting for them, they would not respond until their
+        //level is == ours, so this should never fail:
+        assert(!in_initiating_partition);
+        if (join_level > my_part.level){ throw std::invalid_argument("We should\
+            never receive a JOIN_US with higher level from a different\
+            partition -- they should not have heard our IN_PART response yet");
+        }  
+        set_edge_status(join_root, MST);
+        //send a NEW_SHERIFF only "down" this particular subtree, since leader/level for our partition didn't change
+        buf->push_back(Msg{Msg::Type::NEW_SHERIFF, join_root, my_id, {my_part.leader, my_part.level}});
+        return 1;
+      }   
+    } else {
+    assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
+    }
+
+  assert(false && "unexpected library error: reached end of function somehow ");
   return 0;
 }
 
@@ -525,11 +530,15 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
 //post-condition: level increases, either by joining an advanced partition, or by merging
 size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
+  //we can only receive these over MST links
+  if (get_edge(from)->status != MST){
+    throw std::invalid_argument("We should never get NEW_SHERIFF msgs over non-MST links. Maybe an error in join_us");
+  }
   assert(data.size()==2);
   auto new_leader = data[0];
   auto new_level  = data[1];
 
-  //special case, we're nominated
+  //special case, we're nominated Surprise!
   if (new_leader == my_id){
     //I'm so flattered you chose me
     parent = my_id;

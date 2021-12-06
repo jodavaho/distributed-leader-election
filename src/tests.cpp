@@ -710,7 +710,7 @@ TEST_CASE("test process_nack_part, happy-path"){
 
   CHECK_EQ(s.waiting_count(),2);
   m ={Msg::Type::NACK_PART, 0, 2, {2,0}};
-  s.process(m,&buf);
+  REQUIRE_NOTHROW(s.process(m,&buf));
   CHECK_EQ(buf.size(),           0);
   CHECK_EQ(s.waiting_count(),    1);
   CHECK_EQ(s.mwoe().metric_val, 20);
@@ -720,7 +720,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   CHECK_EQ(buf.size(),0);
 
   m ={Msg::Type::NACK_PART, 0, 1, {1,0}};
-  s.process(m,&buf);
+  REQUIRE_NOTHROW(s.process(m,&buf));
   CHECK_EQ(buf.size(),           1);
   CHECK_EQ(s.waiting_count(),    0);
   CHECK_EQ(s.mwoe().metric_val,  10);
@@ -734,7 +734,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   CHECK_EQ(buf.front().from,  0);
   std::optional<Edge> e;
   CHECK_NOTHROW(e = s.get_edge(s.mwoe().peer));
-  CHECK_EQ(e->status, MST);
+  CHECK_EQ(e->status,MST);
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
   CHECK_EQ(buf.size(),1);
   
@@ -808,7 +808,9 @@ TEST_CASE("test join_us nodes pass")
   std::deque<Msg> buf;
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
-  CHECK_NOTHROW(s.process(m,&buf));
+  CHECK_THROWS(s.process(m,&buf));
+  s.set_partition({5,0});
+  CHECK_EQ(s.process(m,&buf), 1);
   CHECK_EQ(buf.size(),        1);
   CHECK_EQ(buf.front().to,    1);
   CHECK_EQ(buf.front().from,  0);
@@ -820,15 +822,20 @@ TEST_CASE("test join_us root relays to peer")
 {
   //JOIN us emits new_sheriff messages, cleverly designed. 
   //2(root) -> 0 <-> 1 <- some other root
-  auto s = get_state(0,0,0,2,false,false);
+  auto s = get_state(0,1,0,1,false,false);
   //create a join_us that involves me as root
+  //this means I'm in_initiating_partition
   //note: it's { {edge}, {partition} }
   //aka        {root, peer, leader, level}
+  REQUIRE_EQ(s.get_id() , 0);
+  REQUIRE_EQ(s.get_edge(1)->status , UNKNOWN);
+  REQUIRE_EQ(s.get_edge(2)->status , MST);
   Msg m = {Msg::Type::JOIN_US, 0, 2, {1,0,2,0}};
   std::deque<Msg> buf;
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
   CHECK_NOTHROW(s.process(m,&buf));
+  CHECK_EQ(s.get_edge(1)->status , MST);
   CHECK_EQ(buf.size(),        1);
   CHECK_EQ(buf.front().to,    1);
   CHECK_EQ(buf.front().from,  0);
@@ -929,15 +936,13 @@ TEST_CASE("test join_us merge")
   CHECK_EQ(buf.size(), 1); //<-- a few things going on , but only one msg required
   CHECK_EQ(buf.front().to, 1);
   CHECK_EQ(buf.front().from, 0);
-  CHECK_EQ(buf.front().type, Msg::Type::JOIN_US);
+  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);//<--surprise! You're it!
   CHECK_EQ(buf.front().data[0], 1);//<-- the peer (them)
-  CHECK_EQ(buf.front().data[1], 0);//<-- the root (us)
-  CHECK_EQ(buf.front().data[2], 1);//<-- the sheriff
-  CHECK_EQ(buf.front().data[3], 0);//<-- the level has NOT INCREASED (the new_sheriff msg will do that)
+  CHECK_EQ(buf.front().data[1], 1);//<-- the level has increased
   CHECK(s.get_edge(1));
   CHECK_EQ(s.get_edge(1)->status, MST); //<-- still part of the gang
-  CHECK_EQ(s.get_parent_id(),       1); //waiting on msgs from leader
-  CHECK_EQ(s.get_partition().level, 0); //NOT increased level yet
+  CHECK_EQ(s.get_parent_id(),       1); //check new leader is 1
+  CHECK_EQ(s.get_partition().level, 1); //increased level 
 
   //NOW, 1 receives the JOIN_US, and processes exactly the same result.
 }
@@ -957,7 +962,7 @@ TEST_CASE("test join_us merge leader-side")
   Msg m;
 
   //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 2.
-  m = {Msg::Type::JOIN_US,1,3,{0,1,2,0}}; // 2 says to 1 "add the edge 0-1 to partition 2 with level 0. 
+  m = {Msg::Type::JOIN_US,1,3,{0,1,3,0}}; // 3 says to 1 "add the edge 1->0 to partition 2 with level 0. 
   CHECK_NOTHROW(s.process(m,&buf));
   //ok, side effects are:
   //1 sends a message to 0 saying "Join our partition"
@@ -992,31 +997,29 @@ TEST_CASE("test join_us merge leader-side")
   CHECK_EQ(s.get_partition().level, 0); //same level too
   buf.clear();
 
-  //NOTE: this message to 3 would be dropped, because 3 would recognize it is level 0, while it has already sent a message saying the partition should join the MWOE 0-1
-
   //AND NOW, in a big twist, here comes the join message for 1-0 in the opposite direction
+  //
+  CHECK_EQ(s.get_id(),1);
   m = {Msg::Type::JOIN_US, 1,3, {0,1,3,0}};
   CHECK_NOTHROW(s.process(m,&buf));
   //ok, side effects are:
   //1 sends a message to 0 saying "Join us"
   //AND, it sends a message to restructure, since it knows it is now leader
-  CHECK_EQ(buf.size(), 3); //<-- a few things going on 
-  CHECK_EQ(buf.front().to, 0);
+  CHECK_EQ(buf.size(), 2); //<-- a few things going on 
+  CHECK_EQ(buf.front().to, 3);
   CHECK_EQ(buf.front().from, 1);
-  CHECK_EQ(buf.front().type, Msg::Type::JOIN_US);
-  CHECK_EQ(buf.front().data[0], 0);//<-- the peer (them)
-  CHECK_EQ(buf.front().data[1], 1);//<-- the root (us) 
-  CHECK_EQ(buf.front().data[2], 1);//<-- the sheriff (me!)
-  CHECK_EQ(buf.front().data[3], 0);//<-- the level has NOT INCREASED (the new_sheriff msg will do that)
+  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
+  CHECK_EQ(buf.front().data[0], 1);//<-- the sheriff (me!)
+  CHECK_EQ(buf.front().data[1], 1);//<-- the level has INCREASED (we detected double-absorb)
   CHECK(s.get_edge(0));
   CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang
   CHECK_EQ(s.get_parent_id(),       1); //just double checking
-  CHECK_EQ(s.get_partition().level, 0); //NOT increased level yet
+  CHECK_EQ(s.get_partition().level, 1); //NOT increased level yet
   buf.pop_front();
 
   //NOW, 1 receives the JOIN_US, and processes exactly the same result as follows
-  CHECK_EQ(buf.size(), 2); //<-- two MST peers
-  CHECK_EQ(buf.front().to, 3);
+  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(buf.front().to, 0);
   CHECK_EQ(buf.front().from, 1);
   CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
   CHECK_EQ(buf.front().data[0], 1);//<-- the sheriff (me!)

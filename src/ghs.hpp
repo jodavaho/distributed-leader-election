@@ -188,9 +188,6 @@ class GhsState
     size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
 
-    size_t do_absorb(const AgentID&, std::deque<Msg>*)noexcept;
-    size_t do_merge(const AgentID&, const AgentID&, std::deque<Msg>*)noexcept;
-
 
 
     AgentID                      my_id;
