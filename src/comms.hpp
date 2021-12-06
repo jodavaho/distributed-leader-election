@@ -26,7 +26,7 @@ class Comms
         ofile = std::ofstream(fname,std::fstream::out | std::fstream::app);
     }
 
-	void send(Msg::Type type, int to, int from, std::vector<int> data = {})
+	void send(Msg::Type type, size_t to, size_t from, std::vector<size_t> data = {})
 	{
 
         Msg m {type, to, from, data};
@@ -39,9 +39,9 @@ class Comms
 		n_amt_sent += data.size() + 2;
 	}
 
-	int waiting() { return msg_q.size(); }
-  int bytes_sent(){return this->n_amt_sent; }
-  int msgs_sent(){return this->n_msgs_sent; }
+	size_t waiting() { return msg_q.size(); }
+  size_t bytes_sent(){return this->n_amt_sent; }
+  size_t msgs_sent(){return this->n_msgs_sent; }
 
 	Msg get()
 	{
@@ -56,9 +56,9 @@ class Comms
 private:
 	bool verbose;
 	std::deque<Msg> msg_q;
-	int n_msgs_sent;
+	size_t n_msgs_sent;
 	std::string fname;
 	std::ofstream ofile;
-	int n_amt_sent;
+	size_t n_amt_sent;
 
 };

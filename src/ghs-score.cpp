@@ -46,8 +46,8 @@ using std::cin;
 
 struct Edge
 {
-	int to, from;
-	int weight;
+	size_t to, from;
+	size_t weight;
 };
 
 enum EdgeClass
@@ -68,11 +68,11 @@ int main(int argc, char *argv[])
 	comms.set_logfile("ghs.msgs");
 
 	srand(99);
-	int num_agents = 0;
-	std::unordered_map<int, std::unordered_map<int, int>> connectivity_scratch_pad;
+	size_t num_agents = 0;
+	std::unordered_map<size_t, std::unordered_map<size_t, size_t>> connectivity_scratch_pad;
 	{
-		std::unordered_set<int> agents;
-		int a, b, c;
+		std::unordered_set<size_t> agents;
+		size_t a, b, c;
 		char d;
 		while (std::cin >> a >> b >> c >> d)
 		{
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 			agents.insert(b);
 		}
 		num_agents = agents.size();
-		for (int i=0;i<num_agents;i++){
+		for (size_t i=0;i<num_agents;i++){
 			//make sure they were 0 to N-1
 			assert(agents.find(i)!=agents.end());
 			agents.erase(i);
@@ -98,20 +98,20 @@ int main(int argc, char *argv[])
 	//know why I didn't. 
 	auto edge_list = std::vector<std::vector<Edge>>(num_agents, std::vector<Edge>(num_agents));
 	auto best_edge = std::vector<Edge>(num_agents);
-	auto waiting_for = std::vector<int> (num_agents,0);
-	auto part_leader= std::vector<int> (num_agents,0);
-	auto parent = std::vector<int> (num_agents,0);
+	auto waiting_for = std::vector<size_t> (num_agents,0);
+	auto part_leader= std::vector<size_t> (num_agents,0);
+	auto parent = std::vector<size_t> (num_agents,0);
 	auto edge_class = std::vector<std::vector<EdgeClass>>(num_agents,std::vector<EdgeClass>(num_agents,EdgeClass::UNKNOWN_EDGE));
 	auto connectivity_matrix = std::vector<std::vector<double>>(num_agents,std::vector<double>(num_agents,0.0));
 
-	for (int i = 0; i < num_agents; i++)
+	for (size_t i = 0; i < num_agents; i++)
 	{
 		//which partition is each node part of?
 		part_leader[i] = i; //own partition so far
 		//who is parent in the MST?
 		parent[i] = i; //i_am_root!
 		edge_list[i].reserve(num_agents);
-		for (int j=0;j<num_agents;j++){
+		for (size_t j=0;j<num_agents;j++){
 			edge_list[i][j]=Edge{i,j,connectivity_scratch_pad[i][j]};
 			connectivity_matrix[i][j] = connectivity_scratch_pad[i][j];
 		}
@@ -126,9 +126,9 @@ int main(int argc, char *argv[])
 	bool converged = false;
 	
 
-	for (int round=0;round<num_agents && !converged;round++){
+	for (size_t round=0;round<num_agents && !converged;round++){
 
-		for (int i=0;i<num_agents;i++){
+		for (size_t i=0;i<num_agents;i++){
 			if (waiting_for[i] > 0){
 				//this is an annyoing failure case for large N: we're delcaring
 				//victory for a round before we actually hear from all other
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 		cerr<<"Round "<<round<<"========"<<endl;
 		//begin rounds by sending out search requests from the roots this
 		//effectively "starts" a round. 
-		for (int i = 0; i < num_agents; i++)
+		for (size_t i = 0; i < num_agents; i++)
 		{
 			if (part_leader[i]==i){
 
@@ -156,8 +156,8 @@ int main(int argc, char *argv[])
 		{
 
 			auto m = comms.get();
-			int nid = m.to; //"acting" as this node
-			int sender = m.from;
+			size_t nid = m.to; //"acting" as this node
+			size_t sender = m.from;
 
 			//some implementation sanity checks for this node. This doesn't
 			//catch those weird cases where a node just doesn't hear back and
@@ -170,13 +170,13 @@ int main(int argc, char *argv[])
 				case (Msg::Type::SRCH):
 				{
 					//this is a new search request (we'll receive only one search, since it goes out over MST links or from self)
-					best_edge[nid] = Edge{0, 0, std::numeric_limits<int>::max()};
+					best_edge[nid] = Edge{0, 0, std::numeric_limits<size_t>::max()};
 
 					//Note that we wait 
 					waiting_for[nid]=0;
 
 					//check each outgoing link
-					for (int i = 0; i < num_agents; i++)
+					for (size_t i = 0; i < num_agents; i++)
 					{
 
 						//two special kinds of links:
@@ -284,8 +284,8 @@ int main(int argc, char *argv[])
 					cerr << " node "<<nid<<" now waiting for "<<waiting_for[nid]<<endl;
 
 					//save the edge from me to the sender
-					int best_weight=best_edge[nid].weight;
-					int proposed_weight = connectivity_matrix[nid][sender];
+					size_t best_weight=best_edge[nid].weight;
+					size_t proposed_weight = connectivity_matrix[nid][sender];
 
 					//but really only if it's better than the best one
 					if (best_weight > proposed_weight){
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
 						//special case, am I root?
 						if (part_leader[nid]==nid){
 							cerr << "Node: "<< nid << " is leader, broadcasting new join_us .. maybe"<<endl;
-							if (m_best_edge.weight ==  std::numeric_limits<int>::max()){
+							if (m_best_edge.weight ==  std::numeric_limits<size_t>::max()){
 								cerr << "Node: "<< nid << " is leader, but found no suitable edge, algorithm can terminate! "<<endl;
 								//rust, I pine for your oxidization:
 								//break main_loop; 	
@@ -359,13 +359,13 @@ int main(int argc, char *argv[])
 							else
 							{
 								//if we found a new edge let's broadcast the new best edge according to my glorious wishes!
-								for (int i = 0; i < num_agents; i++)
+								for (size_t i = 0; i < num_agents; i++)
 								{
 									//hear ye MST!
 									if ( i==nid || edge_class[nid][i] == MST /* && nid!=i The leader should follow join_us commands from itself*/)
 									{
 										//Let all behold your leader -- who is me -- and tremble
-										int leader = nid;
+										size_t leader = nid;
 										//send forth my commands for node "i" to join the faithful by adding edge 'best_edge' to our MST
 										comms.send(Msg::Type::JOIN_US, i, nid, {m_best_edge.to, m_best_edge.from, m_best_edge.weight, leader});
 									}
@@ -389,13 +389,13 @@ int main(int argc, char *argv[])
 
 					//ok, a brand new edge is being added, sent along the MST links
 					//we're been told to join the edge to the MST:
-					int to = m.data[0];
-					int from = m.data[1];
+					size_t to = m.data[0];
+					size_t from = m.data[1];
 
 					if (from != nid && to !=nid){
 						//this command does not apply to us
 						//not much for us to do but propegate
-						for (int i=0;i<num_agents;i++){
+						for (size_t i=0;i<num_agents;i++){
 							if (edge_class[nid][i]== MST && i!=sender){
 								cerr<<" propegating JOIN_US to "<<i<<endl;
 								comms.send(m.type, i, nid, m.data);
@@ -414,8 +414,8 @@ int main(int argc, char *argv[])
 						//edge is outgoing
 						edge_class[nid][to]=MST;
 						//tell them about the new boss (my boss)
-						int my_leader = part_leader[nid];
-						int wt_for_ref = connectivity_matrix[sender][nid];
+						size_t my_leader = part_leader[nid];
+						size_t wt_for_ref = connectivity_matrix[sender][nid];
 						comms.send(Msg::Type::JOIN_US, to, nid, {to /*them*/, from /*me*/, wt_for_ref, my_leader});
 						comms.send(Msg::Type::NEW_SHERIFF, to, nid, {my_leader});
 						//NEW_SHERIFF gives them a chance to rebutt with a
@@ -444,7 +444,7 @@ int main(int argc, char *argv[])
 					//
 					//Since this action originates at the site of an add ... 
 					//TODO: Leader selection should take place only at leaders or recently-joined nodes
-					int cand_leader = m.data[0];
+					size_t cand_leader = m.data[0];
 					if (part_leader[nid]==cand_leader){
 						cerr << "Node: "<<nid<<" already joined "<<m.data[0]<<endl;
 						//we don't need to propegate, these messages originate
@@ -459,7 +459,7 @@ int main(int argc, char *argv[])
 						parent[nid]=sender;
 
 						//in which case, we should propegate
-						for (int i =0;i<num_agents;i++){
+						for (size_t i =0;i<num_agents;i++){
 							if (i!=sender && edge_class[nid][i]==MST){
 								comms.send(Msg::Type::NEW_SHERIFF, i,nid, {cand_leader});
 							}
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
 						//no need to change anything, their leader option is worse, but 
 						//let's tell them that so they can fall in line
 						cerr <<" Node: "<<nid<<" sending new leader instead of joining: "<<m.data[0]<<endl;
-						int my_leader = part_leader[nid];
+						size_t my_leader = part_leader[nid];
 						comms.send(Msg::Type::NEW_SHERIFF, sender,nid, {my_leader});
 					}
 					break;
@@ -488,19 +488,19 @@ int main(int argc, char *argv[])
 		cerr << "Round "<<round<<" done, " << comms.bytes_sent()<< " bytes sent with "<<comms.msgs_sent()<<" msgs"<<endl;
 
 		cerr << "Leaders"<<endl;
-		for (int i=0;i< num_agents;i++){
+		for (size_t i=0;i< num_agents;i++){
 			cerr<<" "<<i<<"->"<<part_leader[i];
 		}
 		cerr<<endl;
 
 		cerr << "Parents"<<endl;
-		for (int i=0;i< num_agents;i++){
+		for (size_t i=0;i< num_agents;i++){
 			cerr<<" "<<i<<"->"<<parent[i];
 		}
 		cerr<<endl;
 
 		cerr << "Waiting (should be 0)"<<endl;
-		for (int i=0;i< num_agents;i++){
+		for (size_t i=0;i< num_agents;i++){
 			cerr<<" "<<i<<"->"<<waiting_for[i];
 		}
 		cerr<<endl;
@@ -511,17 +511,17 @@ int main(int argc, char *argv[])
 
 		cerr << "   ";
 
-		int width = 1+floor(log(num_agents));
-		for (int i=0;i<num_agents;i++){
+		size_t width = 1+floor(log(num_agents));
+		for (size_t i=0;i<num_agents;i++){
 			cerr.width(width);
 			cerr << i;
 		}
 
 		cerr << endl;
-		for (int i=0;i<num_agents;i++){
+		for (size_t i=0;i<num_agents;i++){
 			cerr.width(width);
 			cerr << i; 
-			for (int j=0;j<num_agents;j++){
+			for (size_t j=0;j<num_agents;j++){
 				char to_print;
 				if (i==j) to_print='.';
 				else if (parent[j]==i) to_print='P';
@@ -555,9 +555,9 @@ int main(int argc, char *argv[])
 	}
 
 	//write out the MST:
-	for (int i=0;i<num_agents;i++){
-		int m_parent = parent[i];
-		int weight = connectivity_matrix[i][m_parent];
+	for (size_t i=0;i<num_agents;i++){
+		size_t m_parent = parent[i];
+		size_t weight = connectivity_matrix[i][m_parent];
 		char designation='T';
 		if (m_parent==i){
 			designation='R';
