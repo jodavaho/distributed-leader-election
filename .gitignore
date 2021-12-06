@@ -1,0 +1,5 @@
+.vscode
+.hook_local*
+local/
+deps/
+build/
