@@ -45,11 +45,11 @@ GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size
   return s;
 }
 
-TEST_CASE("test get_state"){
+TEST_CASE("unit-test get_state"){
   auto s = get_state(0,1,1,1,false,false);
 }
 
-TEST_CASE("test set_edge_status"){
+TEST_CASE("unit-test set_edge_status"){
   GhsState s(0);
   CHECK_EQ(1, s.set_edge( {1,0,DELETED, 1}));
   CHECK_EQ(0, s.set_edge( {1,0,UNKNOWN, 1}));
@@ -75,7 +75,7 @@ TEST_CASE("test set_edge_status"){
   CHECK_THROWS_AS( s.set_edge_status(2,MST), std::invalid_argument & );
 }
 
-TEST_CASE("test typecast")
+TEST_CASE("unit-test typecast")
 {
 
   std::deque<Msg> buf;
@@ -123,7 +123,7 @@ TEST_CASE("test typecast")
 
 }
 
-TEST_CASE("test mst_broadcast")
+TEST_CASE("unit-test mst_broadcast")
 {
 
   std::deque<Msg> buf;
@@ -159,7 +159,7 @@ TEST_CASE("test mst_broadcast")
 
 }
 
-TEST_CASE("test mst_convergecast")
+TEST_CASE("unit-test mst_convergecast")
 {
 
   std::deque<Msg> buf;
@@ -200,7 +200,7 @@ TEST_CASE("test mst_convergecast")
 
 }
 
-TEST_CASE("test start_round() on leader, unknown peers")
+TEST_CASE("unit-test start_round() on leader, unknown peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -216,7 +216,7 @@ TEST_CASE("test start_round() on leader, unknown peers")
   }
 }
 
-TEST_CASE("test start_round() on leader, mst peers")
+TEST_CASE("unit-test start_round() on leader, mst peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -235,7 +235,7 @@ TEST_CASE("test start_round() on leader, mst peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test start_round() on leader, discarded peers")
+TEST_CASE("unit-test start_round() on leader, discarded peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -246,7 +246,7 @@ TEST_CASE("test start_round() on leader, discarded peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test start_round() on leader, mixed peers")
+TEST_CASE("unit-test start_round() on leader, mixed peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -273,7 +273,7 @@ TEST_CASE("test start_round() on leader, mixed peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test start_round() on non-leader")
+TEST_CASE("unit-test start_round() on non-leader")
 {
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
@@ -292,7 +292,7 @@ TEST_CASE("test start_round() on non-leader")
 
 }
 
-TEST_CASE("test process_srch() checks recipient"){
+TEST_CASE("unit-test process_srch() checks recipient"){
 
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
@@ -308,7 +308,7 @@ TEST_CASE("test process_srch() checks recipient"){
     
 }
 
-TEST_CASE("test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
+TEST_CASE("unit-test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -324,7 +324,7 @@ TEST_CASE("test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
   }
 }
 
-TEST_CASE("test process_srch,  mst peers")
+TEST_CASE("unit-test process_srch,  mst peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -345,7 +345,7 @@ TEST_CASE("test process_srch,  mst peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test process_srch, discarded peers")
+TEST_CASE("unit-test process_srch, discarded peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -358,7 +358,7 @@ TEST_CASE("test process_srch, discarded peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test process_srch, mixed peers")
+TEST_CASE("unit-test process_srch, mixed peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -387,7 +387,7 @@ TEST_CASE("test process_srch, mixed peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test process_srch, mixed peers, with parent link")
+TEST_CASE("unit-test process_srch, mixed peers, with parent link")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -430,7 +430,7 @@ TEST_CASE("Guard against Msg refactoring"){
 
 }
 
-TEST_CASE("test ghs_worst_possible_edge()")
+TEST_CASE("unit-test ghs_worst_possible_edge()")
 {
   Edge edge = ghs_worst_possible_edge();
   CHECK(edge.peer == -1);
@@ -444,7 +444,7 @@ TEST_CASE("test ghs_worst_possible_edge()")
   CHECK_EQ(y.metric_val, std::numeric_limits<size_t>::max());
 }
 
-TEST_CASE("test process_srch_ret throws when not waiting")
+TEST_CASE("unit-test process_srch_ret throws when not waiting")
 {
 
   std::deque<Msg> buf;
@@ -452,7 +452,7 @@ TEST_CASE("test process_srch_ret throws when not waiting")
   CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH_RET,0,1,{}}, &buf), const std::invalid_argument&);
 }
 
-TEST_CASE("test process_srch_ret, one peer, no edge found ")
+TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
 {
 
   std::deque<Msg> buf;
@@ -487,7 +487,7 @@ TEST_CASE("test process_srch_ret, one peer, no edge found ")
 
 }
 
-TEST_CASE("test process_srch_ret, one peer, edge found ")
+TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 {
 
   std::deque<Msg> buf;
@@ -527,7 +527,7 @@ TEST_CASE("test process_srch_ret, one peer, edge found ")
 
 }
 
-TEST_CASE("test process_srch_ret, one peer, not leader")
+TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 {
 
   std::deque<Msg> buf;
@@ -565,7 +565,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
 
 }
 
-TEST_CASE("test process_ack_part, happy-path"){
+TEST_CASE("unit-test process_ack_part, happy-path"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -593,7 +593,7 @@ TEST_CASE("test process_ack_part, happy-path"){
   CHECK_EQ(e->status, DELETED);
 }
 
-TEST_CASE("test process_ack_part, not waiting for anyone"){
+TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -618,7 +618,7 @@ TEST_CASE("test process_ack_part, not waiting for anyone"){
   CHECK_EQ(e->status, UNKNOWN); //<--unmodified!
 }
 
-TEST_CASE("test process_ack_part, no edge"){
+TEST_CASE("unit-test process_ack_part, no edge"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -638,7 +638,7 @@ TEST_CASE("test process_ack_part, no edge"){
   CHECK(!e);
 }
 
-TEST_CASE("test process_ack_part, waiting, but not for sender"){
+TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -664,7 +664,7 @@ TEST_CASE("test process_ack_part, waiting, but not for sender"){
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
 }
 
-TEST_CASE("test in_part, happy-path"){
+TEST_CASE("unit-test in_part, happy-path"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -694,7 +694,7 @@ TEST_CASE("test in_part, happy-path"){
   CHECK_EQ(s.delayed_count(),1);
 }
 
-TEST_CASE("test process_nack_part, happy-path"){
+TEST_CASE("unit-test process_nack_part, happy-path"){
 
   GhsState s(0);
   std::deque<Msg> buf;
@@ -740,7 +740,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   
 }
 
-TEST_CASE("test process_nack_part, not-leader"){
+TEST_CASE("unit-test process_nack_part, not-leader"){
 
   GhsState s(0);
   std::deque<Msg> buf;
@@ -795,7 +795,7 @@ TEST_CASE("test process_nack_part, not-leader"){
 
 }
 
-TEST_CASE("test join_us nodes pass")
+TEST_CASE("unit-test join_us nodes pass")
 {
 
   //JOIN us emits new_sheriff messages, cleverly designed. 
@@ -818,7 +818,7 @@ TEST_CASE("test join_us nodes pass")
   
 }
 
-TEST_CASE("test join_us root relays to peer")
+TEST_CASE("unit-test join_us root relays to peer")
 {
   //JOIN us emits new_sheriff messages, cleverly designed. 
   //2(root) -> 0 <-> 1 <- some other root
@@ -853,7 +853,7 @@ TEST_CASE("test join_us root relays to peer")
 
 }
 
-TEST_CASE("test join_us one side of merge")
+TEST_CASE("unit-test join_us one side of merge")
 {
   auto s = get_state(0,1,1,1,false,false);
   //0 is me
@@ -880,7 +880,7 @@ TEST_CASE("test join_us one side of merge")
   CHECK_EQ(s.get_partition().level,  1); //same level too
 }
 
-TEST_CASE("test join_us merge")
+TEST_CASE("unit-test join_us merge")
 {
   auto s = get_state(0,1,1,1,false,false);
   //0 is me
@@ -947,7 +947,7 @@ TEST_CASE("test join_us merge")
   //NOW, 1 receives the JOIN_US, and processes exactly the same result.
 }
 
-TEST_CASE("test join_us merge leader-side")
+TEST_CASE("unit-test join_us merge leader-side")
 {
   //essentially the other side of above test
   GhsState s(1);
@@ -1043,7 +1043,7 @@ TEST_CASE("test join_us merge leader-side")
 
 }
 
-TEST_CASE("test new_sheriff happy succession")
+TEST_CASE("unit-test new_sheriff happy succession")
 {
 
   auto s = get_state(0,0,0,1,true,false);
@@ -1061,7 +1061,7 @@ TEST_CASE("test new_sheriff happy succession")
   
 }
 
-TEST_CASE("test new_sheriff happy succession chains down")
+TEST_CASE("unit-test new_sheriff happy succession chains down")
 {
 
   //node 0 has 3 outgoing mst links
@@ -1097,7 +1097,7 @@ TEST_CASE("test new_sheriff happy succession chains down")
   
 }
 
-TEST_CASE("test new_sheriff happy succession chains up")
+TEST_CASE("unit-test new_sheriff happy succession chains up")
 {
 
   //node 2(root)->node 0->node 1
@@ -1122,7 +1122,7 @@ TEST_CASE("test new_sheriff happy succession chains up")
 
 }
 
-TEST_CASE("test new_sheriff happy children obey")
+TEST_CASE("unit-test new_sheriff happy children obey")
 {
   //node 2(root)->node 0->node 1
   auto s = get_state(0,0,0,2,false,false);
@@ -1146,7 +1146,7 @@ TEST_CASE("test new_sheriff happy children obey")
 
 }
 
-TEST_CASE("test new_sheriff is suprised")
+TEST_CASE("unit-test new_sheriff is suprised")
 {
   //node 0(root)->{node 1}
   auto s = get_state(0,0,0,1,true,false);
@@ -1167,3 +1167,74 @@ TEST_CASE("test new_sheriff is suprised")
   CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
 }
 
+
+TEST_CASE("integration-test two nodes")
+{
+  GhsState s0(0,{{1,0,UNKNOWN,1}});
+  GhsState s1(1,{{0,1,UNKNOWN,2}});
+  std::deque<Msg> buf;
+  //let's turn the crank and see what happens
+  s0.start_round(&buf);
+  s1.start_round(&buf);
+  CHECK_EQ(buf.size(),2);
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::IN_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2);
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::NACK_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2);
+  CHECK_EQ(s0.get_partition().level,0); //<--NOT ++ 
+  CHECK_EQ(s1.get_partition().level,0); //<--NOT ++ 
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::JOIN_US);
+    CHECK_EQ(m.from, m.data[2]); //<-- hey can you join *my* partition with me as leader?
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2); 
+  CHECK_EQ(s0.get_parent_id(),1);
+  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF);
+    CHECK_EQ(1, m.data[0]);//<--agreement?
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(s0.get_partition().leader,1);
+  CHECK_EQ(s1.get_partition().leader,1);
+  Msg m = buf.front();
+  buf.pop_front();
+  CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF); //<-- merge()
+  CHECK_EQ(m.to,0);
+  CHECK_EQ(m.from,1);
+  CHECK_EQ(m.data[1],1);//level ++
+  CHECK_EQ(s0.get_parent_id(),1);
+  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+  s0.process(m,&buf);
+  CHECK_EQ(buf.size(),0);
+}
