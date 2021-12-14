@@ -114,12 +114,13 @@ void GhsState::set_partition(const Partition &p) noexcept{
  * Queue up the start of the round
  *
  */
-void GhsState::start_round(std::deque<Msg> *outgoing_buffer) noexcept{
+size_t GhsState::start_round(std::deque<Msg> *outgoing_buffer) noexcept{
   //If I'm leader, then I need to start the process. Otherwise wait
   if (my_part.leader == my_id){
     //nobody tells us what to do but ourselves
-    process_srch(my_id, {}, outgoing_buffer);
+    return process_srch(my_id, {}, outgoing_buffer);
   }
+  return 0;
 }
 
 size_t GhsState::waiting_count() const noexcept
@@ -495,7 +496,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
       buf->push_back( Msg{ Msg::Type::NEW_SHERIFF, parent, my_id, {parent, my_part.level}});
       return 1;
     } 
-  }else if (edge_to_other_part->status == UNKNOWN){
+  } else if (edge_to_other_part->status == UNKNOWN){
       if (in_initiating_partition ){
         //requeset abosrb to peer's partition just send it, see what they say
         //(see next one) btw, because we were able to find a MWOE, we know that
@@ -540,11 +541,16 @@ size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, s
 
   //special case, we're nominated Surprise!
   if (new_leader == my_id){
-    //I'm so flattered you chose me
+    //I'm so flattered you chose me.  This can only happen if we just merged()
+    //Which can only happen once per partition (all other joins must be
+    //absorb(), which makes me their leader, too)
+    //
+    //That means this is the end of a round, and we should get moving on the new round.
     parent = my_id;
     set_partition({new_leader,new_level});
     check_new_level(buf);
-    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
+    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf) +
+      start_round(buf);
   }
 
   if (from!=parent && new_leader != my_part.leader){

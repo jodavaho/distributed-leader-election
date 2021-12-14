@@ -156,7 +156,7 @@ class GhsState
     size_t typecast(const EdgeStatus& status, const Msg::Type &m, const std::vector<size_t> data, std::deque<Msg> *buf) const noexcept;
 
     //stateful algorithm steps
-    void start_round(std::deque<Msg> *outgoing_msgs) noexcept;
+    size_t start_round(std::deque<Msg> *outgoing_msgs) noexcept;
     size_t process(const Msg &msg, std::deque<Msg> *outgoing_buffer);
 
     //reset the algorithm state
