@@ -517,7 +517,8 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
         set_edge_status(join_root, MST);
         //send a NEW_SHERIFF only "down" this particular subtree, since leader/level for our partition didn't change
         buf->push_back(Msg{Msg::Type::NEW_SHERIFF, join_root, my_id, {my_part.leader, my_part.level}});
-        return 1;
+        //and send a "DONE" msg *up* our tree.
+        return 1 + mst_convergecast(Msg::Type::JOIN_OK,{});
       }   
     } else {
     assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
@@ -549,8 +550,8 @@ size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, s
     parent = my_id;
     set_partition({new_leader,new_level});
     check_new_level(buf);
-    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf) +
-      start_round(buf);
+    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf) 
+      + start_round(buf);
   }
 
   if (from!=parent && new_leader != my_part.leader){

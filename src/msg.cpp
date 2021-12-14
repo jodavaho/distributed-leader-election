@@ -8,6 +8,7 @@ std::string to_string(const Msg::Type &type){
 		case Msg::Type::ACK_PART:{return "ACK_PART";}
 		case Msg::Type::NACK_PART:{return "NACK_PART";}
 		case Msg::Type::JOIN_US:{return "JOIN_US";}
+		case Msg::Type::JOIN_OK:{return "JOIN_OK";}
 		case Msg::Type::ELECTION:{return "ELECTION";}
 		case Msg::Type::NOT_IT:{return "NOT_IT";}
 		case Msg::Type::NEW_SHERIFF:{return "NEW_SHERIFF";}
