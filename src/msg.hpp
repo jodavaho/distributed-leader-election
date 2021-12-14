@@ -23,6 +23,7 @@ typedef struct
 		ACK_PART,
 		NACK_PART,
 		JOIN_US,
+    JOIN_OK,
 		ELECTION,
 		NOT_IT,
 		NEW_SHERIFF

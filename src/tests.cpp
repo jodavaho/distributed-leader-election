@@ -868,8 +868,8 @@ TEST_CASE("unit-test join_us one side of merge")
   std::deque<Msg> buf;
   CHECK_NOTHROW(s.process(m,&buf));
   //ok, side effects are:
-  //0 sends a message to 1 saying "we're in charge now"
-  CHECK_EQ(buf.size(), 1);
+  //0 sends a message to 1 saying "we're in charge now" + SRCH
+  CHECK_EQ(buf.size(), 2);
   CHECK_EQ(buf.front().to, 1);
   CHECK_EQ(buf.front().from, 0);
   CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
@@ -1159,13 +1159,15 @@ TEST_CASE("unit-test new_sheriff is suprised")
   CHECK_NOTHROW(s.process(ns,&buf));
   CHECK_EQ(s.get_partition().leader,0);
   CHECK_EQ(s.get_partition().level,1);
-  CHECK_EQ(s.get_parent_id(), 0);   //I'm the root
-  CHECK_EQ(buf.size(), 1);
+  CHECK_EQ(s.get_parent_id(), 0);   //I'm the root, and that ends the round
+  CHECK_EQ(buf.size(), 2);
   CHECK_EQ(buf.front().to, 1); //hey buddy
   CHECK_EQ(buf.front().from, 0); //It's your old pal zero
   CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
   CHECK_EQ(buf.front().data[0], 0); //and just kidding its me 0
   CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
+  buf.pop_front();
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH); //There's a new sheriff
 }
 
 
@@ -1224,7 +1226,7 @@ TEST_CASE("integration-test two nodes")
       case (1):{ s1.process(m,&buf);break;}
     }
   }
-  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(buf.size(), 2); 
   CHECK_EQ(s0.get_partition().leader,1);
   CHECK_EQ(s1.get_partition().leader,1);
   Msg m = buf.front();
@@ -1236,6 +1238,9 @@ TEST_CASE("integration-test two nodes")
   CHECK_EQ(s0.get_parent_id(),1);
   CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
   CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(buf.back().type, Msg::Type::SRCH); //<-- merge result triggers new round
+  buf.pop_back();
+
   s0.process(m,&buf);
   CHECK_EQ(buf.size(),0);
 }
@@ -1295,7 +1300,7 @@ TEST_CASE("integration-test opposite two nodes")
       case (1):{ s1.process(m,&buf);break;}
     }
   }
-  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(buf.size(), 2); 
   CHECK_EQ(s0.get_partition().leader,1);
   CHECK_EQ(s1.get_partition().leader,1);
   Msg m = buf.front();
@@ -1307,6 +1312,10 @@ TEST_CASE("integration-test opposite two nodes")
   CHECK_EQ(s0.get_parent_id(),1);
   CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
   CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+
+  CHECK_EQ(buf.back().type, Msg::Type::SRCH);
+  buf.pop_back();
+
   s0.process(m,&buf);
   CHECK_EQ(buf.size(),0);
 }

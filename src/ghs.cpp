@@ -151,6 +151,7 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
     case    (Msg::Type::ACK_PART):{     return  process_ack_part(     msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::NACK_PART):{    return  process_nack_part(    msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::JOIN_US):{      return  process_join_us(      msg.from, msg.data, outgoing_buffer);  }
+    case    (Msg::Type::JOIN_OK):{      return  process_join_ok(      msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::ELECTION):{     return  process_election(     msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::NEW_SHERIFF):{  return  process_new_sheriff(  msg.from, msg.data, outgoing_buffer);  }
     //case    (Msg::Type::NOT_IT):{       return  process_not_it(       this,msg.from, msg.data);      }
@@ -518,7 +519,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
         //send a NEW_SHERIFF only "down" this particular subtree, since leader/level for our partition didn't change
         buf->push_back(Msg{Msg::Type::NEW_SHERIFF, join_root, my_id, {my_part.leader, my_part.level}});
         //and send a "DONE" msg *up* our tree.
-        return 1 + mst_convergecast(Msg::Type::JOIN_OK,{});
+        return 1 + mst_convergecast(Msg::Type::JOIN_OK,{}, buf);
       }   
     } else {
     assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
@@ -526,6 +527,19 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
 
   assert(false && "unexpected library error: reached end of function somehow ");
   return 0;
+}
+
+size_t GhsState::process_join_ok( AgentID from, std::vector<size_t> data, std::deque<Msg>*buf){
+
+  //we got a message that the join was OK. Time to initiate a new round. 
+  if (get_partition().leader == my_id){
+    //i'm in charge, start new round
+    return start_round(buf);
+  } else {
+    //we're not, just pass it along
+    return mst_convergecast(Msg::Type::JOIN_OK, data, buf);
+  }
+  
 }
 
 //pre-condition: msg contains information about a new leader in a new level greater than ours
