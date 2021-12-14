@@ -4,6 +4,7 @@
 #include "msg.hpp"
 #include <deque>
 #include <optional>
+#include <fstream>
 
 GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
 {
@@ -1237,4 +1238,121 @@ TEST_CASE("integration-test two nodes")
   CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
   s0.process(m,&buf);
   CHECK_EQ(buf.size(),0);
+}
+
+TEST_CASE("integration-test opposite two nodes")
+{
+  GhsState s0(0,{{1,0,UNKNOWN,1}});
+  GhsState s1(1,{{0,1,UNKNOWN,2}});
+  std::deque<Msg> buf;
+  //let's turn the crank and see what happens
+  s1.start_round(&buf);
+  s0.start_round(&buf);
+  CHECK_EQ(buf.size(),2);
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::IN_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2);
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::NACK_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2);
+  CHECK_EQ(s0.get_partition().level,0); //<--NOT ++ 
+  CHECK_EQ(s1.get_partition().level,0); //<--NOT ++ 
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::JOIN_US);
+    CHECK_EQ(m.from, m.data[2]); //<-- hey can you join *my* partition with me as leader?
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2); 
+  CHECK_EQ(s0.get_parent_id(),1);
+  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF);
+    CHECK_EQ(1, m.data[0]);//<--agreement?
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(s0.get_partition().leader,1);
+  CHECK_EQ(s1.get_partition().leader,1);
+  Msg m = buf.front();
+  buf.pop_front();
+  CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF); //<-- merge()
+  CHECK_EQ(m.to,0);
+  CHECK_EQ(m.from,1);
+  CHECK_EQ(m.data[1],1);//level ++
+  CHECK_EQ(s0.get_parent_id(),1);
+  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+  s0.process(m,&buf);
+  CHECK_EQ(buf.size(),0);
+}
+
+TEST_CASE("sim-test 3 node frenzy")
+{
+
+  std::ofstream f("sim-test-3-node-frenzy.msg");
+
+  GhsState states[3]={
+    {0},{1},{2}
+  };
+  for (size_t i=0;i<3;i++){
+    for (size_t j=0;j<3;j++){
+      if (i!=j){
+        //add N^2 edges
+        Edge to_add = {i,j,UNKNOWN,(size_t)( (1<<i) + (1<<j))};
+        states[j].set_edge(to_add);
+      }
+    }
+  }
+  std::deque<Msg> buf;
+  for (int i=0;i<3;i++){
+    states[i].start_round(&buf);
+  }
+  int msg_limit = 100;
+  int msg_count = 0;
+  //here we go:
+  //
+  while(buf.size()>0 && msg_count++ < msg_limit){
+    Msg m = buf.front();
+    buf.pop_front();
+    f << m << std::endl;
+    states[m.to].process(m,&buf);
+  }
+
+  CHECK_EQ(buf.size(),0);
+  CHECK_LT(msg_count, msg_limit);
+
+  //do we have a single partition?
+  for (size_t i=0;i<3;i++){
+    for (size_t j=0;j<3;j++){
+      if (i!=j){
+        CHECK_EQ(states[i].get_partition().leader, states[j].get_partition().leader);
+      }
+    }
+  }
+
 }
