@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
 						size_t my_leader = part_leader[nid];
 						size_t wt_for_ref = connectivity_matrix[sender][nid];
 						comms.send(Msg::Type::JOIN_US, to, nid, {to /*them*/, from /*me*/, wt_for_ref, my_leader});
-						comms.send(Msg::Type::NEW_SHERIFF, to, nid, {my_leader});
+						//comms.send(Msg::Type::NEW_SHERIFF, to, nid, {my_leader});
 						//NEW_SHERIFF gives them a chance to rebutt with a
 						//better choice, see below
 					}
@@ -426,53 +426,6 @@ int main(int argc, char *argv[])
 					break;
 				} // end JOIN_US
 
-				case Msg::Type::NEW_SHERIFF:
-				{
-
-					if (edge_class[nid][sender]!=MST){
-						cerr << "Node "<< nid << " did not recognize sender ("<<sender<<") as MST link!"<<endl;
-					}
-					if (edge_class[sender][nid]!=MST){
-						cerr << "ERRR: Node "<< sender << " did not recognize " << nid << " as MST link but still sent NEW_SHERIFF msg"<<endl;
-					}
-					//assert(edge_class[sender][nid]==MST);
-					//assert(edge_class[nid][sender]==MST);
-					//OK, we got the links in, but now we're arguing about who
-					//is boss of the new graph, which affects everything from
-					//who makes decisions to the polarity of MST links /
-					//parenthood.
-					//
-					//Since this action originates at the site of an add ... 
-					//TODO: Leader selection should take place only at leaders or recently-joined nodes
-					size_t cand_leader = m.data[0];
-					if (part_leader[nid]==cand_leader){
-						cerr << "Node: "<<nid<<" already joined "<<m.data[0]<<endl;
-						//we don't need to propegate, these messages originate
-						//not from roots, but from the boundary between
-						//partitions, so they'll only go until they hit the same
-						//partition, as evidenced by leaders
-					}
-					else if (cand_leader>part_leader[nid]){
-						//hot damn they do have a nice leader, let's join them!
-						cerr <<" Node: "<<nid<<" joining new leader: "<<m.data[0]<<endl;
-						part_leader[nid]=cand_leader;
-						parent[nid]=sender;
-
-						//in which case, we should propegate
-						for (size_t i =0;i<num_agents;i++){
-							if (i!=sender && edge_class[nid][i]==MST){
-								comms.send(Msg::Type::NEW_SHERIFF, i,nid, {cand_leader});
-							}
-						}
-					} else {
-						//no need to change anything, their leader option is worse, but 
-						//let's tell them that so they can fall in line
-						cerr <<" Node: "<<nid<<" sending new leader instead of joining: "<<m.data[0]<<endl;
-						size_t my_leader = part_leader[nid];
-						comms.send(Msg::Type::NEW_SHERIFF, sender,nid, {my_leader});
-					}
-					break;
-				} // end NEW_SHERIFF
 
 				default :{
 					cerr<<"=====WARNING UNHANDLED MESSAGE=====";

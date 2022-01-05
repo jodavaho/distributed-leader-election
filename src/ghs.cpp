@@ -118,7 +118,7 @@ size_t GhsState::start_round(std::deque<Msg> *outgoing_buffer) noexcept{
   //If I'm leader, then I need to start the process. Otherwise wait
   if (my_part.leader == my_id){
     //nobody tells us what to do but ourselves
-    return process_srch(my_id, {}, outgoing_buffer);
+    return process_srch(my_id, {my_part.leader, my_part.level}, outgoing_buffer);
   }
   return 0;
 }
@@ -151,9 +151,7 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
     case    (Msg::Type::ACK_PART):{     return  process_ack_part(     msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::NACK_PART):{    return  process_nack_part(    msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::JOIN_US):{      return  process_join_us(      msg.from, msg.data, outgoing_buffer);  }
-    case    (Msg::Type::JOIN_OK):{      return  process_join_ok(      msg.from, msg.data, outgoing_buffer);  }
-    case    (Msg::Type::ELECTION):{     return  process_election(     msg.from, msg.data, outgoing_buffer);  }
-    case    (Msg::Type::NEW_SHERIFF):{  return  process_new_sheriff(  msg.from, msg.data, outgoing_buffer);  }
+    //case    (Msg::Type::ELECTION):{     return  process_election(     msg.from, msg.data, outgoing_buffer);  }
     //case    (Msg::Type::NOT_IT):{       return  process_not_it(       this,msg.from, msg.data);      }
     default:{ throw std::invalid_argument("Got unrecognzied message"); }
   }
@@ -162,15 +160,14 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
 
 size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
-  if (from!=my_part.leader && from!=parent){
-    //something is tragically wrong here, one of these must be true
-    throw std::invalid_argument("Got a message from someone, not us, not our leader, and not our parent");
-  }
+  assert(data.size()==2);
+
+  //grab the new partition information, since only one node / partition sends srch() msgs.
+  auto leader = data[0];
+  auto level  = data[1];
+  my_part = {leader,level};
 
   assert(waiting_for.size()==0 && " We got a srch msg while still waiting for results!");
-
-  //we'll only receive this once, so we have to start the search when we get
-  //this.
 
   //initialize the best edge to a bad value for comparisons
   best_edge = ghs_worst_possible_edge();
@@ -199,7 +196,9 @@ size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deq
   std::copy(srchbuf.begin(), srchbuf.end(), std::back_inserter(*buf));
   assert( (buf->size() -bufsz == srch_sent + part_sent)  );
 
-  return srch_sent + part_sent;
+  //It's not clear if we should actually check_new_level yet
+ 
+  return srch_sent + part_sent + check_new_level(buf);
 }
 
 size_t GhsState::process_srch_ret(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
@@ -433,9 +432,16 @@ size_t GhsState::check_new_level( std::deque<Msg>* buf){
   // 
   //
 
-
 size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
+
+  //if not MST:
+    //mark them as MST
+    //send courtesy msg
+  //if MST:
+    //select leader
+    //if us, start new round
+
 
   //we preserve the opportunity to trigger our own joins here with from==my_id
   if (! (get_edge(from) || from==my_id) ){
@@ -486,19 +492,20 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
 
   if ( edge_to_other_part->status == MST){
     //we already absorbed once, so now we merge()
-    //find leader, send new_sheriff. If sheriff == other guy, send just to him
+    //find leader, If sheriff == other guy, set parent, wait
     //(see "surprised sheriff" in process_new_sheriff).
     auto leader_id = std::max(join_peer, join_root);
     parent = leader_id;
     my_part.level++;
     if (leader_id == my_id){
-      return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_id, my_part.level}, buf);
+      return start_round(buf);
     } else {
-      //we initated the second absorb, so let the new sheriff know.
-      buf->push_back( Msg{ Msg::Type::NEW_SHERIFF, parent, my_id, {parent, my_part.level}});
+      //we are initiating the second absorb, so let the other side know by
+      //sending courtsey join msg.
+      buf->push_back( Msg{ Msg::Type::JOIN_US, parent, my_id, data});
       return 1;
     } 
-  } else if (edge_to_other_part->status == UNKNOWN){
+  } else if (edge_to_other_part->status == UNKNOWN) {
       if (in_initiating_partition ){
         //requeset abosrb to peer's partition just send it, see what they say
         //(see next one) btw, because we were able to find a MWOE, we know that
@@ -508,7 +515,6 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
         buf->push_back(Msg{Msg::Type::JOIN_US, join_peer, my_id, data});
         return 1;
       } else {
-        //command them to join ours on same level. 
         //NOTE, if we were waiting for them, they would not respond until their
         //level is == ours, so this should never fail:
         assert(!in_initiating_partition);
@@ -517,82 +523,17 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
             partition -- they should not have heard our IN_PART response yet");
         }  
         set_edge_status(join_root, MST);
-        //send a NEW_SHERIFF only "down" this particular subtree, since leader/level for our partition didn't change
-        buf->push_back(Msg{Msg::Type::NEW_SHERIFF, join_root, my_id, {my_part.leader, my_part.level}});
-        //and send a "DONE" msg *up* our tree.
-        return 1 + mst_convergecast(Msg::Type::JOIN_OK,{}, buf);
+        //because we aren't in the initiating partition, the other guy already
+        //has us marked MST, so we don't need to do anything.  
+        //-- a leader somewhere else will send the next round start (or perhaps
+        //it will be one of us when we do a merge()
+        return 0;
       }   
     } else {
       assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
     }
 
   assert(false && "unexpected library error: reached end of function somehow ");
-  return 0;
-}
-
-size_t GhsState::process_join_ok( AgentID from, std::vector<size_t> data, std::deque<Msg>*buf){
-
-  //we got a message that the join was OK. Time to initiate a new round. 
-  if (get_partition().leader == my_id){
-    //i'm in charge, start new round
-    return start_round(buf);
-  } else {
-    //we're not, just pass it along
-    return mst_convergecast(Msg::Type::JOIN_OK, data, buf);
-  }
-  
-}
-
-//pre-condition: msg contains information about a new leader in a new level greater than ours
-//post-condition: level increases, either by joining an advanced partition, or by merging
-size_t GhsState::process_new_sheriff(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
-{
-  //we can only receive these over MST links
-  if (get_edge(from)->status != MST){
-    throw std::invalid_argument("We should never get NEW_SHERIFF msgs over non-MST links. Maybe an error in join_us");
-  }
-  assert(data.size()==2);
-  auto new_leader = data[0];
-  auto new_level  = data[1];
-
-  //special case, we're nominated Surprise!
-  if (new_leader == my_id){
-    //I'm so flattered you chose me.  This can only happen if we just merged()
-    //Which can only happen once per partition (all other joins must be
-    //absorb(), which makes me their leader, too)
-    //
-    //That means this is the end of a round, and we should get moving on the new round.
-    parent = my_id;
-    set_partition({new_leader,new_level});
-    check_new_level(buf);
-    return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf) 
-      + start_round(buf);
-  }
-
-  if (from!=parent && new_leader != my_part.leader){
-    //reorg in process!
-    parent = from;
-  }
-
-  //regardless of reorg, we are advanced by joining
-  assert(new_level >= my_part.level); //<--something wrong if old new_sheriff msgs are propegating, but we can technically reorg without a level increase during absorb()
-  //this might be resolved by choosing std::max(new,old), but is that the right thing to do? No, also need to rebroadcast
-  my_part = {new_leader, new_level};
-
-  //and must clean up old pending messages
-  check_new_level(buf);
-
-  return mst_broadcast(Msg::Type::NEW_SHERIFF, {my_part.leader, my_part.level}, buf);
-}
-
-size_t GhsState::process_election(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
-{
-  return 0;
-}
-
-
-size_t GhsState::process_not_it(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
-{
   return 0;
 }
 

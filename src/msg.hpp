@@ -23,10 +23,8 @@ typedef struct
 		ACK_PART,
 		NACK_PART,
 		JOIN_US,
-    JOIN_OK,
 		ELECTION,
 		NOT_IT,
-		NEW_SHERIFF
 	} type;
 	size_t to, from;
 	std::vector<size_t> data;

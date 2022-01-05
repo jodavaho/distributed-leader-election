@@ -178,16 +178,13 @@ class GhsState
     /* Join / Merge / Absorb stage message */
     //join_us does some heavy lifting to determine how partitions should be restructured and joined
     size_t  process_join_us(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_join_ok(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    //new_sheriff is the msg that initiates a restructure, and is completely deterministic
-    size_t  process_new_sheriff( AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     //After a level change, we may have to do some cleanup responses, this will handle that.
     size_t  check_new_level( std::deque<Msg>* );
 
     /* Leader election messages */
     //these are kept here for completeness, but are only required 
-    size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
 
 
 
