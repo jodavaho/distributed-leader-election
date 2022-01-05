@@ -379,6 +379,7 @@ size_t GhsState::check_new_level( std::deque<Msg>* buf){
   // - Merge join should change the algorithm level for at least one of the partitions joining.
   // - [deviation from text] Merge joins are initiated by two absorb actions across the same edge
   // - The key is that if two partitions join eachother, the edge between them is unique and is now a "Core" edge. The leader is always on the new core edge. 
+  // - If you consider that there's only one merge, and N-1 absorbs (N=# partitions) per round, you'll see that there's *never* a leader that is leader after he sends out a JOIN_US msg.
   //
   // Q: What if we request that another partition joins us, and they are adding a different edge to yet another parition? 
   // - A req B join, but B req C join (which implies C req B)
@@ -522,7 +523,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
         return 1 + mst_convergecast(Msg::Type::JOIN_OK,{}, buf);
       }   
     } else {
-    assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
+      assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
     }
 
   assert(false && "unexpected library error: reached end of function somehow ");
