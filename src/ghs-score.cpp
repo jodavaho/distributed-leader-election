@@ -125,8 +125,7 @@ int main(int argc, char *argv[])
 
 
 
-		cerr << "Graph: (C=child_of; P=parent_of; .=self-loop; '-'=discarded; x=error/other;"<<endl;
-
+		cerr << "Graph: (?=unknown; C=child_of; P=parent_of; .=self-loop; '-'=discarded; x=error/other;"<<endl;
 		cerr << "   ";
 
 		size_t width = 1+floor(log(num_agents));

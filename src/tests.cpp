@@ -6,6 +6,11 @@
 #include <optional>
 #include <fstream>
 
+
+///Problems:
+//TODO: SRCH now contains a partition embedded
+//TODO: NEW_SHERIFF is removed
+
 GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
 {
   GhsState s(my_id);
@@ -81,7 +86,7 @@ TEST_CASE("unit-test typecast")
 
   std::deque<Msg> buf;
   GhsState s(0);
-  size_t sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
+  size_t sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -89,7 +94,7 @@ TEST_CASE("unit-test typecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({1,0,EdgeStatus::UNKNOWN,1});
-  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
+  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {0,0}, &buf);
   //got one
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -103,7 +108,7 @@ TEST_CASE("unit-test typecast")
   //add edge to node 2 of wrong type
   s.set_parent_edge({2,0,EdgeStatus::MST,1});
   //look for unknown
-  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
+  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {0,0}, &buf);
   //only one still, right?
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -114,7 +119,7 @@ TEST_CASE("unit-test typecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({3,0,EdgeStatus::MST,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //Now got one here too
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -129,7 +134,7 @@ TEST_CASE("unit-test mst_broadcast")
 
   std::deque<Msg> buf;
   GhsState s(0);
-  size_t sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  size_t sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -137,20 +142,20 @@ TEST_CASE("unit-test mst_broadcast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({1,0,EdgeStatus::UNKNOWN,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to, still
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
   s.set_edge({2,0,EdgeStatus::MST,1});
   s.set_parent_edge({2,0,EdgeStatus::MST,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to, still, right!?
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
   s.set_edge({3,0,EdgeStatus::MST,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //Now got one
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -166,7 +171,7 @@ TEST_CASE("unit-test mst_convergecast")
   std::deque<Msg> buf;
   GhsState s(0);
   size_t sent;
-  sent =   s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent =   s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -174,7 +179,7 @@ TEST_CASE("unit-test mst_convergecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({1,0,EdgeStatus::UNKNOWN,1});
-  sent = s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to, still
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -182,7 +187,7 @@ TEST_CASE("unit-test mst_convergecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({2,0,EdgeStatus::MST,1});
-  sent = s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //Still can't send to children MST
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -191,7 +196,7 @@ TEST_CASE("unit-test mst_convergecast")
 
   s.set_edge({3,0,EdgeStatus::MST,1});
   s.set_parent_edge({3,0,EdgeStatus::MST,1});
-  sent = s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //Only to parents!
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -208,7 +213,7 @@ TEST_CASE("unit-test start_round() on leader, unknown peers")
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,UNKNOWN,1});
   s.set_edge({2, 0,UNKNOWN,1});
-  s.start_round(&buf);
+  CHECK_NOTHROW(s.start_round(&buf));
   CHECK_EQ(buf.size(),2);
   while(buf.size()>0){ 
     auto m = buf.front();
@@ -300,16 +305,17 @@ TEST_CASE("unit-test process_srch() checks recipient"){
   GhsState s(0);
   //set leader to 1, level to 0 
   s.set_partition({1,0});
+  s.set_edge({1,0,MST,1});
   //from rando
-  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,2,{}}, &buf), const std::invalid_argument&);
+  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,2,{1,0}}, &buf), const std::invalid_argument&);
   //from leader is ok
-  CHECK_NOTHROW(s.process( Msg{Msg::Type::SRCH,0,1,{}}, &buf));
+  CHECK_NOTHROW(s.process( Msg{Msg::Type::SRCH,0,1,{1,0}}, &buf));
   //from self not allowed
-  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,0,{}}, &buf), const std::invalid_argument&);
+  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,0,{1,0}}, &buf), const std::invalid_argument&);
     
 }
 
-TEST_CASE("unit-test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
+TEST_CASE("unit-test process_srch, unknown peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -334,7 +340,7 @@ TEST_CASE("unit-test process_srch,  mst peers")
   s.set_edge({2, 0,MST,1});
   s.set_edge({3, 0,MST,1});
   s.set_parent_edge({3,0,MST,1});
-  s.process({Msg::Type::SRCH,0,3,{}},&buf);
+  s.process({Msg::Type::SRCH,0,3,{3,0}},&buf);
 
   CHECK_EQ(buf.size(),2);
   auto m = buf.front();
@@ -355,7 +361,7 @@ TEST_CASE("unit-test process_srch, discarded peers")
   s.set_edge({2, 0,DELETED,1});
   s.set_edge({3, 0,MST,1});
   s.set_parent_edge({3,0,MST,1});
-  s.process({Msg::Type::SRCH,0,3,{}},&buf);
+  s.process({Msg::Type::SRCH,0,3,{3,0}},&buf);
   CHECK_EQ(buf.size(),0);
 }
 
@@ -369,7 +375,7 @@ TEST_CASE("unit-test process_srch, mixed peers")
   s.set_edge({3, 0,UNKNOWN,1});
   s.set_edge({4, 0,MST,1});
   s.set_parent_edge({4,0,MST,1});
-  s.process({Msg::Type::SRCH,0,4,{}},&buf);
+  s.process({Msg::Type::SRCH,0,4,{4,0}},&buf);
 
   CHECK_EQ(buf.size(),2);
 
@@ -398,7 +404,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   s.set_edge({2, 0,MST,1});
   s.set_edge({3, 0,MST,1});
   s.set_parent_edge( {3,0,MST,1} );
-  CHECK_NOTHROW(s.process({Msg::Type::SRCH,0,3,{}},&buf));
+  CHECK_NOTHROW(s.process({Msg::Type::SRCH,0,3,{3,0}},&buf));
 
   CHECK_EQ(buf.size(),1);
 
@@ -410,7 +416,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
 
   CHECK_EQ(buf.size(),0);
   //now from non-parent
-  CHECK_THROWS_AS(s.process({Msg::Type::SRCH,0,2,{}},&buf), const std::invalid_argument&);
+  CHECK_THROWS_AS(s.process({Msg::Type::SRCH,0,2,{0,0}},&buf), const std::invalid_argument&);
 }
 
 TEST_CASE("Guard against Edge refactoring"){
@@ -540,7 +546,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   s.set_partition( {1,0} );
 
   //start it by getting a search from leader to node 0
-  s.process({ Msg::Type::SRCH,0,1,{}  }, &buf);
+  s.process({ Msg::Type::SRCH,0,1,{1,0}  }, &buf);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
   CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<size_t>::max());
@@ -756,7 +762,7 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   CHECK_NOTHROW(s.set_partition({3,0}));
 
   //send the start message
-  CHECK_NOTHROW(s.process(Msg{Msg::Type::SRCH,0,3,{}}, &buf));
+  CHECK_NOTHROW(s.process(Msg{Msg::Type::SRCH,0,3,{3,0}}, &buf));
 
   CHECK_EQ(buf.size(),2);
   buf.pop_front();

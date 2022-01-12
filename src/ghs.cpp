@@ -161,13 +161,21 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
 size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
   assert(data.size()==2);
+  if (from !=my_id && get_edge(from)->status !=MST){
+    throw std::invalid_argument("Unknown sender");
+  }
+  assert(from == my_id ||  get_edge(from)->status == MST); // now that would be weird if it wasn't
+
+  if (waiting_for.size() != 0 ){
+    throw std::invalid_argument(" Waiting but got SRCH ");
+  }
+  assert(waiting_for.size()==0 && " We got a srch msg while still waiting for results!");
 
   //grab the new partition information, since only one node / partition sends srch() msgs.
   auto leader = data[0];
   auto level  = data[1];
   my_part = {leader,level};
 
-  assert(waiting_for.size()==0 && " We got a srch msg while still waiting for results!");
 
   //initialize the best edge to a bad value for comparisons
   best_edge = ghs_worst_possible_edge();
@@ -179,7 +187,7 @@ size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deq
   std::deque<Msg> srchbuf;
 
   //first broadcast
-  size_t srch_sent = mst_broadcast(Msg::Type::SRCH, {}, &srchbuf);
+  size_t srch_sent = mst_broadcast(Msg::Type::SRCH, {my_part.leader, my_part.level}, &srchbuf);
 
   //then ping unknown edges
   //OPTIMIZATION: Ping neighbors in sorted order, rather than flooding
