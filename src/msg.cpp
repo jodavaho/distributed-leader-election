@@ -2,6 +2,7 @@
 
 std::string to_string(const Msg::Type &type){
 	switch (type){
+		case Msg::Type::NOOP:{return "NOOP";}
 		case Msg::Type::SRCH:{return "SRCH";}
 		case Msg::Type::SRCH_RET:{return "SRCH_RET";}
 		case Msg::Type::IN_PART:{return "IN_PART";}
