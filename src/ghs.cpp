@@ -15,6 +15,16 @@ GhsState::GhsState(AgentID my_id,  std::vector<Edge> edges) noexcept{
   }
 }
 
+std::ostream& operator << ( std::ostream& outs, const GhsState & s){
+  outs<<"{id:"<<s.get_id()<<" ";
+  outs<<"leader:"<<s.get_leader_id()<<" ";
+  outs<<"level:"<<s.get_level()<<" ";
+  outs<<"waiting:"<<s.waiting_count()<<" ";
+  outs<<"delayed:"<<s.delayed_count()<<" ";
+  outs<<"}";
+  return outs;
+}
+
 /**
  * Reset the algorithm status completely
  */
@@ -64,8 +74,8 @@ void GhsState::set_edge_status(const AgentID &to, const EdgeStatus &status)
 
 void GhsState::set_parent_edge(const Edge&e) {
 
-  if (e.status != MST){
-    throw std::invalid_argument("Cannot add non MST edge as parent!");
+  if (e.status != MST && e.peer != my_id ){
+    throw std::invalid_argument("Cannot add non MST / non-self edge as parent!");
   }
 
   if (e.root != my_id){
@@ -151,6 +161,7 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
     case    (Msg::Type::ACK_PART):{     return  process_ack_part(     msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::NACK_PART):{    return  process_nack_part(    msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::JOIN_US):{      return  process_join_us(      msg.from, msg.data, outgoing_buffer);  }
+    case    (Msg::Type::NOOP):{         return  0; }
     //case    (Msg::Type::ELECTION):{     return  process_election(     msg.from, msg.data, outgoing_buffer);  }
     //case    (Msg::Type::NOT_IT):{       return  process_not_it(       this,msg.from, msg.data);      }
     default:{ throw std::invalid_argument("Got unrecognzied message"); }
@@ -175,14 +186,13 @@ size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deq
   auto leader = data[0];
   auto level  = data[1];
   my_part = {leader,level};
-
+  //also note our parent may have changed
+  parent=from;
 
   //initialize the best edge to a bad value for comparisons
   best_edge = ghs_worst_possible_edge();
   best_edge.root = my_id;
 
-  //process each edge differently
- 
   //we'll cache outgoing messages temporarily
   std::deque<Msg> srchbuf;
 
@@ -204,8 +214,7 @@ size_t GhsState::process_srch(  AgentID from, std::vector<size_t> data, std::deq
   std::copy(srchbuf.begin(), srchbuf.end(), std::back_inserter(*buf));
   assert( (buf->size() -bufsz == srch_sent + part_sent)  );
 
-  //It's not clear if we should actually check_new_level yet
- 
+  //make sure to check_new_level, since our level may have changed, above. 
   return srch_sent + part_sent + check_new_level(buf);
 }
 
@@ -375,82 +384,12 @@ size_t GhsState::check_new_level( std::deque<Msg>* buf){
 }
 
 
-  // JOIN is tricky. 
-  //
-  // There's really two kinds: Absorb (joiner loses leader, maybe increases its level), Merge (joiner and joinee both form a new leader together).
-  //
-  // In general, 
-  //
-  // - Multiple joins can be processed in any sequence and produce the same result
-  // - Merge joins (which increment level) must occur *only* at an edge connecting two partitions, A and B, where MWOE(A) == MWOE(B). 
-  // - Merge join should change the algorithm level for at least one of the partitions joining.
-  // - [deviation from text] Merge joins are initiated by two absorb actions across the same edge
-  // - The key is that if two partitions join eachother, the edge between them is unique and is now a "Core" edge. The leader is always on the new core edge. 
-  // - If you consider that there's only one merge, and N-1 absorbs (N=# partitions) per round, you'll see that there's *never* a leader that is leader after he sends out a JOIN_US msg.
-  //
-  // Q: What if we request that another partition joins us, and they are adding a different edge to yet another parition? 
-  // - A req B join, but B req C join (which implies C req B)
-  // A: It should play out like this: 
-  // - First, absorb A into B then either:
-  //    1. B absorbs into C, taking A with it; followed by C attempting to absorb into B. This kicks off a merge (A+B,C), and the leader is in B or C as required.
-  //    2. OR, C absorbs into B, Then A absorbs into B, then B attempts to absorb into C, resulting in a Merge(A+B,C)
-  //    3. OR, B and C absorb then merge, followed by A absorbing into B+C.
-  // - Either way, one merge happened (level++), and one absorb. 
-  //
-  // Q: What if a join is received (by node B) from a node (A) that has not sent a  NACK/ACK_PART msg yet (to B)?
-  // - This happens when that node (A) makes a decisions about its partitions' MWOE before responding to queries from outside the partition  (e.g., from B)
-  // A: Treat it as absorb A into B, (which means A's leader becomes B's leader), and then have B re-start the MWOE search in A's subtree. 
-  //
-  // Q: But, what if three partitions add eachother in a cycle? 
-  // A: Cannot happen:  A<->B<->C<->A implies that A<->C and A<->B is MWOE for A, which is impossible by the unique weights for each edge (See @Edge structure for how this would be accomplished in the field). Similarly for B with A,C, etc. There's a discussion of this ("Component subgraph") in Lynch. 
-  //
-  // Q: What if we send a JOIN, but that partition isn't ready to join / still searching?
-  // A: They will handle using opposite of next case
-  //
-  // Q: What if we receive a JOIN but are in the middle of a search?  
-  // A: This is a more general case of the ACK/NACK discussion above. We treat it as an absorb + search.
-  // - Suppose A is searching, and B requests A join B. 
-  // - Then two cases: 
-  //   1. level(A)>=B, in which case B absorb into A + A trigger new MWOE search is OK
-  //   2. level(A)<B, in which case B absorb would lower the level. A may already be in B's partition without knowing it yet. 
-  //   - I say this cannot happen. Why? Well, A would not reply to B's IN_PART request, because it does not know wheter it is in B's partition. So, B would not have enough information to declare edge (A,B) as a MWOE. 
-  //   - Is there a condition that can increase B's level while waiting for search results? No, a MWOE is required to increase level. 
-  //   
-  //join_us has an edge and a partition as payload
-  //this operates on edges, really.  
-  //
-  //- if neither the root or the peer is us, 
-  //  - assert it was received on an MST link
-  //  - pass the message on (mst_broadcast)
-  //
-  //- if the root of the passed edge is us, 
-  //  - assert, waiting_count == 0; that's an error condition otherwise
-  //  - assert it was received on an MST link
-  //  - we add edge as MST 
-  //  - we pass to peer, they will send a NEW_SHERIFF message.
-  //
-  //- if the peer of the passed edge is us
-  //  - assert(our level >= theirs), otherwise how did they get a response from our partition?
-  //  - if on an MST link, time to MERGE
-  //    - set parent as self
-  //    - send new_sheriff (max(us, them), level+1) across all MST links (mst_broadcast)
-  //  - if not on an MST link, time to ABSORB:
-  //    - we add as MST link
-  //    - send new sheriff to them (our leader, our level)
-  // 
-  //
+//  If there's a bug, it's probably in here. 
+//
 
 size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::deque<Msg>*buf)
 {
 
-  //if not MST:
-    //mark them as MST
-    //send courtesy msg
-  //if MST:
-    //select leader
-    //if us, start new round
-
-  
   //we preserve the opportunity to trigger our own joins here with from==my_id
   if (! (get_edge(from) || from==my_id) ){
     throw new std::invalid_argument("No edge to "+std::to_string(from)+" found!");
@@ -502,9 +441,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
 
   if ( edge_to_other_part->status == MST){
     //we already absorbed once, so now we merge()
-    //find leader, If sheriff == other guy, set parent, wait
     auto leader_id = std::max(join_peer, join_root);
-    //parent = leader_id;
     my_part.leader = leader_id;
     my_part.level++;
     if (leader_id == my_id){
@@ -619,4 +556,8 @@ AgentID GhsState::get_parent_id() const noexcept{
 
 AgentID GhsState::get_leader_id() const noexcept{
   return my_part.leader;
+}
+
+AgentID GhsState::get_level() const noexcept{
+  return my_part.level;
 }

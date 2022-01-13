@@ -947,6 +947,7 @@ TEST_CASE("unit-test join_us merge leader-side")
   s.set_edge({3,1,MST,1});
   s.set_edge({0,1,UNKNOWN,1});
   s.set_parent_edge({3,1,MST,1});
+  CHECK_EQ(s.get_parent_id(),3); 
   std::deque<Msg> buf;
   Msg m;
 
@@ -969,20 +970,25 @@ TEST_CASE("unit-test join_us merge leader-side")
   buf.pop_front();
 
   //AND NOW, in a big twist, here comes the join message for 1-0 in the opposite direction
-  //
   CHECK_EQ(s.get_id(),1);
+  CHECK_EQ(buf.size(), 0);
   m = {Msg::Type::JOIN_US, 1,3, {0,1,3,0}};
+  CHECK(s.get_edge(0));
   CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang
   CHECK_NOTHROW(s.process(m,&buf));
   CHECK(s.get_edge(0));
-  CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang
-  CHECK_EQ(s.get_parent_id(),       3); //Don't just abandon MST links
+  CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang, STILL
+  CHECK_EQ(s.get_parent_id(),       1); //This changes because we start_round on ourselves as new leader, which process_srch's on ourselves, setting ourselves as new leader. Desired, but obtuse.
   CHECK_EQ(s.get_partition().level, 1); //level auto-increment b/c we detected merge()
   CHECK_EQ(s.get_partition().leader, 1); //We're leader
   //ok, side effects are:
   //1 sends a message to 0 saying "Join us"
   //AND, it sends a message to SRCH
-  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(buf.size(), 2); //lord only knows why it chooses this order though. 
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH);
+  CHECK_EQ(buf.front().to, 3);
+  CHECK_EQ(buf.back().type, Msg::Type::SRCH); //we have a child to ping
+  CHECK_EQ(buf.back().to, 0);
 
 }
 
@@ -1133,9 +1139,21 @@ TEST_CASE("sim-test 3 node frenzy")
   //
   while(buf.size()>0 && msg_count++ < msg_limit){
     Msg m = buf.front();
+
+    std::deque<Msg> added;
     buf.pop_front();
-    f << m << std::endl;
-    states[m.to].process(m,&buf);
+
+    f << "f: "<<states[m.from]<<std::endl;
+    f << "t: "<<states[m.to]<<std::endl;
+    f << "-  "<<m << std::endl;
+    states[m.to].process(m,&added);
+    f << "t':"<< states[m.to]<<std::endl;
+
+    for (const auto &m: added){
+      f <<"+  "<< m <<std::endl;
+      buf.push_back(m);
+    }
+    f << std::endl;
   }
 
   CHECK_EQ(buf.size(),0);

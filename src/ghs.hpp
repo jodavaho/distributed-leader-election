@@ -121,6 +121,7 @@ class GhsState
      * Returns whatever I believe my leader is
      */
     AgentID get_leader_id() const noexcept;
+    AgentID get_level() const noexcept;
 
     /** 
      *
@@ -203,5 +204,8 @@ class GhsState
     Partition                    best_partition;
 
 };
+
+
+std::ostream& operator << ( std::ostream& outs, const GhsState & s);
 
 #endif
