@@ -450,7 +450,7 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
     //select leader
     //if us, start new round
 
-
+  
   //we preserve the opportunity to trigger our own joins here with from==my_id
   if (! (get_edge(from) || from==my_id) ){
     throw new std::invalid_argument("No edge to "+std::to_string(from)+" found!");
@@ -481,6 +481,8 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
     //leader CAN be different, even though we're initating, IF we're on an MST
     //link to them
     if (join_lead != my_part.leader && get_edge(join_peer)->status != MST){
+      std::cerr<<"My leader: "<<my_part.leader<<std::endl;
+      std::cerr<<"join_lead: "<<join_lead<<std::endl;
       throw std::invalid_argument("We should never receive a JOIN_US with a different leader when we initiate");
     }
     if (join_level != my_part.level){
@@ -503,7 +505,8 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
     //find leader, If sheriff == other guy, set parent, wait
     //(see "surprised sheriff" in process_new_sheriff).
     auto leader_id = std::max(join_peer, join_root);
-    parent = leader_id;
+    //parent = leader_id;
+    my_part.leader = leader_id;
     my_part.level++;
     if (leader_id == my_id){
       return start_round(buf);
@@ -523,13 +526,14 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
         buf->push_back(Msg{Msg::Type::JOIN_US, join_peer, my_id, data});
         return 1;
       } else {
-        //NOTE, if we were waiting for them, they would not respond until their
-        //level is == ours, so this should never fail:
         assert(!in_initiating_partition);
         if (join_level > my_part.level){ throw std::invalid_argument("We should\
             never receive a JOIN_US with higher level from a different\
             partition -- they should not have heard our IN_PART response yet");
         }  
+        //NOTE, if we were waiting for them, they would not respond until their
+        //level is == ours, so this should never fail:
+        assert(my_part.level>=join_level);
         set_edge_status(join_root, MST);
         //because we aren't in the initiating partition, the other guy already
         //has us marked MST, so we don't need to do anything.  
