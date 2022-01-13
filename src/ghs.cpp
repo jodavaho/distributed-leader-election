@@ -503,7 +503,6 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   if ( edge_to_other_part->status == MST){
     //we already absorbed once, so now we merge()
     //find leader, If sheriff == other guy, set parent, wait
-    //(see "surprised sheriff" in process_new_sheriff).
     auto leader_id = std::max(join_peer, join_root);
     //parent = leader_id;
     my_part.leader = leader_id;
