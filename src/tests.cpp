@@ -1161,6 +1161,7 @@ TEST_CASE("sim-test 3 node frenzy")
 
   //do we have a single partition?
   for (size_t i=0;i<3;i++){
+    CHECK(states[i].is_converged());
     for (size_t j=0;j<3;j++){
       if (i!=j){
         CHECK_EQ(states[i].get_partition().leader, states[j].get_partition().leader);

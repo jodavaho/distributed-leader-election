@@ -53,6 +53,7 @@ typedef struct {
 
 class GhsState
 {
+
   public:
 
     /**
@@ -73,6 +74,7 @@ class GhsState
      * @throws invalid_argument if you attempt to add an edge
      * that is rooted on another node. 
      *
+     * This method is basically @deprecated
      *
      * @Return: 0 if edge updated. 1 if it was inserted (it's new)
      */
@@ -121,6 +123,10 @@ class GhsState
      * Returns whatever I believe my leader is
      */
     AgentID get_leader_id() const noexcept;
+
+    /**
+     * Returns whatever I believe this partition's level is
+     */
     AgentID get_level() const noexcept;
 
     /** 
@@ -139,6 +145,7 @@ class GhsState
     //getters
     size_t waiting_count() const noexcept;
     size_t delayed_count() const noexcept;
+    std::string  dump_edges()const noexcept;
 
     Edge mwoe() const noexcept;
 
@@ -168,6 +175,9 @@ class GhsState
     //reset the algorithm state
     bool reset() noexcept;
 
+    //Get the algorithm state
+    bool is_converged() const noexcept;
+
   private:
 
     /* Search stage messages */
@@ -177,6 +187,7 @@ class GhsState
     size_t  process_in_part(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_ack_part(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_nack_part(   AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_noop( std::deque<Msg>* );
     //This does moderate lifting to determine if the search is complete for the
     //current node, and if so, returns the results to our leader
     size_t  check_search_status( std::deque<Msg>*);
@@ -201,7 +212,7 @@ class GhsState
     std::vector<Edge>            outgoing_edges;
     std::vector<Msg>             respond_later;
     Edge                         best_edge;
-    Partition                    best_partition;
+    bool                         algorithm_converged;
 
 };
 

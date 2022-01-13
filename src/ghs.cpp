@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <deque>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <optional> //req c++20
 
@@ -21,6 +22,8 @@ std::ostream& operator << ( std::ostream& outs, const GhsState & s){
   outs<<"level:"<<s.get_level()<<" ";
   outs<<"waiting:"<<s.waiting_count()<<" ";
   outs<<"delayed:"<<s.delayed_count()<<" ";
+  outs<<"converged:"<<s.is_converged()<<" ";
+  outs<<"("<<s.dump_edges()<<")";
   outs<<"}";
   return outs;
 }
@@ -29,12 +32,12 @@ std::ostream& operator << ( std::ostream& outs, const GhsState & s){
  * Reset the algorithm status completely
  */
 bool GhsState::reset() noexcept{
-  this->my_part         =  Partition{my_id,0};
-  this->parent          =  my_id; //I live alone
-  this->waiting_for     =  {};
-  this->respond_later   =  {};
-  this->best_edge       =  ghs_worst_possible_edge();
-  this->best_partition  =  my_part;
+  this->my_part              =  Partition{my_id,0};
+  this->parent               =  my_id;                      
+  this->waiting_for          =  {};
+  this->respond_later        =  {};
+  this->best_edge            =  ghs_worst_possible_edge();
+  this->algorithm_converged  =  false;
 
   for (size_t i=0;i<outgoing_edges.size();i++){
     outgoing_edges[i].status=UNKNOWN;
@@ -161,7 +164,7 @@ size_t GhsState::process(const Msg &msg, std::deque<Msg> *outgoing_buffer){
     case    (Msg::Type::ACK_PART):{     return  process_ack_part(     msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::NACK_PART):{    return  process_nack_part(    msg.from, msg.data, outgoing_buffer);  }
     case    (Msg::Type::JOIN_US):{      return  process_join_us(      msg.from, msg.data, outgoing_buffer);  }
-    case    (Msg::Type::NOOP):{         return  0; }
+    case    (Msg::Type::NOOP):{         return  process_noop( outgoing_buffer ); }
     //case    (Msg::Type::ELECTION):{     return  process_election(     msg.from, msg.data, outgoing_buffer);  }
     //case    (Msg::Type::NOT_IT):{       return  process_not_it(       this,msg.from, msg.data);      }
     default:{ throw std::invalid_argument("Got unrecognzied message"); }
@@ -308,7 +311,6 @@ size_t GhsState::process_nack_part(  AgentID from, std::vector<size_t> data, std
   }
   auto their_edge = get_edge(from);
   assert(data.size()==2);
-  Partition their_part = {data[0],data[1]};
 
   if (!their_edge){
     throw std::invalid_argument("We got a message from "+std::to_string(from)+" but we don't have an edge to them");
@@ -316,7 +318,6 @@ size_t GhsState::process_nack_part(  AgentID from, std::vector<size_t> data, std
   
   if (best_edge.metric_val > their_edge->metric_val){
     best_edge = *their_edge;
-    best_partition = their_part;
   }
 
   //@throws:
@@ -348,7 +349,7 @@ size_t GhsState::check_search_status(std::deque<Msg>* buf){
 
     if (am_leader && !found_new_edge ){
       //I'm leader, no new edge, let's move on b/c we're done here
-      return mst_broadcast( Msg::Type::NOOP, {}, buf);
+      return process_noop( buf );
     }
 
     if (am_leader && found_new_edge && !its_my_edge){
@@ -503,6 +504,11 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
   return 0;
 }
 
+size_t GhsState::process_noop(std::deque<Msg> *buf){
+  algorithm_converged=true;
+  return mst_broadcast(Msg::Type::NOOP, {},buf);
+}
+
 size_t GhsState::typecast(const EdgeStatus& status, const Msg::Type &m, const std::vector<size_t> data, std::deque<Msg> *buf)const noexcept{
   size_t sent(0);
   for (const auto & e : outgoing_edges){
@@ -560,4 +566,30 @@ AgentID GhsState::get_leader_id() const noexcept{
 
 AgentID GhsState::get_level() const noexcept{
   return my_part.level;
+}
+
+bool GhsState::is_converged() const noexcept{
+  return algorithm_converged;
+}
+
+std::string  GhsState::dump_edges() const noexcept{
+  std::stringstream ss;
+  ss<<"( ";
+  for (auto e:outgoing_edges){
+    ss<<" ";
+    ss<<e.root<<"-->"<<e.peer<<" ";
+    switch (e.status){
+      case UNKNOWN: {ss<<"---";break;}
+      case MST: {ss<<"MST";break;}
+      case DELETED: {ss<<"DEL";break;}
+    }
+    if (e.peer == parent){
+      ss<<"+P";
+    } else {
+      ss<<"  ";
+    }
+    ss<<" "<<e.metric_val<<";";
+  }
+  ss<<")";
+  return ss.str();
 }
