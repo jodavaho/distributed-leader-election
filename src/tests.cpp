@@ -906,7 +906,7 @@ TEST_CASE("unit-test join_us response to MST edge")
   auto e = s.get_edge(1);
   CHECK(e);
   CHECK_EQ(e->status,MST); //we marked as MST
-  CHECK_EQ(s.get_parent_id(), 1);//but we know 1 is parent
+  CHECK_EQ(s.get_leader_id(), 1);
 
 }
 
@@ -1035,40 +1035,10 @@ TEST_CASE("integration-test two nodes")
     }
   }
   CHECK_EQ(buf.size(), 2); 
-  CHECK_EQ(s0.get_parent_id(),1);
+  CHECK_EQ(s0.get_leader_id(),1);
   CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
   CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
 
-  //TODO: 
-  /*
-  for (int i=0;i<2;i++){
-    Msg m = buf.front();
-    buf.pop_front();
-    CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF);
-    CHECK_EQ(1, m.data[0]);//<--agreement?
-    switch(m.to){
-      case (0):{ s0.process(m,&buf);break;}
-      case (1):{ s1.process(m,&buf);break;}
-    }
-  }
-  CHECK_EQ(buf.size(), 2); 
-  CHECK_EQ(s0.get_partition().leader,1);
-  CHECK_EQ(s1.get_partition().leader,1);
-  Msg m = buf.front();
-  buf.pop_front();
-  CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF); //<-- merge()
-  CHECK_EQ(m.to,0);
-  CHECK_EQ(m.from,1);
-  CHECK_EQ(m.data[1],1);//level ++
-  CHECK_EQ(s0.get_parent_id(),1);
-  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
-  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
-  CHECK_EQ(buf.back().type, Msg::Type::SRCH); //<-- merge result triggers new round
-  buf.pop_back();
-
-  s0.process(m,&buf);
-  CHECK_EQ(buf.size(),0);
-  */
 }
 
 TEST_CASE("integration-test opposite two nodes")
@@ -1113,41 +1083,9 @@ TEST_CASE("integration-test opposite two nodes")
     }
   }
   CHECK_EQ(buf.size(), 2); 
-  CHECK_EQ(s0.get_parent_id(),1);
+  CHECK_EQ(s0.get_leader_id(),1);
   CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
   CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
-
-  //TODO:
-  /*
-  for (int i=0;i<2;i++){
-    Msg m = buf.front();
-    buf.pop_front();
-    CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF);
-    CHECK_EQ(1, m.data[0]);//<--agreement?
-    switch(m.to){
-      case (0):{ s0.process(m,&buf);break;}
-      case (1):{ s1.process(m,&buf);break;}
-    }
-  }
-  CHECK_EQ(buf.size(), 2); 
-  CHECK_EQ(s0.get_partition().leader,1);
-  CHECK_EQ(s1.get_partition().leader,1);
-  Msg m = buf.front();
-  buf.pop_front();
-  CHECK_EQ(m.type,Msg::Type::NEW_SHERIFF); //<-- merge()
-  CHECK_EQ(m.to,0);
-  CHECK_EQ(m.from,1);
-  CHECK_EQ(m.data[1],1);//level ++
-  CHECK_EQ(s0.get_parent_id(),1);
-  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
-  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
-
-  CHECK_EQ(buf.back().type, Msg::Type::SRCH);
-  buf.pop_back();
-
-  s0.process(m,&buf);
-  CHECK_EQ(buf.size(),0);
-  */
 
 }
 

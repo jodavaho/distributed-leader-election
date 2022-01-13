@@ -599,3 +599,7 @@ Edge ghs_worst_possible_edge(){
 AgentID GhsState::get_parent_id() const noexcept{
   return parent;
 }
+
+AgentID GhsState::get_leader_id() const noexcept{
+  return my_part.leader;
+}

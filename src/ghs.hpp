@@ -117,6 +117,11 @@ class GhsState
      */
     AgentID get_parent_id() const noexcept;
 
+    /**
+     * Returns whatever I believe my leader is
+     */
+    AgentID get_leader_id() const noexcept;
+
     /** 
      *
      * You must set an edge as MST using set_edge, BEFORE you call this method to
