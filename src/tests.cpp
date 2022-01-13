@@ -896,13 +896,7 @@ TEST_CASE("unit-test join_us response to MST edge")
   Msg m = {Msg::Type::JOIN_US,0,1,{0,1,1,0}}; // 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
   std::deque<Msg> buf;
   CHECK_NOTHROW(s.process(m,&buf));
-  CHECK_EQ(buf.size(),1);//Send "courtesy" join to alert of merge()
-  auto n = buf.front();
-  CHECK_EQ(n.type, Msg::Type::JOIN_US);
-  CHECK_EQ(n.data[0], m.data[0]);
-  CHECK_EQ(n.data[1], m.data[1]);
-  CHECK_EQ(n.data[2], m.data[2]);
-  CHECK_EQ(n.data[3], m.data[3]);
+  CHECK_EQ(buf.size(),0);//No action: we are 0, JOIN_US was from new_leader.
   auto e = s.get_edge(1);
   CHECK(e);
   CHECK_EQ(e->status,MST); //we marked as MST
@@ -1034,7 +1028,8 @@ TEST_CASE("integration-test two nodes")
       case (1):{ s1.process(m,&buf);break;}
     }
   }
-  CHECK_EQ(buf.size(), 2); 
+  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH); // leader triggered new round. 
   CHECK_EQ(s0.get_leader_id(),1);
   CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
   CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
@@ -1047,9 +1042,15 @@ TEST_CASE("integration-test opposite two nodes")
   GhsState s1(1,{{0,1,UNKNOWN,2}});
   std::deque<Msg> buf;
   //let's turn the crank and see what happens
+  //
+
+
+  //Trigger start
   s1.start_round(&buf);
   s0.start_round(&buf);
-  CHECK_EQ(buf.size(),2);
+
+  //Nodes sent pings to neighbors
+  CHECK_EQ(buf.size(),2); // IN_PART? x2
   for (int i=0;i<2;i++){
     Msg m = buf.front();
     buf.pop_front();
@@ -1059,7 +1060,9 @@ TEST_CASE("integration-test opposite two nodes")
       case (1):{ s1.process(m,&buf);break;}
     }
   }
-  CHECK_EQ(buf.size(), 2);
+
+  //Nodes recognized a partition
+  CHECK_EQ(buf.size(), 2); // NACK_PART x2
   for (int i=0;i<2;i++){
     Msg m = buf.front();
     buf.pop_front();
@@ -1069,7 +1072,9 @@ TEST_CASE("integration-test opposite two nodes")
       case (1):{ s1.process(m,&buf);break;}
     }
   }
-  CHECK_EQ(buf.size(), 2);
+
+  //Nodes responded with JOIN requests
+  CHECK_EQ(buf.size(), 2); // JOIN_US x2
   CHECK_EQ(s0.get_partition().level,0); //<--NOT ++ 
   CHECK_EQ(s1.get_partition().level,0); //<--NOT ++ 
   for (int i=0;i<2;i++){
@@ -1082,10 +1087,22 @@ TEST_CASE("integration-test opposite two nodes")
       case (1):{ s1.process(m,&buf);break;}
     }
   }
-  CHECK_EQ(buf.size(), 2); 
+
+  //Nodes updated graph:
+  CHECK_EQ(s0.get_edge(1)->status, MST);
+  CHECK_EQ(s1.get_edge(0)->status, MST);
+
+  //nodes understand leader implicitly from prior JOIN_US msgs to be max(0,1)=1
+  //... 
   CHECK_EQ(s0.get_leader_id(),1);
+  CHECK_EQ(s1.get_leader_id(),1);
   CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
-  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ also
+
+  //Only one node responded, and it was the leader
+  CHECK_EQ(buf.size(), 1); // SRCH from leader only
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH);
+  CHECK_EQ(buf.front().from , 1);
 
 }
 

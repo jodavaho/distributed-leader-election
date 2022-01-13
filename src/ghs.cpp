@@ -508,36 +508,54 @@ size_t GhsState::process_join_us(  AgentID from, std::vector<size_t> data, std::
     my_part.leader = leader_id;
     my_part.level++;
     if (leader_id == my_id){
+      //In this case, we already sent JOIN_US (since it's an MST link), and if
+      //they have not procssed that, they will soon enough. At that time, they
+      //will see the link to us as MST (after all they sent JOIN_US -- this
+      //msg), AND they will recognize our leader-hood. We advance in faith that
+      //they will march along. 
       return start_round(buf);
+
     } else {
-      //we are initiating the second absorb, so let the other side know by
-      //sending courtsey join msg.
-      buf->push_back( Msg{ Msg::Type::JOIN_US, parent, my_id, data});
-      return 1;
+      //In this case, we already sent JOIN_US (b/c it's an MST link), meaning
+      //this came from THEM. If they rec'd ours first, then they know if they
+      //are leader or not. if not, AND we're not leader, we're at deadlock
+      //until they process our JOIN_US and see the MST link from their JOIN_US
+      //request and recognize their own leader-hood. We wait. 
+      return 0;
     } 
   } else if (edge_to_other_part->status == UNKNOWN) {
       if (in_initiating_partition ){
-        //requeset abosrb to peer's partition just send it, see what they say
-        //(see next one) btw, because we were able to find a MWOE, we know that
-        //their level >= ours. Otherwise, they would not have responded to our
-        //search (see process_in_part)
+        //In this case, we're sending a JOIN_US without hearing from them yet.
+        //We may not be their MWOE, which would make this an "absorb" case.
+        //just send it, see what they say (see next one). btw, because we were
+        //able to find a MWOE, we know that their level >= ours. Otherwise,
+        //they would not have responded to our search (see process_in_part). So
+        //this absorb request is valid and setting their link as MST is OK. 
         set_edge_status(join_peer, MST);
         buf->push_back(Msg{Msg::Type::JOIN_US, join_peer, my_id, data});
         return 1;
       } else {
+
         assert(!in_initiating_partition);
-        if (join_level > my_part.level){ throw std::invalid_argument("We should\
-            never receive a JOIN_US with higher level from a different\
-            partition -- they should not have heard our IN_PART response yet");
-        }  
+
+        //In this case, we received a JOIN_US from another partition, one that
+        //we have not yet recognized or marked as our own MWOE. This means they
+        //are a prime candidate to absorb into our partition. 
         //NOTE, if we were waiting for them, they would not respond until their
         //level is == ours, so this should never fail:
         assert(my_part.level>=join_level);
+
+        //Since we know they are prime absorbtion material, we just do it and
+        //mark them as children. There's one subtlety here: We may have to
+        //revise our search status once they absorb!! That's TODO: test to see
+        //if we adequately handle premature absorb requests. After all, our
+        //MWOE might now be in their subtree. 
         set_edge_status(join_root, MST);
-        //because we aren't in the initiating partition, the other guy already
-        //has us marked MST, so we don't need to do anything.  
-        //-- a leader somewhere else will send the next round start (or perhaps
-        //it will be one of us when we do a merge()
+        
+        //Anyway, because we aren't in the initiating partition, the other guy
+        //already has us marked MST, so we don't need to do anything.  -- a
+        //leader somewhere else will send the next round start (or perhaps it
+        //will be one of us when we do a merge()
         return 0;
       }   
     } else {
