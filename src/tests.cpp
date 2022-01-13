@@ -7,10 +7,6 @@
 #include <fstream>
 
 
-///Problems:
-//TODO: SRCH now contains a partition embedded
-//TODO: NEW_SHERIFF is removed
-
 GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
 {
   GhsState s(my_id);
