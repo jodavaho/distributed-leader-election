@@ -11,4 +11,6 @@ std::string dump_edges(const GhsState<N,A>&) ;
 template <std::size_t N, std::size_t A>
 std::ostream& operator << ( std::ostream&, const GhsState<N,A>&);
 
+#include "ghs_printer_impl.hpp"
+
 #endif

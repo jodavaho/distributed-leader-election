@@ -8,13 +8,6 @@ set(CMAKE_CXX_FLAGS " -Wpedantic  -Wall -Werror ${CMAKE_CXX_FLAGS}")
 
 include_directories(deps/doctest)
 
-add_library(ghs-alg
-  src/ghs.cpp
-  src/msg.cpp
-  src/graph.cpp
-  src/seque.cpp
-)
-
 #add_executable(ghs-score src/ghs-score.cpp) 
 #target_link_libraries(ghs-score ghs-alg )
 
@@ -31,4 +24,3 @@ add_executable(test
   src/graph.cpp 
   src/seque.cpp
 )
-#target_link_libraries(test ghs-alg)

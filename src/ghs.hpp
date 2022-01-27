@@ -189,6 +189,6 @@ class GhsState
 
 };
 
-
+#include "ghs_impl.hpp"
 
 #endif
