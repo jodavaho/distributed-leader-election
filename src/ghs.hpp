@@ -4,8 +4,9 @@
 #include "msg.hpp"
 #include "graph.hpp"
 #include "seque.hpp"
+#include <array>
 
-template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
+template <std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE>
 class GhsState
 {
 
@@ -119,23 +120,23 @@ class GhsState
      * Sends to MST child links only
      * @return number of messages sent
      */
-    size_t mst_broadcast(const MsgType, const MsgData&, StaticQueue<Msg, BUF_SZ> &buf) const noexcept;
+    size_t mst_broadcast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf) const noexcept;
 
     /**
      * Sends to parent MST link only
      * @return number of mssages sent (it had better be 1 or 0 if this is a root)
      */
-    size_t mst_convergecast(const MsgType, const MsgData&, StaticQueue<Msg, BUF_SZ>&buf)const noexcept;
+    size_t mst_convergecast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE>&buf)const noexcept;
 
     /**
      * Filters edges by `msgtype`, and sends outgoing message along those that match.
      * @return number of messages sent
      */
-    size_t typecast(const EdgeStatus status, const MsgType, const MsgData&, StaticQueue<Msg, BUF_SZ> &buf) const noexcept;
+    size_t typecast(const EdgeStatus status, const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf) const noexcept;
 
     //stateful algorithm steps
-    size_t start_round(StaticQueue<Msg, BUF_SZ> &outgoing_msgs) noexcept;
-    size_t process(const Msg &msg, StaticQueue<Msg, BUF_SZ> &outgoing_buffer);
+    size_t start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs) noexcept;
+    size_t process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer);
 
     //reset the algorithm state
     bool reset() noexcept;
@@ -154,21 +155,21 @@ class GhsState
     //each of srch, srch_ret, in_part, ack_part, nack_part are deterministic and straightfoward
     //TODO: This is so ugly in practice, just parent-class the type() data and change these apis
     //TODO: OR just override process() to accept different payloads
-    size_t  process_srch(        AgentID from, const SrchPayload&, StaticQueue<Msg, BUF_SZ>&);
-    size_t  process_srch_ret(    AgentID from, const SrchRetPayload&, StaticQueue<Msg, BUF_SZ>&);
-    size_t  process_in_part(     AgentID from, const InPartPayload&, StaticQueue<Msg, BUF_SZ>&);
-    size_t  process_ack_part(    AgentID from, const AckPartPayload&, StaticQueue<Msg, BUF_SZ>&);
-    size_t  process_nack_part(   AgentID from, const NackPartPayload&, StaticQueue<Msg, BUF_SZ>&);
-    size_t  process_noop( StaticQueue<Msg, BUF_SZ>& );
+    size_t  process_srch(        AgentID from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    size_t  process_srch_ret(    AgentID from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    size_t  process_in_part(     AgentID from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    size_t  process_ack_part(    AgentID from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    size_t  process_nack_part(   AgentID from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    size_t  process_noop( StaticQueue<Msg, MSG_Q_SIZE>& );
     //This does moderate lifting to determine if the search is complete for the
     //current node, and if so, returns the results to our leader
-    size_t  check_search_status( StaticQueue<Msg, BUF_SZ>&);
+    size_t  check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&);
 
     /* Join / Merge / Absorb stage message */
     //join_us does some heavy lifting to determine how partitions should be restructured and joined
-    size_t  process_join_us(     AgentID from, const JoinUsPayload&, StaticQueue<Msg, BUF_SZ>&);
+    size_t  process_join_us(     AgentID from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
     //After a level change, we may have to do some cleanup responses, this will handle that.
-    size_t  check_new_level( StaticQueue<Msg, BUF_SZ>& );
+    size_t  check_new_level( StaticQueue<Msg, MSG_Q_SIZE>& );
 
     bool                     index_of(const AgentID&, size_t& out_idx) const;
     void                     respond_later(const AgentID&, const InPartPayload &m);
@@ -180,12 +181,12 @@ class GhsState
     Level                    my_level;
     bool                     algorithm_converged;
 
-    AgentID                  peers[GHS_MAX_AGENTS];
-    size_t                   n_peers;//peers[i] for i>=n_peers is invalid
-    bool                     waiting_for_response[GHS_MAX_AGENTS];
-    Edge                     outgoing_edges[GHS_MAX_AGENTS];
-    InPartPayload            response_prompt[GHS_MAX_AGENTS];
-    bool                     response_required[GHS_MAX_AGENTS];
+    std::array<AgentID,NUM_AGENTS>        peers;
+    std::size_t                           n_peers;
+    std::array<bool,NUM_AGENTS>           waiting_for_response;
+    std::array<Edge,NUM_AGENTS>           outgoing_edges;
+    std::array<InPartPayload,NUM_AGENTS>  response_prompt;
+    std::array<bool,NUM_AGENTS>           response_required;
 
 };
 
