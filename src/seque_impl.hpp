@@ -1,5 +1,3 @@
-#include <cstdlib>//size_t
-#include "seque.hpp"
 
 template <typename T, std::size_t N>
 StaticQueue<T,N>::StaticQueue():
