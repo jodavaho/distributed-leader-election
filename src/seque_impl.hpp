@@ -49,14 +49,7 @@ QueueRetcode StaticQueue<T,N>::push(const T item){
 
 template <typename T, std::size_t N>
 QueueRetcode StaticQueue<T,N>::front(T &out_item) const {
-  if (is_empty())
-  {
-    return ERR_QUEUE_EMPTY;
-  }
-
-  out_item = circle_buf[idx_front];
-  return OK;
-
+  return at(0,out_item);
 }
 
 template <typename T, std::size_t N>
@@ -86,4 +79,31 @@ QueueRetcode StaticQueue<T,N>::pop(T &out_item){
   }
   r = pop();
   return r;
+}
+
+
+template <typename T, std::size_t N>
+QueueRetcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
+{
+
+  if (size()==0){
+    return ERR_QUEUE_EMPTY;
+  }
+
+  if (idx>N){
+    return ERR_BAD_IDX;
+  }
+
+  if (idx>=size()){
+    return ERR_NO_SUCH_ELEMENT;
+  }
+
+  size_t actual_idx = idx+idx_front;
+  if (actual_idx > N){
+    actual_idx -= N;
+  }
+
+  out_item = circle_buf[actual_idx];
+  return OK;
+
 }
