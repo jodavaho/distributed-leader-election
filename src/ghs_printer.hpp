@@ -5,8 +5,10 @@
 #include <string>
 #include <iostream>
 
-std::string dump_edges(const GhsState&) ;
+template <std::size_t N, std::size_t A>
+std::string dump_edges(const GhsState<N,A>&) ;
 
-std::ostream& operator << ( std::ostream& outs, const GhsState & s);
+template <std::size_t N, std::size_t A>
+std::ostream& operator << ( std::ostream&, const GhsState<N,A>&);
 
 #endif

@@ -8,10 +8,10 @@
 #include "seque.hpp"
 #include <fstream>
 
-
-GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
+template<std::size_t N, std::size_t BUF_SZ>
+GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
 {
-  GhsState s(my_id);
+  GhsState<N,BUF_SZ> s(my_id);
   AgentID id=1;
   for (size_t i=0;i<n_unknown;i++, id++){
     REQUIRE_EQ(1, s.set_edge( {id,0,UNKNOWN, id}));
@@ -56,12 +56,12 @@ GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size
 }
 
 TEST_CASE("unit-test get_state"){
-  auto s = get_state(0,1,1,1,false,false);
+  auto s = get_state<32,32>(0,1,1,1,false,false);
   (void)s;
 }
 
 TEST_CASE("unit-test set_edge_status"){
-  GhsState s(0);
+  GhsState<4,32> s(0);
   CHECK_EQ(1, s.set_edge( {1,0,DELETED, 1}));
   CHECK_EQ(0, s.set_edge( {1,0,UNKNOWN, 1}));
 
@@ -88,8 +88,8 @@ TEST_CASE("unit-test set_edge_status"){
 TEST_CASE("unit-test typecast")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   MsgData d;
   d.srch = SrchPayload{0,0};
   size_t sent = s.typecast(EdgeStatus::UNKNOWN, MsgType::SRCH, d, buf);
@@ -148,8 +148,8 @@ TEST_CASE("unit-test typecast")
 TEST_CASE("unit-test mst_broadcast")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   MsgData pld;
   pld.srch={0,0};
   size_t sent = s.mst_broadcast(MsgType::SRCH, pld,  buf);
@@ -192,8 +192,8 @@ TEST_CASE("unit-test mst_broadcast")
 TEST_CASE("unit-test mst_convergecast")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   size_t sent;
   MsgData pld;
   pld.srch={0,0};
@@ -239,8 +239,8 @@ TEST_CASE("unit-test mst_convergecast")
 
 TEST_CASE("unit-test start_round() on leader, unknown peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,UNKNOWN,1});
   s.set_edge({2, 0,UNKNOWN,1});
@@ -258,8 +258,8 @@ TEST_CASE("unit-test start_round() on leader, unknown peers")
 
 TEST_CASE("unit-test start_round() on leader, mst peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -279,8 +279,8 @@ TEST_CASE("unit-test start_round() on leader, mst peers")
 
 TEST_CASE("unit-test start_round() on leader, discarded peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,DELETED,1});
@@ -290,8 +290,8 @@ TEST_CASE("unit-test start_round() on leader, discarded peers")
 
 TEST_CASE("unit-test start_round() on leader, mixed peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,MST,1});
@@ -321,9 +321,9 @@ TEST_CASE("unit-test start_round() on leader, mixed peers")
 
 TEST_CASE("unit-test start_round() on non-leader")
 {
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   //set id to 0, and 4 total nodes
-  GhsState s(0);
+  GhsState<4,32> s(0);
   //set leader to 1, level to 0 (ignored)
   s.set_leader_id(1);
   s.set_level(0);
@@ -341,9 +341,9 @@ TEST_CASE("unit-test start_round() on non-leader")
 
 TEST_CASE("unit-test process_srch() checks recipient"){
 
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   //set id to 0, and 4 total nodes
-  GhsState s(0);
+  GhsState<4,32> s(0);
   //set leader to 1, level to 0 
   s.set_leader_id(1);
   s.set_level(0);
@@ -362,8 +362,8 @@ TEST_CASE("unit-test process_srch() checks recipient"){
 
 TEST_CASE("unit-test process_srch, unknown peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,UNKNOWN,1});
   s.set_edge({2, 0,UNKNOWN,1});
@@ -381,8 +381,8 @@ TEST_CASE("unit-test process_srch, unknown peers")
 
 TEST_CASE("unit-test process_srch,  mst peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -406,8 +406,8 @@ TEST_CASE("unit-test process_srch,  mst peers")
 
 TEST_CASE("unit-test process_srch, discarded peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,DELETED,1});
@@ -420,8 +420,8 @@ TEST_CASE("unit-test process_srch, discarded peers")
 
 TEST_CASE("unit-test process_srch, mixed peers")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,MST,1});
@@ -453,8 +453,8 @@ TEST_CASE("unit-test process_srch, mixed peers")
 
 TEST_CASE("unit-test process_srch, mixed peers, with parent link")
 {
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   s.set_leader_id(3);
   s.set_level(0);
   REQUIRE_EQ(buf.size(),0);
@@ -505,8 +505,8 @@ TEST_CASE("unit-test ghs_worst_possible_edge()")
 TEST_CASE("unit-test process_srch_ret throws when not waiting")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   Msg m = SrchRetPayload{}.to_msg(0,1);
   CHECK_THROWS_AS(s.process( m, buf), const std::invalid_argument&);
 }
@@ -514,8 +514,8 @@ TEST_CASE("unit-test process_srch_ret throws when not waiting")
 TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
 
@@ -558,8 +558,8 @@ TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
 TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
   s.set_leader_id(0);
@@ -605,8 +605,8 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 {
 
-  StaticQueue<Msg> buf;
-  GhsState s(0);
+  StaticQueue<Msg,32> buf;
+  GhsState<4,32> s(0);
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -647,8 +647,8 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 }
 
 TEST_CASE("unit-test process_ack_part, happy-path"){
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
   Edge e;
 
   //create edge to 1
@@ -673,8 +673,8 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
 }
 
 TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
 
   //create edge to 1
   int r;
@@ -694,8 +694,8 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
 }
 
 TEST_CASE("unit-test process_ack_part, no edge"){
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
   Edge e;
 
   //create edge to 1
@@ -714,8 +714,8 @@ TEST_CASE("unit-test process_ack_part, no edge"){
 }
 
 TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
   Edge e;
 
   //create edge to 1
@@ -739,8 +739,8 @@ TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
 }
 
 TEST_CASE("unit-test in_part, happy-path"){
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
   //set partition to led by agent 0 with level 2
   s.set_leader_id(0);
   s.set_level(2);
@@ -777,8 +777,8 @@ TEST_CASE("unit-test in_part, happy-path"){
 
 TEST_CASE("unit-test process_nack_part, happy-path"){
 
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
   Msg m;
 
   CHECK_NOTHROW(s.set_edge({1,0,UNKNOWN,10}));
@@ -827,8 +827,8 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
 
 TEST_CASE("unit-test process_nack_part, not-leader"){
 
-  GhsState s(0);
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
   Msg m;
 
   //add two outgoing unkonwn edges
@@ -891,14 +891,14 @@ TEST_CASE("unit-test join_us nodes pass")
 
   //JOIN us emits new_sheriff messages, cleverly designed. 
   //2(root) -> 0 -> 1
-  auto s = get_state(0,0,0,2,false,false);
+  auto s = get_state<4,32>(0,0,0,2,false,false);
   //create a join_us that doesn't involve node or any neighbors
   //note: it's { {edge}, {partition} }
   //aka        {root, peer, leader, level}
   Msg m;
   m = JoinUsPayload{4,5,5,0}.to_msg(0,2);
   
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
   CHECK_THROWS(s.process(m,buf));
@@ -918,7 +918,7 @@ TEST_CASE("unit-test join_us root relays to peer")
 {
   //JOIN us emits new_sheriff messages, cleverly designed. 
   //2(root) -> 0 <-> 1 <- some other root
-  auto s = get_state(0,1,0,1,false,false);
+  auto s = get_state<3,32>(0,1,0,1,false,false);
   //create a join_us that involves me as root
   //this means I'm in_initiating_partition
   //note: it's { {edge}, {partition} }
@@ -931,7 +931,7 @@ TEST_CASE("unit-test join_us root relays to peer")
   e=s.get_edge(2);
   REQUIRE_EQ(e.status, MST);
   Msg m = JoinUsPayload{1,0,2,0}.to_msg(0,2);
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
   CHECK_NOTHROW(s.process(m,buf));
@@ -959,7 +959,7 @@ TEST_CASE("unit-test join_us root relays to peer")
 
 TEST_CASE("unit-test join_us response to higher level")
 {
-  auto s = get_state(0,1,1,1,false,false);
+  auto s = get_state<4,32>(0,1,1,1,false,false);
   //0 is me
   //1 is unknown
   //2 is deleted
@@ -969,7 +969,7 @@ TEST_CASE("unit-test join_us response to higher level")
   s.set_leader_id(3);
   s.set_level(0);
   Msg m = JoinUsPayload{0,1,1,1}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   //error: we shoudl never receive a join_ from a partition with higher level!
   CHECK_THROWS_AS(s.process(m,buf), std::invalid_argument);
   s.set_leader_id(3);
@@ -981,7 +981,7 @@ TEST_CASE("unit-test join_us response to higher level")
 
 TEST_CASE("unit-test join_us response to MST edge")
 {
-  auto s = get_state(0,1,1,1,false,false);
+  auto s = get_state<4,32>(0,1,1,1,false,false);
   //0 is me
   //1 is unknown
   //2 is deleted
@@ -992,7 +992,7 @@ TEST_CASE("unit-test join_us response to MST edge")
   s.set_level(0);
   s.set_edge_status(1,MST); //previous one-way join (see prior test case)
   Msg m = JoinUsPayload{0,1,1,0}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   CHECK_NOTHROW(s.process(m,buf));
   CHECK_EQ(buf.size(),0);//No action: we are 0, JOIN_US was from new_leader.
   Edge e=s.get_edge(1);
@@ -1003,7 +1003,7 @@ TEST_CASE("unit-test join_us response to MST edge")
 
 TEST_CASE("unit-test join_us merge")
 {
-  auto s = get_state(0,1,1,1,false,false);
+  auto s = get_state<4,32>(0,1,1,1,false,false);
   //0 is me
   //1 is unknown
   //2 is deleted
@@ -1012,7 +1012,7 @@ TEST_CASE("unit-test join_us merge")
   //and we should trigger an obsorb of 1's partition.
   s.set_leader_id(3);
   s.set_level(0);
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   Msg m;
 
   //FIRST, 0 gets the message that the edge 0-1 is the MWOE from partition with leader 3.
@@ -1039,7 +1039,7 @@ TEST_CASE("unit-test join_us merge")
 TEST_CASE("unit-test join_us merge leader-side")
 {
   //essentially the other side of above test
-  GhsState s(1);
+  GhsState<4,32> s(1);
   //0 is unknown
   //1 is me
   //3 is my leader (not same as 3 above)
@@ -1049,7 +1049,7 @@ TEST_CASE("unit-test join_us merge leader-side")
   s.set_edge({0,1,UNKNOWN,1});
   s.set_parent_id(3);
   CHECK_EQ(s.get_parent_id(),3); 
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   Msg m;
 
   //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 2.
@@ -1102,9 +1102,9 @@ TEST_CASE("unit-test join_us merge leader-side")
 
 TEST_CASE("integration-test two nodes")
 {
-  GhsState s0(0); s0.add_edge(Edge{1,0,UNKNOWN,1});
-  GhsState s1(1); s1.add_edge(Edge{0,1,UNKNOWN,2});
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s0(0); s0.add_edge(Edge{1,0,UNKNOWN,1});
+  GhsState<4,32> s1(1); s1.add_edge(Edge{0,1,UNKNOWN,2});
+  StaticQueue<Msg,32> buf;
   //let's turn the crank and see what happens
   s0.start_round(buf);
   s1.start_round(buf);
@@ -1153,9 +1153,9 @@ TEST_CASE("integration-test two nodes")
 
 TEST_CASE("integration-test opposite two nodes")
 {
-  GhsState s0(0); s0.add_edge({1,0,UNKNOWN,1});
-  GhsState s1(1); s1.add_edge({0,1,UNKNOWN,2});
-  StaticQueue<Msg> buf;
+  GhsState<4,32> s0(0); s0.add_edge({1,0,UNKNOWN,1});
+  GhsState<4,32> s1(1); s1.add_edge({0,1,UNKNOWN,2});
+  StaticQueue<Msg,32> buf;
   //let's turn the crank and see what happens
   //
 
@@ -1229,7 +1229,7 @@ TEST_CASE("sim-test 3 node frenzy")
 
   std::ofstream f("sim-test-3-node-frenzy.msg");
 
-  GhsState states[3]={
+  GhsState<4,32> states[3]={
     {0},{1},{2}
   };
   for (size_t i=0;i<3;i++){
@@ -1241,7 +1241,7 @@ TEST_CASE("sim-test 3 node frenzy")
       }
     }
   }
-  StaticQueue<Msg> buf;
+  StaticQueue<Msg,32> buf;
   for (int i=0;i<3;i++){
     states[i].start_round(buf);
   }
@@ -1251,7 +1251,7 @@ TEST_CASE("sim-test 3 node frenzy")
   //
   while(buf.size()>0 && msg_count++ < msg_limit){
     Msg m; buf.pop(m);
-    StaticQueue<Msg> added;
+    StaticQueue<Msg,32> added;
 
     f << "f: "<<states[m.from]<<std::endl;
     f << "t: "<<states[m.to]<<std::endl;

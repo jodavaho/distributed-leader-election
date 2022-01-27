@@ -10,16 +10,19 @@
 
 using std::max;
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsState::GhsState(AgentID my_id) noexcept{
   this->my_id =  my_id;
   reset();
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsState::~GhsState(){}
 
 /**
  * Reset the algorithm status completely
  */
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState::reset() noexcept{
   set_leader_id(my_id);
   set_level(0);
@@ -44,6 +47,7 @@ bool GhsState::reset() noexcept{
  * Queue up the start of the round
  *
  */
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::start_round(StaticQueue<Msg> &outgoing_buffer) noexcept{
   //If I'm leader, then I need to start the process. Otherwise wait
   if (my_leader == my_id){
@@ -53,10 +57,12 @@ size_t GhsState::start_round(StaticQueue<Msg> &outgoing_buffer) noexcept{
   return 0;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 Edge GhsState::mwoe() const noexcept{
   return best_edge;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process(const Msg &msg, StaticQueue<Msg> &outgoing_buffer){
   if (msg.from == my_id ){
     throw std::invalid_argument("Got a message from ourselves");
@@ -79,6 +85,7 @@ size_t GhsState::process(const Msg &msg, StaticQueue<Msg> &outgoing_buffer){
   return true;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_srch(  AgentID from, const SrchPayload& data, StaticQueue<Msg>&buf)
 {
   //we either sent to ourselves, OR we should have an edge to them
@@ -143,6 +150,7 @@ size_t GhsState::process_srch(  AgentID from, const SrchPayload& data, StaticQue
   return srch_sent + part_sent + check_new_level(buf);
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_srch_ret(  AgentID from, const SrchRetPayload &data, StaticQueue<Msg>&buf)
 {
 
@@ -176,6 +184,7 @@ size_t GhsState::process_srch_ret(  AgentID from, const SrchRetPayload &data, St
   return check_search_status(buf);
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_in_part(  AgentID from, const InPartPayload& data, StaticQueue<Msg>&buf)
 {
   //let them know if we're in their partition or not. Easy.
@@ -210,6 +219,7 @@ size_t GhsState::process_in_part(  AgentID from, const InPartPayload& data, Stat
   }
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_ack_part(  AgentID from, const AckPartPayload& data, StaticQueue<Msg>&buf)
 {
   //we now know that the sender is in our partition. Mark their edge as deleted
@@ -222,6 +232,7 @@ size_t GhsState::process_ack_part(  AgentID from, const AckPartPayload& data, St
   return check_search_status(buf);
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_nack_part(  AgentID from, const NackPartPayload &data, StaticQueue<Msg>&buf)
 {
   //we now know that the sender is in our partition. Mark their edge as deleted
@@ -240,6 +251,7 @@ size_t GhsState::process_nack_part(  AgentID from, const NackPartPayload &data, 
   return check_search_status(buf);
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::check_search_status(StaticQueue<Msg> &buf){
   
   if (waiting_count() == 0)
@@ -279,6 +291,7 @@ size_t GhsState::check_search_status(StaticQueue<Msg> &buf){
 }
 
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::check_new_level( StaticQueue<Msg> &buf){
 
   size_t ret=0;
@@ -300,6 +313,7 @@ size_t GhsState::check_new_level( StaticQueue<Msg> &buf){
 }
 
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_join_us(  AgentID from, const JoinUsPayload &data, StaticQueue<Msg>&buf)
 {
 
@@ -422,11 +436,13 @@ size_t GhsState::process_join_us(  AgentID from, const JoinUsPayload &data, Stat
   return 0;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::process_noop(StaticQueue<Msg> &buf){
   algorithm_converged=true;
   return mst_broadcast(MsgType::NOOP, {},buf);
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::typecast(const EdgeStatus status, const MsgType m, const MsgData &data, StaticQueue<Msg> &buf)const noexcept{
   size_t sent=0;
   for (size_t idx=0;idx<n_peers;idx++){
@@ -446,6 +462,7 @@ size_t GhsState::typecast(const EdgeStatus status, const MsgType m, const MsgDat
 }
 
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::mst_broadcast(const MsgType m, const MsgData &data, StaticQueue<Msg> &buf)const noexcept{
   size_t sent =0;
   for (size_t idx =0;idx<n_peers;idx++){
@@ -464,6 +481,7 @@ size_t GhsState::mst_broadcast(const MsgType m, const MsgData &data, StaticQueue
   return sent;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::mst_convergecast(const MsgType m, const MsgData& data, StaticQueue<Msg> &buf)const noexcept{
   size_t sent(0);
   for (size_t idx =0;idx<n_peers;idx++){
@@ -483,6 +501,7 @@ size_t GhsState::mst_convergecast(const MsgType m, const MsgData& data, StaticQu
 }
 
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::set_parent_id(const AgentID& id){
 
   //case 1: self-loop ok
@@ -497,30 +516,39 @@ void GhsState::set_parent_id(const AgentID& id){
   parent = id; 
 
 }
+
+
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 AgentID GhsState::get_parent_id() const noexcept{
   return parent;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 AgentID GhsState::get_leader_id() const noexcept{
   return my_leader;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::set_leader_id(const AgentID& leader){
   my_leader = leader;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 AgentID GhsState::get_level() const noexcept{
   return my_level;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::set_level(const Level & l){
   my_level = l;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState::is_converged() const noexcept{
   return algorithm_converged;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState::index_of(const AgentID& who, size_t &idx) const{
   for (size_t i=0;i<n_peers;i++){
     if (peers[i] == who){
@@ -531,18 +559,21 @@ bool GhsState::index_of(const AgentID& who, size_t &idx) const{
   return false;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::set_waiting_for(const AgentID &who, bool waiting){
   size_t idx=0;
   assert (index_of(who,idx) && "Could not find peer: "+who);
   waiting_for_response[idx]=waiting;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState::is_waiting_for(const AgentID& who){
   size_t idx=0;
   assert (index_of(who,idx) && "Could not find peer: "+who);
   return waiting_for_response[idx];
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::set_response_required(const AgentID &who, bool resp)
 {
   size_t idx=0;
@@ -550,29 +581,34 @@ void GhsState::set_response_required(const AgentID &who, bool resp)
   response_required[idx]=resp;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState::is_response_required(const AgentID &who){
   size_t idx=0;
   assert (index_of(who,idx) && "Could not find peer: "+who);
   return response_required[idx];
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::set_response_prompt(const AgentID &who, const InPartPayload& m){
   size_t idx=0;
   assert (index_of(who,idx) && "Could not find peer: "+who);
   response_prompt[idx]=m;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 InPartPayload GhsState:: get_response_prompt(const AgentID &who){
   size_t idx=0;
   assert (index_of(who,idx) && "Could not find peer: "+who);
   return response_prompt[idx];
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState::has_edge(const AgentID& to) const{
   size_t idx=0;
   return index_of(to,idx);
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 Edge GhsState::get_edge(const AgentID& to)  const
 {
   size_t idx=0;
@@ -580,6 +616,7 @@ Edge GhsState::get_edge(const AgentID& to)  const
   return outgoing_edges[idx];
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 
 void GhsState::set_edge_status(const AgentID &to, const EdgeStatus &status)
 {
@@ -588,6 +625,7 @@ void GhsState::set_edge_status(const AgentID &to, const EdgeStatus &status)
   outgoing_edges[idx].status=status;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::set_edge(const Edge &e) {
 
   if (e.root != my_id){
@@ -610,6 +648,7 @@ size_t GhsState::set_edge(const Edge &e) {
   }
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::waiting_count() const noexcept
 {
   size_t waiting =0;
@@ -622,6 +661,7 @@ size_t GhsState::waiting_count() const noexcept
   return waiting;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState::delayed_count() const noexcept
 {
   size_t delayed =0;
@@ -633,10 +673,12 @@ size_t GhsState::delayed_count() const noexcept
   return delayed;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 AgentID GhsState::get_id() const noexcept {
   return my_id;
 }
 
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState::respond_later(const AgentID&from, const InPartPayload &m)
 {
   size_t idx;
