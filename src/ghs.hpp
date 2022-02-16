@@ -53,6 +53,7 @@ typedef struct {
 
 class GhsState
 {
+
   public:
 
     /**
@@ -73,6 +74,7 @@ class GhsState
      * @throws invalid_argument if you attempt to add an edge
      * that is rooted on another node. 
      *
+     * This method is basically @deprecated
      *
      * @Return: 0 if edge updated. 1 if it was inserted (it's new)
      */
@@ -117,6 +119,16 @@ class GhsState
      */
     AgentID get_parent_id() const noexcept;
 
+    /**
+     * Returns whatever I believe my leader is
+     */
+    AgentID get_leader_id() const noexcept;
+
+    /**
+     * Returns whatever I believe this partition's level is
+     */
+    AgentID get_level() const noexcept;
+
     /** 
      *
      * You must set an edge as MST using set_edge, BEFORE you call this method to
@@ -133,6 +145,7 @@ class GhsState
     //getters
     size_t waiting_count() const noexcept;
     size_t delayed_count() const noexcept;
+    std::string  dump_edges()const noexcept;
 
     Edge mwoe() const noexcept;
 
@@ -162,6 +175,9 @@ class GhsState
     //reset the algorithm state
     bool reset() noexcept;
 
+    //Get the algorithm state
+    bool is_converged() const noexcept;
+
   private:
 
     /* Search stage messages */
@@ -171,6 +187,7 @@ class GhsState
     size_t  process_in_part(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_ack_part(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     size_t  process_nack_part(   AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    size_t  process_noop( std::deque<Msg>* );
     //This does moderate lifting to determine if the search is complete for the
     //current node, and if so, returns the results to our leader
     size_t  check_search_status( std::deque<Msg>*);
@@ -178,16 +195,13 @@ class GhsState
     /* Join / Merge / Absorb stage message */
     //join_us does some heavy lifting to determine how partitions should be restructured and joined
     size_t  process_join_us(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_join_ok(     AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    //new_sheriff is the msg that initiates a restructure, and is completely deterministic
-    size_t  process_new_sheriff( AgentID from, std::vector<size_t> data, std::deque<Msg>*);
     //After a level change, we may have to do some cleanup responses, this will handle that.
     size_t  check_new_level( std::deque<Msg>* );
 
     /* Leader election messages */
     //these are kept here for completeness, but are only required 
-    size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
-    size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //size_t  process_election(    AgentID from, std::vector<size_t> data, std::deque<Msg>*);
+    //size_t  process_not_it(      AgentID from, std::vector<size_t> data, std::deque<Msg>*);
 
 
 
@@ -198,8 +212,11 @@ class GhsState
     std::vector<Edge>            outgoing_edges;
     std::vector<Msg>             respond_later;
     Edge                         best_edge;
-    Partition                    best_partition;
+    bool                         algorithm_converged;
 
 };
+
+
+std::ostream& operator << ( std::ostream& outs, const GhsState & s);
 
 #endif

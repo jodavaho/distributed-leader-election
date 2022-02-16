@@ -2,6 +2,7 @@
 
 std::string to_string(const Msg::Type &type){
 	switch (type){
+		case Msg::Type::NOOP:{return "NOOP";}
 		case Msg::Type::SRCH:{return "SRCH";}
 		case Msg::Type::SRCH_RET:{return "SRCH_RET";}
 		case Msg::Type::IN_PART:{return "IN_PART";}
@@ -11,7 +12,6 @@ std::string to_string(const Msg::Type &type){
 		case Msg::Type::JOIN_OK:{return "JOIN_OK";}
 		case Msg::Type::ELECTION:{return "ELECTION";}
 		case Msg::Type::NOT_IT:{return "NOT_IT";}
-		case Msg::Type::NEW_SHERIFF:{return "NEW_SHERIFF";}
 		default: {return "??";};
 	}
 }
