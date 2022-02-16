@@ -46,7 +46,31 @@ class GhsState
      *
      */
     void add_edge_to(const AgentID &to);
+
+    /**
+     * Returns the Edge, but only if has_edge(to) would return true.
+     *
+     * Otherwise, will assert
+     */
     Edge get_edge(const AgentID& to) const;
+
+    /**
+     * Returns true if any of the following will work:
+     *
+     * get_edge(to)
+     * set_edge_status(to, ... )
+     * get_edge_status(to)
+     * set_edge_meteric(to, ... )
+     * get_edge_metric(to)
+     * set_response_required(to, ... )
+     * is_response_required(to)
+     * set_response_prompt(to, ... ) 
+     * get_response_prompt(to)
+     *
+     * If it returns false, all fo them will fail:
+     * - For now, with either assert( has_edge(to) ), or std::invalid_argument
+     * - Eventually, with only assert( has_edge(to) )
+     */
     bool has_edge( const AgentID &to) const;
 
 
@@ -144,9 +168,12 @@ class GhsState
     //Get the algorithm state
     bool is_converged() const noexcept;
 
-    size_t get_n_peers()const {
-      return n_peers;
-    }
+    /**
+     *
+     * Returns the number of peers, which is a counter that is incremented
+     * every time you add_edge_to(id) (or variant), with a new id. 
+     */
+    size_t get_n_peers()const { return n_peers; }
 
 
   private:
