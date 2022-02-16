@@ -9,8 +9,6 @@
 #include <math.h>
 #include <unordered_map>
 
-#include "comms.hpp"
-
 #define MAX_AGENTS 1024
 using std::cerr;
 using std::cerr;
@@ -41,8 +39,6 @@ std::ostream& operator<<(std::ostream& s, const Edge& e){
  */
 int main(int argc, char *argv[]) 
 {
-	Comms comms;
-	comms.set_logfile("ghs.msgs");
 
 	srand(99);
 	size_t num_agents = 0;
@@ -103,7 +99,7 @@ int main(int argc, char *argv[])
 
   for (int round=0;round<10;round++){
 	
-		cerr << "Round "<<round<<" done, " << comms.bytes_sent()<< " bytes sent with "<<comms.msgs_sent()<<" msgs"<<endl;
+		//cerr << "Round "<<round<<" done, " << comms.bytes_sent()<< " bytes sent with "<<comms.msgs_sent()<<" msgs"<<endl;
 
 		cerr << "Leaders"<<endl;
 		for (size_t i=0;i< num_agents;i++){

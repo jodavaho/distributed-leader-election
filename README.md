@@ -2,6 +2,8 @@
 
 NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021
 
+Should eventually be compliant with [this c++ style guide](https://cadregitlab.jpl.nasa.gov/cadre/cadre-gnc-docs/-/blob/main/cpp_guidelines/cpp_guidelines.pdf)
+
 
 # Building
 
