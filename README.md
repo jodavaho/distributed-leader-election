@@ -1,5 +1,8 @@
 # Leader Election
 
+NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021
+
+
 # Building
 
 I use cmake.

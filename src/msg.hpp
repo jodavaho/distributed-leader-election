@@ -25,7 +25,6 @@ typedef struct
 		JOIN_US,
 		ELECTION,
 		NOT_IT,
-		NEW_SHERIFF
 	} type;
 	size_t to, from;
 	std::vector<size_t> data;
