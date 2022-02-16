@@ -4,6 +4,8 @@
 #include "msg.hpp"
 #include <deque>
 #include <optional>
+#include <fstream>
+
 
 GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
 {
@@ -45,11 +47,11 @@ GhsState get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_deleted=0, size
   return s;
 }
 
-TEST_CASE("test get_state"){
+TEST_CASE("unit-test get_state"){
   auto s = get_state(0,1,1,1,false,false);
 }
 
-TEST_CASE("test set_edge_status"){
+TEST_CASE("unit-test set_edge_status"){
   GhsState s(0);
   CHECK_EQ(1, s.set_edge( {1,0,DELETED, 1}));
   CHECK_EQ(0, s.set_edge( {1,0,UNKNOWN, 1}));
@@ -75,12 +77,12 @@ TEST_CASE("test set_edge_status"){
   CHECK_THROWS_AS( s.set_edge_status(2,MST), std::invalid_argument & );
 }
 
-TEST_CASE("test typecast")
+TEST_CASE("unit-test typecast")
 {
 
   std::deque<Msg> buf;
   GhsState s(0);
-  size_t sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
+  size_t sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -88,7 +90,7 @@ TEST_CASE("test typecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({1,0,EdgeStatus::UNKNOWN,1});
-  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
+  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {0,0}, &buf);
   //got one
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -102,7 +104,7 @@ TEST_CASE("test typecast")
   //add edge to node 2 of wrong type
   s.set_parent_edge({2,0,EdgeStatus::MST,1});
   //look for unknown
-  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {}, &buf);
+  sent = s.typecast(EdgeStatus::UNKNOWN, Msg::Type::SRCH, {0,0}, &buf);
   //only one still, right?
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -113,7 +115,7 @@ TEST_CASE("test typecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({3,0,EdgeStatus::MST,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //Now got one here too
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -123,12 +125,12 @@ TEST_CASE("test typecast")
 
 }
 
-TEST_CASE("test mst_broadcast")
+TEST_CASE("unit-test mst_broadcast")
 {
 
   std::deque<Msg> buf;
   GhsState s(0);
-  size_t sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  size_t sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -136,20 +138,20 @@ TEST_CASE("test mst_broadcast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({1,0,EdgeStatus::UNKNOWN,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to, still
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
   s.set_edge({2,0,EdgeStatus::MST,1});
   s.set_parent_edge({2,0,EdgeStatus::MST,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to, still, right!?
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
   s.set_edge({3,0,EdgeStatus::MST,1});
-  sent = s.mst_broadcast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_broadcast(Msg::Type::SRCH, {0,0}, &buf);
   //Now got one
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -159,13 +161,13 @@ TEST_CASE("test mst_broadcast")
 
 }
 
-TEST_CASE("test mst_convergecast")
+TEST_CASE("unit-test mst_convergecast")
 {
 
   std::deque<Msg> buf;
   GhsState s(0);
   size_t sent;
-  sent =   s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent =   s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -173,7 +175,7 @@ TEST_CASE("test mst_convergecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({1,0,EdgeStatus::UNKNOWN,1});
-  sent = s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //nobody to send to, still
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -181,7 +183,7 @@ TEST_CASE("test mst_convergecast")
   while (buf.size()>0){ buf.pop_front(); }
 
   s.set_edge({2,0,EdgeStatus::MST,1});
-  sent = s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //Still can't send to children MST
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -190,7 +192,7 @@ TEST_CASE("test mst_convergecast")
 
   s.set_edge({3,0,EdgeStatus::MST,1});
   s.set_parent_edge({3,0,EdgeStatus::MST,1});
-  sent = s.mst_convergecast(Msg::Type::SRCH, {}, &buf);
+  sent = s.mst_convergecast(Msg::Type::SRCH, {0,0}, &buf);
   //Only to parents!
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
@@ -200,14 +202,14 @@ TEST_CASE("test mst_convergecast")
 
 }
 
-TEST_CASE("test start_round() on leader, unknown peers")
+TEST_CASE("unit-test start_round() on leader, unknown peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
   REQUIRE_EQ(buf.size(),0);
   s.set_edge({1, 0,UNKNOWN,1});
   s.set_edge({2, 0,UNKNOWN,1});
-  s.start_round(&buf);
+  CHECK_NOTHROW(s.start_round(&buf));
   CHECK_EQ(buf.size(),2);
   while(buf.size()>0){ 
     auto m = buf.front();
@@ -216,7 +218,7 @@ TEST_CASE("test start_round() on leader, unknown peers")
   }
 }
 
-TEST_CASE("test start_round() on leader, mst peers")
+TEST_CASE("unit-test start_round() on leader, mst peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -235,7 +237,7 @@ TEST_CASE("test start_round() on leader, mst peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test start_round() on leader, discarded peers")
+TEST_CASE("unit-test start_round() on leader, discarded peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -246,7 +248,7 @@ TEST_CASE("test start_round() on leader, discarded peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test start_round() on leader, mixed peers")
+TEST_CASE("unit-test start_round() on leader, mixed peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -273,7 +275,7 @@ TEST_CASE("test start_round() on leader, mixed peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test start_round() on non-leader")
+TEST_CASE("unit-test start_round() on non-leader")
 {
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
@@ -292,23 +294,24 @@ TEST_CASE("test start_round() on non-leader")
 
 }
 
-TEST_CASE("test process_srch() checks recipient"){
+TEST_CASE("unit-test process_srch() checks recipient"){
 
   std::deque<Msg> buf;
   //set id to 0, and 4 total nodes
   GhsState s(0);
   //set leader to 1, level to 0 
   s.set_partition({1,0});
+  s.set_edge({1,0,MST,1});
   //from rando
-  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,2,{}}, &buf), const std::invalid_argument&);
+  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,2,{1,0}}, &buf), const std::invalid_argument&);
   //from leader is ok
-  CHECK_NOTHROW(s.process( Msg{Msg::Type::SRCH,0,1,{}}, &buf));
+  CHECK_NOTHROW(s.process( Msg{Msg::Type::SRCH,0,1,{1,0}}, &buf));
   //from self not allowed
-  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,0,{}}, &buf), const std::invalid_argument&);
+  CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH,0,0,{1,0}}, &buf), const std::invalid_argument&);
     
 }
 
-TEST_CASE("test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
+TEST_CASE("unit-test process_srch, unknown peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -324,7 +327,7 @@ TEST_CASE("test process({Msg::Type::SRCH,0,1,{}},), unknown peers")
   }
 }
 
-TEST_CASE("test process_srch,  mst peers")
+TEST_CASE("unit-test process_srch,  mst peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -333,7 +336,7 @@ TEST_CASE("test process_srch,  mst peers")
   s.set_edge({2, 0,MST,1});
   s.set_edge({3, 0,MST,1});
   s.set_parent_edge({3,0,MST,1});
-  s.process({Msg::Type::SRCH,0,3,{}},&buf);
+  s.process({Msg::Type::SRCH,0,3,{3,0}},&buf);
 
   CHECK_EQ(buf.size(),2);
   auto m = buf.front();
@@ -345,7 +348,7 @@ TEST_CASE("test process_srch,  mst peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test process_srch, discarded peers")
+TEST_CASE("unit-test process_srch, discarded peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -354,11 +357,11 @@ TEST_CASE("test process_srch, discarded peers")
   s.set_edge({2, 0,DELETED,1});
   s.set_edge({3, 0,MST,1});
   s.set_parent_edge({3,0,MST,1});
-  s.process({Msg::Type::SRCH,0,3,{}},&buf);
+  s.process({Msg::Type::SRCH,0,3,{3,0}},&buf);
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test process_srch, mixed peers")
+TEST_CASE("unit-test process_srch, mixed peers")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -368,7 +371,7 @@ TEST_CASE("test process_srch, mixed peers")
   s.set_edge({3, 0,UNKNOWN,1});
   s.set_edge({4, 0,MST,1});
   s.set_parent_edge({4,0,MST,1});
-  s.process({Msg::Type::SRCH,0,4,{}},&buf);
+  s.process({Msg::Type::SRCH,0,4,{4,0}},&buf);
 
   CHECK_EQ(buf.size(),2);
 
@@ -387,7 +390,7 @@ TEST_CASE("test process_srch, mixed peers")
   CHECK_EQ(buf.size(),0);
 }
 
-TEST_CASE("test process_srch, mixed peers, with parent link")
+TEST_CASE("unit-test process_srch, mixed peers, with parent link")
 {
   std::deque<Msg> buf;
   GhsState s(0);
@@ -397,7 +400,7 @@ TEST_CASE("test process_srch, mixed peers, with parent link")
   s.set_edge({2, 0,MST,1});
   s.set_edge({3, 0,MST,1});
   s.set_parent_edge( {3,0,MST,1} );
-  CHECK_NOTHROW(s.process({Msg::Type::SRCH,0,3,{}},&buf));
+  CHECK_NOTHROW(s.process({Msg::Type::SRCH,0,3,{3,0}},&buf));
 
   CHECK_EQ(buf.size(),1);
 
@@ -409,7 +412,7 @@ TEST_CASE("test process_srch, mixed peers, with parent link")
 
   CHECK_EQ(buf.size(),0);
   //now from non-parent
-  CHECK_THROWS_AS(s.process({Msg::Type::SRCH,0,2,{}},&buf), const std::invalid_argument&);
+  CHECK_THROWS_AS(s.process({Msg::Type::SRCH,0,2,{0,0}},&buf), const std::invalid_argument&);
 }
 
 TEST_CASE("Guard against Edge refactoring"){
@@ -430,7 +433,7 @@ TEST_CASE("Guard against Msg refactoring"){
 
 }
 
-TEST_CASE("test ghs_worst_possible_edge()")
+TEST_CASE("unit-test ghs_worst_possible_edge()")
 {
   Edge edge = ghs_worst_possible_edge();
   CHECK(edge.peer == -1);
@@ -444,7 +447,7 @@ TEST_CASE("test ghs_worst_possible_edge()")
   CHECK_EQ(y.metric_val, std::numeric_limits<size_t>::max());
 }
 
-TEST_CASE("test process_srch_ret throws when not waiting")
+TEST_CASE("unit-test process_srch_ret throws when not waiting")
 {
 
   std::deque<Msg> buf;
@@ -452,7 +455,7 @@ TEST_CASE("test process_srch_ret throws when not waiting")
   CHECK_THROWS_AS(s.process( Msg{Msg::Type::SRCH_RET,0,1,{}}, &buf), const std::invalid_argument&);
 }
 
-TEST_CASE("test process_srch_ret, one peer, no edge found ")
+TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
 {
 
   std::deque<Msg> buf;
@@ -487,7 +490,7 @@ TEST_CASE("test process_srch_ret, one peer, no edge found ")
 
 }
 
-TEST_CASE("test process_srch_ret, one peer, edge found ")
+TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 {
 
   std::deque<Msg> buf;
@@ -527,7 +530,7 @@ TEST_CASE("test process_srch_ret, one peer, edge found ")
 
 }
 
-TEST_CASE("test process_srch_ret, one peer, not leader")
+TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 {
 
   std::deque<Msg> buf;
@@ -539,7 +542,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
   s.set_partition( {1,0} );
 
   //start it by getting a search from leader to node 0
-  s.process({ Msg::Type::SRCH,0,1,{}  }, &buf);
+  s.process({ Msg::Type::SRCH,0,1,{1,0}  }, &buf);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
   CHECK_EQ(s.mwoe().metric_val, std::numeric_limits<size_t>::max());
@@ -565,7 +568,7 @@ TEST_CASE("test process_srch_ret, one peer, not leader")
 
 }
 
-TEST_CASE("test process_ack_part, happy-path"){
+TEST_CASE("unit-test process_ack_part, happy-path"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -593,7 +596,7 @@ TEST_CASE("test process_ack_part, happy-path"){
   CHECK_EQ(e->status, DELETED);
 }
 
-TEST_CASE("test process_ack_part, not waiting for anyone"){
+TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -618,7 +621,7 @@ TEST_CASE("test process_ack_part, not waiting for anyone"){
   CHECK_EQ(e->status, UNKNOWN); //<--unmodified!
 }
 
-TEST_CASE("test process_ack_part, no edge"){
+TEST_CASE("unit-test process_ack_part, no edge"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -638,7 +641,7 @@ TEST_CASE("test process_ack_part, no edge"){
   CHECK(!e);
 }
 
-TEST_CASE("test process_ack_part, waiting, but not for sender"){
+TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -664,7 +667,7 @@ TEST_CASE("test process_ack_part, waiting, but not for sender"){
   CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument&);
 }
 
-TEST_CASE("test in_part, happy-path"){
+TEST_CASE("unit-test in_part, happy-path"){
   GhsState s(0);
   std::deque<Msg> buf;
   std::optional<Edge> e;
@@ -694,7 +697,7 @@ TEST_CASE("test in_part, happy-path"){
   CHECK_EQ(s.delayed_count(),1);
 }
 
-TEST_CASE("test process_nack_part, happy-path"){
+TEST_CASE("unit-test process_nack_part, happy-path"){
 
   GhsState s(0);
   std::deque<Msg> buf;
@@ -740,7 +743,7 @@ TEST_CASE("test process_nack_part, happy-path"){
   
 }
 
-TEST_CASE("test process_nack_part, not-leader"){
+TEST_CASE("unit-test process_nack_part, not-leader"){
 
   GhsState s(0);
   std::deque<Msg> buf;
@@ -755,7 +758,7 @@ TEST_CASE("test process_nack_part, not-leader"){
   CHECK_NOTHROW(s.set_partition({3,0}));
 
   //send the start message
-  CHECK_NOTHROW(s.process(Msg{Msg::Type::SRCH,0,3,{}}, &buf));
+  CHECK_NOTHROW(s.process(Msg{Msg::Type::SRCH,0,3,{3,0}}, &buf));
 
   CHECK_EQ(buf.size(),2);
   buf.pop_front();
@@ -795,7 +798,7 @@ TEST_CASE("test process_nack_part, not-leader"){
 
 }
 
-TEST_CASE("test join_us nodes pass")
+TEST_CASE("unit-test join_us nodes pass")
 {
 
   //JOIN us emits new_sheriff messages, cleverly designed. 
@@ -818,7 +821,7 @@ TEST_CASE("test join_us nodes pass")
   
 }
 
-TEST_CASE("test join_us root relays to peer")
+TEST_CASE("unit-test join_us root relays to peer")
 {
   //JOIN us emits new_sheriff messages, cleverly designed. 
   //2(root) -> 0 <-> 1 <- some other root
@@ -853,7 +856,7 @@ TEST_CASE("test join_us root relays to peer")
 
 }
 
-TEST_CASE("test join_us one side of merge")
+TEST_CASE("unit-test join_us response to higher level")
 {
   auto s = get_state(0,1,1,1,false,false);
   //0 is me
@@ -862,25 +865,42 @@ TEST_CASE("test join_us one side of merge")
   //3 is mst & leader
   //Let's test the case where 1 sends 0 a join_us
   //and we should trigger an obsorb of 1's partition.
+  s.set_partition({3,0}); //<-- 0 and 3 are "ahead" w/ level 1
+  Msg m = {Msg::Type::JOIN_US,0,1,{0,1,1,1}}; // 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
+  std::deque<Msg> buf;
+  //error: we shoudl never receive a join_ from a partition with higher level!
+  CHECK_THROWS_AS(s.process(m,&buf), std::invalid_argument);
   s.set_partition({3,1}); //<-- 0 and 3 are "ahead" w/ level 1
+  CHECK_NOTHROW(s.process(m,&buf));
+  CHECK_EQ(buf.size(),0);//no msgs to send
+  auto e = s.get_edge(1);
+  CHECK(e);
+  CHECK_EQ(e->status,MST); //we marked as MST
+}
+
+TEST_CASE("unit-test join_us response to MST edge")
+{
+  auto s = get_state(0,1,1,1,false,false);
+  //0 is me
+  //1 is unknown
+  //2 is deleted
+  //3 is mst & leader
+  //Let's test the case where 1 sends 0 a join_us
+  //and we should trigger an obsorb of 1's partition.
+  s.set_partition({3,0}); 
+  s.set_edge_status(1,MST); //previous one-way join (see prior test case)
   Msg m = {Msg::Type::JOIN_US,0,1,{0,1,1,0}}; // 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
   std::deque<Msg> buf;
   CHECK_NOTHROW(s.process(m,&buf));
-  //ok, side effects are:
-  //0 sends a message to 1 saying "we're in charge now"
-  CHECK_EQ(buf.size(), 1);
-  CHECK_EQ(buf.front().to, 1);
-  CHECK_EQ(buf.front().from, 0);
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
-  CHECK_EQ(buf.front().data[0], 3);//<-- the sheriff
-  CHECK_EQ(buf.front().data[1], 1);//<-- the level
-  CHECK(s.get_edge(1));
-  CHECK_EQ(s.get_edge(1)->status, MST); //<-- part of the gang now
-  CHECK_EQ(s.get_parent_id(),       3); //same leader though
-  CHECK_EQ(s.get_partition().level,  1); //same level too
+  CHECK_EQ(buf.size(),0);//No action: we are 0, JOIN_US was from new_leader.
+  auto e = s.get_edge(1);
+  CHECK(e);
+  CHECK_EQ(e->status,MST); //we marked as MST
+  CHECK_EQ(s.get_leader_id(), 1);
+
 }
 
-TEST_CASE("test join_us merge")
+TEST_CASE("unit-test join_us merge")
 {
   auto s = get_state(0,1,1,1,false,false);
   //0 is me
@@ -889,13 +909,13 @@ TEST_CASE("test join_us merge")
   //3 is mst & leader
   //Let's test the case where 1 sends 0 a join_us
   //and we should trigger an obsorb of 1's partition.
-  s.set_partition({3,0}); //<-- 0 and 3 are at same level as 1.
+  s.set_partition({3,0}); //<-- 0 and 3 are at same level as 0;
   std::deque<Msg> buf;
   Msg m;
 
   //FIRST, 0 gets the message that the edge 0-1 is the MWOE from partition with leader 3.
-  m = {Msg::Type::JOIN_US,0,3,{1,0,3,0}}; // 3 says to zero "add the edge 1-0 to partition 3 with level 1. 
-  CHECK_NOTHROW(s.process(m,&buf));
+  m = {Msg::Type::JOIN_US,0,3,{1,0,3,0}}; // 3 says to zero "add the edge 1<-0 to partition 3 with level 0. 
+  CHECK_NOTHROW(s.process(m,&buf));//shouldn't be a problem
   //ok, side effects are:
   //0 sends a message to 1 saying "Join our partition"
   CHECK_EQ(buf.size(), 1);
@@ -906,48 +926,13 @@ TEST_CASE("test join_us merge")
   CHECK_EQ(buf.front().data[1], 0);//<-- edge peer
   CHECK_EQ(buf.front().data[2], 3);//<-- leader 
   CHECK_EQ(buf.front().data[3], 0);//<-- level is not changed during absorb
-  
-  //at this point, 1 would do the previously tested thing, and send back "absorb" by asking them to become a subtree at the same level as 1.
-
-  m = {Msg::Type::NEW_SHERIFF,0,1, {1,0}}; //one is in charge, and the level is 0
-  buf.clear();
-  CHECK_NOTHROW(s.process(m,&buf));
-  //ok, side effects are:
-  //0 sends a message to 3 saying "1 is in charge now"
-  CHECK_EQ(buf.size(), 1);
-  CHECK_EQ(buf.front().to, 3);
-  CHECK_EQ(buf.front().from, 0);
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
-  CHECK_EQ(buf.front().data[0], 1);//<-- the sheriff
-  CHECK_EQ(buf.front().data[1], 0);//<-- the level
   CHECK(s.get_edge(1));
-  CHECK_EQ(s.get_edge(1)->status, MST); //<-- part of the gang now
-  CHECK_EQ(s.get_parent_id(),       1); //same leader as 1
-  CHECK_EQ(s.get_partition().level, 0); //same level too
-  buf.clear();
+  CHECK_EQ(s.get_edge(1)->status, MST);//<-- MST link established
 
-  //NOTE: this message to 3 would be dropped, because 3 would recognize it is level 0, while it has already sent a message saying the partition should join the MWOE 0-1
-
-  //AND NOW, in a big twist, here comes the join message for 0-1 in the opposite direction
-  m = {Msg::Type::JOIN_US, 0,3, {1,0,3,0}};
-  CHECK_NOTHROW(s.process(m,&buf));
-  //ok, side effects are:
-  //0 sends a message to 1 saying "Join us"
-  CHECK_EQ(buf.size(), 1); //<-- a few things going on , but only one msg required
-  CHECK_EQ(buf.front().to, 1);
-  CHECK_EQ(buf.front().from, 0);
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);//<--surprise! You're it!
-  CHECK_EQ(buf.front().data[0], 1);//<-- the peer (them)
-  CHECK_EQ(buf.front().data[1], 1);//<-- the level has increased
-  CHECK(s.get_edge(1));
-  CHECK_EQ(s.get_edge(1)->status, MST); //<-- still part of the gang
-  CHECK_EQ(s.get_parent_id(),       1); //check new leader is 1
-  CHECK_EQ(s.get_partition().level, 1); //increased level 
-
-  //NOW, 1 receives the JOIN_US, and processes exactly the same result.
 }
 
-TEST_CASE("test join_us merge leader-side")
+
+TEST_CASE("unit-test join_us merge leader-side")
 {
   //essentially the other side of above test
   GhsState s(1);
@@ -958,11 +943,12 @@ TEST_CASE("test join_us merge leader-side")
   s.set_edge({3,1,MST,1});
   s.set_edge({0,1,UNKNOWN,1});
   s.set_parent_edge({3,1,MST,1});
+  CHECK_EQ(s.get_parent_id(),3); 
   std::deque<Msg> buf;
   Msg m;
 
   //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 2.
-  m = {Msg::Type::JOIN_US,1,3,{0,1,3,0}}; // 3 says to 1 "add the edge 1->0 to partition 2 with level 0. 
+  m = {Msg::Type::JOIN_US,1,3,{0,1,3,0}}; // 3 says to 1 "add the edge 1->0 to partition 3 with level 0. 
   CHECK_NOTHROW(s.process(m,&buf));
   //ok, side effects are:
   //1 sends a message to 0 saying "Join our partition"
@@ -977,193 +963,206 @@ TEST_CASE("test join_us merge leader-side")
   //we anticipated their response. A little. 
   CHECK(s.get_edge(0));
   CHECK_EQ(s.get_edge(0)->status, MST);
-  
-  //at this point, 0 would do the previously tested thing, and send back "absorb" by asking them to become a subtree at the same level as 0.
-
-  m = {Msg::Type::NEW_SHERIFF,1,0, {0,0}}; //zero says to 1, "You say join, ok, so Join me, I'm in chage"
-  buf.clear();
-  CHECK_NOTHROW(s.process(m,&buf));
-  //ok, side effects are:
-  //1 sends a message to 3 saying "0 is in charge now"
-  CHECK_EQ(buf.size(), 1);
-  CHECK_EQ(buf.front().to, 3);
-  CHECK_EQ(buf.front().from, 1);
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
-  CHECK_EQ(buf.front().data[0], 0);//<-- the sheriff
-  CHECK_EQ(buf.front().data[1], 0);//<-- the level
-  CHECK(s.get_edge(0));
-  CHECK_EQ(s.get_edge(0)->status, MST); //<-- part of the gang now
-  CHECK_EQ(s.get_parent_id(),       0); //1 has same leader as 0
-  CHECK_EQ(s.get_partition().level, 0); //same level too
-  buf.clear();
-
-  //AND NOW, in a big twist, here comes the join message for 1-0 in the opposite direction
-  //
-  CHECK_EQ(s.get_id(),1);
-  m = {Msg::Type::JOIN_US, 1,3, {0,1,3,0}};
-  CHECK_NOTHROW(s.process(m,&buf));
-  //ok, side effects are:
-  //1 sends a message to 0 saying "Join us"
-  //AND, it sends a message to restructure, since it knows it is now leader
-  CHECK_EQ(buf.size(), 2); //<-- a few things going on 
-  CHECK_EQ(buf.front().to, 3);
-  CHECK_EQ(buf.front().from, 1);
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
-  CHECK_EQ(buf.front().data[0], 1);//<-- the sheriff (me!)
-  CHECK_EQ(buf.front().data[1], 1);//<-- the level has INCREASED (we detected double-absorb)
-  CHECK(s.get_edge(0));
-  CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang
-  CHECK_EQ(s.get_parent_id(),       1); //just double checking
-  CHECK_EQ(s.get_partition().level, 1); //NOT increased level yet
   buf.pop_front();
 
-  //NOW, 1 receives the JOIN_US, and processes exactly the same result as follows
-  CHECK_EQ(buf.size(), 1); 
-  CHECK_EQ(buf.front().to, 0);
-  CHECK_EQ(buf.front().from, 1);
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF);
-  CHECK_EQ(buf.front().data[0], 1);//<-- the sheriff (me!)
-  CHECK_EQ(buf.front().data[1], 1);//<-- the level has INCREASED (merge detected)
-  CHECK(s.get_edge(3));
-  CHECK_EQ(s.get_edge(3)->status, MST); //<-- still part of the gang
-  CHECK_EQ(s.get_parent_id(),       1); //just double checking
-  CHECK_EQ(s.get_partition().level, 1); //increased 
-  //
-  CHECK_EQ(buf.back().to, 0);  
-  CHECK_EQ(buf.back().from, 1);//new leader
-  CHECK_EQ(buf.back().type, Msg::Type::NEW_SHERIFF);
-  CHECK_EQ(buf.back().data[0], 1);//<-- the sheriff (me!)
-  CHECK_EQ(buf.back().data[1], 1);//<-- the level has INCREASED (merge detected)
+  //AND NOW, in a big twist, here comes the join message for 1-0 in the opposite direction
+  CHECK_EQ(s.get_id(),1);
+  CHECK_EQ(buf.size(), 0);
+  m = {Msg::Type::JOIN_US, 1,3, {0,1,3,0}};
   CHECK(s.get_edge(0));
   CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang
-  CHECK_EQ(s.get_parent_id(),       1); //just double checking
-  CHECK_EQ(s.get_partition().level, 1); //increased 
-
-
+  CHECK_NOTHROW(s.process(m,&buf));
+  CHECK(s.get_edge(0));
+  CHECK_EQ(s.get_edge(0)->status, MST); //<-- still part of the gang, STILL
+  CHECK_EQ(s.get_parent_id(),       1); //This changes because we start_round on ourselves as new leader, which process_srch's on ourselves, setting ourselves as new leader. Desired, but obtuse.
+  CHECK_EQ(s.get_partition().level, 1); //level auto-increment b/c we detected merge()
+  CHECK_EQ(s.get_partition().leader, 1); //We're leader
+  //ok, side effects are:
+  //1 sends a message to 0 saying "Join us"
+  //AND, it sends a message to SRCH
+  CHECK_EQ(buf.size(), 2); //lord only knows why it chooses this order though. 
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH);
+  CHECK_EQ(buf.front().to, 3);
+  CHECK_EQ(buf.back().type, Msg::Type::SRCH); //we have a child to ping
+  CHECK_EQ(buf.back().to, 0);
 
 }
 
-TEST_CASE("test new_sheriff happy succession")
+
+TEST_CASE("integration-test two nodes")
 {
-
-  auto s = get_state(0,0,0,1,true,false);
-  CHECK_EQ(s.get_partition().leader,0);
-  CHECK_EQ(s.get_partition().level,0);
+  GhsState s0(0,{{1,0,UNKNOWN,1}});
+  GhsState s1(1,{{0,1,UNKNOWN,2}});
   std::deque<Msg> buf;
-  //happy path: same level+1, leader adjacent from MST link -- should just reorg
-  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {1,1}};
-  CHECK_NOTHROW(s.process(ns,&buf));
-  auto parent_edge = s.get_edge(1);
-  CHECK_EQ(parent_edge->status,MST);
-  CHECK_EQ(s.get_partition().leader,1);
-  CHECK_EQ(s.get_partition().level,1);
-  CHECK_EQ(buf.size(), 0);
-  
-}
-
-TEST_CASE("test new_sheriff happy succession chains down")
-{
-
-  //node 0 has 3 outgoing mst links
-  //node 0(root)->{ node 1, node 2, node 3 }
-  auto s = get_state(0,0,0,3,true,false);
-  //node 0 is the leader
-  CHECK_EQ(s.get_partition().leader,0);
-  CHECK_EQ(s.get_partition().level,0);
-
-  std::deque<Msg> buf;
-  
-  //leader recvs msg
-  //removes itself and tells its (new) children
-  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {1,1}};
-  CHECK_NOTHROW(s.process(ns,&buf));
-  CHECK_EQ(s.get_partition().leader,1);
-  CHECK_EQ(s.get_partition().level,1);
-  //
+  //let's turn the crank and see what happens
+  s0.start_round(&buf);
+  s1.start_round(&buf);
+  CHECK_EQ(buf.size(),2);
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::IN_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
   CHECK_EQ(buf.size(), 2);
-  CHECK_EQ(buf.front().to, 2); //hey former child, 2
-  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
-  CHECK_EQ(buf.front().data[0], 1); //and it's 1
-  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::NACK_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 2);
+  CHECK_EQ(s0.get_partition().level,0); //<--NOT ++ 
+  CHECK_EQ(s1.get_partition().level,0); //<--NOT ++ 
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::JOIN_US);
+    CHECK_EQ(m.from, m.data[2]); //<-- hey can you join *my* partition with me as leader?
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+  CHECK_EQ(buf.size(), 1); 
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH); // leader triggered new round. 
+  CHECK_EQ(s0.get_leader_id(),1);
+  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ 
+
+}
+
+TEST_CASE("integration-test opposite two nodes")
+{
+  GhsState s0(0,{{1,0,UNKNOWN,1}});
+  GhsState s1(1,{{0,1,UNKNOWN,2}});
+  std::deque<Msg> buf;
+  //let's turn the crank and see what happens
   //
-  CHECK_EQ(buf.back().to, 3); //hey former child, 3
-  CHECK_EQ(buf.back().from, 0); //It's your old pal zero
-  CHECK_EQ(buf.back().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
-  CHECK_EQ(buf.back().data[0], 1); //and it's 1
-  CHECK_EQ(buf.back().data[1], 1); //and now we're so advanced
+
+
+  //Trigger start
+  s1.start_round(&buf);
+  s0.start_round(&buf);
+
+  //Nodes sent pings to neighbors
+  CHECK_EQ(buf.size(),2); // IN_PART? x2
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::IN_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+
+  //Nodes recognized a partition
+  CHECK_EQ(buf.size(), 2); // NACK_PART x2
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::NACK_PART);
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+
+  //Nodes responded with JOIN requests
+  CHECK_EQ(buf.size(), 2); // JOIN_US x2
+  CHECK_EQ(s0.get_partition().level,0); //<--NOT ++ 
+  CHECK_EQ(s1.get_partition().level,0); //<--NOT ++ 
+  for (int i=0;i<2;i++){
+    Msg m = buf.front();
+    buf.pop_front();
+    CHECK_EQ(m.type,Msg::Type::JOIN_US);
+    CHECK_EQ(m.from, m.data[2]); //<-- hey can you join *my* partition with me as leader?
+    switch(m.to){
+      case (0):{ s0.process(m,&buf);break;}
+      case (1):{ s1.process(m,&buf);break;}
+    }
+  }
+
+  //Nodes updated graph:
+  CHECK_EQ(s0.get_edge(1)->status, MST);
+  CHECK_EQ(s1.get_edge(0)->status, MST);
+
+  //nodes understand leader implicitly from prior JOIN_US msgs to be max(0,1)=1
+  //... 
+  CHECK_EQ(s0.get_leader_id(),1);
+  CHECK_EQ(s1.get_leader_id(),1);
+  CHECK_EQ(s0.get_partition().level,1); //<--now ++ 
+  CHECK_EQ(s1.get_partition().level,1); //<--now ++ also
+
+  //Only one node responded, and it was the leader
+  CHECK_EQ(buf.size(), 1); // SRCH from leader only
+  CHECK_EQ(buf.front().type, Msg::Type::SRCH);
+  CHECK_EQ(buf.front().from , 1);
+
+}
+
+TEST_CASE("sim-test 3 node frenzy")
+{
+
+  std::ofstream f("sim-test-3-node-frenzy.msg");
+
+  GhsState states[3]={
+    {0},{1},{2}
+  };
+  for (size_t i=0;i<3;i++){
+    for (size_t j=0;j<3;j++){
+      if (i!=j){
+        //add N^2 edges
+        Edge to_add = {i,j,UNKNOWN,(size_t)( (1<<i) + (1<<j))};
+        states[j].set_edge(to_add);
+      }
+    }
+  }
+  std::deque<Msg> buf;
+  for (int i=0;i<3;i++){
+    states[i].start_round(&buf);
+  }
+  int msg_limit = 100;
+  int msg_count = 0;
+  //here we go:
   //
-  CHECK_EQ(s.get_parent_id(), 1);
-  
-}
+  while(buf.size()>0 && msg_count++ < msg_limit){
+    Msg m = buf.front();
 
-TEST_CASE("test new_sheriff happy succession chains up")
-{
+    std::deque<Msg> added;
+    buf.pop_front();
 
-  //node 2(root)->node 0->node 1
-  auto s = get_state(0,0,0,2,false,false);
-  //note, 2 is our parent / leader
-  CHECK_EQ(s.get_partition().leader,2);
-  CHECK_EQ(s.get_partition().level,0);
-  std::deque<Msg> buf;
+    f << "f: "<<states[m.from]<<std::endl;
+    f << "t: "<<states[m.to]<<std::endl;
+    f << "-  "<<m << std::endl;
+    states[m.to].process(m,&added);
+    f << "t':"<< states[m.to]<<std::endl;
 
-  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {1,1}};
-  CHECK_NOTHROW(s.process(ns,&buf));
-  CHECK_EQ(s.get_partition().leader,1);
-  CHECK_EQ(s.get_partition().level,1);
-  CHECK_EQ(buf.size(), 1);
-  CHECK_EQ(buf.front().to, 2); //hey former leader
-  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
-  CHECK_EQ(buf.front().data[0], 1); //and it's 1
-  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
-  //chain down will also occur -- reorg works. 
-  CHECK_EQ(s.get_parent_id(), 1);
+    for (const auto &m: added){
+      f <<"+  "<< m <<std::endl;
+      buf.push_back(m);
+    }
+    f << std::endl;
+  }
 
-}
+  CHECK_EQ(buf.size(),0);
+  CHECK_LT(msg_count, msg_limit);
 
-TEST_CASE("test new_sheriff happy children obey")
-{
-  //node 2(root)->node 0->node 1
-  auto s = get_state(0,0,0,2,false,false);
-  //note, 2 is our parent / leader
-  CHECK_EQ(s.get_partition().leader,2);
-  CHECK_EQ(s.get_partition().level,0);
-  std::deque<Msg> buf;
-
-  //who's node 3? never heard of him, but node 1 must be closer to him
-  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {3,1}};
-  CHECK_NOTHROW(s.process(ns,&buf));
-  CHECK_EQ(s.get_partition().leader,3);
-  CHECK_EQ(s.get_partition().level,1);
-  CHECK_EQ(buf.size(), 1);
-  CHECK_EQ(buf.front().to, 2); //hey former leader
-  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
-  CHECK_EQ(buf.front().data[0], 3); //and it's 3
-  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
-  CHECK_EQ(s.get_parent_id(), 1); // one must be closer, right?
+  //do we have a single partition?
+  for (size_t i=0;i<3;i++){
+    CHECK(states[i].is_converged());
+    for (size_t j=0;j<3;j++){
+      if (i!=j){
+        CHECK_EQ(states[i].get_partition().leader, states[j].get_partition().leader);
+      }
+    }
+  }
 
 }
-
-TEST_CASE("test new_sheriff is suprised")
-{
-  //node 0(root)->{node 1}
-  auto s = get_state(0,0,0,1,true,false);
-  CHECK_EQ(s.get_partition().leader,0);
-  CHECK_EQ(s.get_partition().level,0);
-  std::deque<Msg> buf;
-
-  Msg ns = {Msg::Type::NEW_SHERIFF, 0,1, {0,1}};
-  CHECK_NOTHROW(s.process(ns,&buf));
-  CHECK_EQ(s.get_partition().leader,0);
-  CHECK_EQ(s.get_partition().level,1);
-  CHECK_EQ(s.get_parent_id(), 0);   //I'm the root
-  CHECK_EQ(buf.size(), 1);
-  CHECK_EQ(buf.front().to, 1); //hey buddy
-  CHECK_EQ(buf.front().from, 0); //It's your old pal zero
-  CHECK_EQ(buf.front().type, Msg::Type::NEW_SHERIFF); //There's a new sheriff
-  CHECK_EQ(buf.front().data[0], 0); //and just kidding its me 0
-  CHECK_EQ(buf.front().data[1], 1); //and now we're so advanced
-}
-
