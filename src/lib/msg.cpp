@@ -1,4 +1,4 @@
-#include "msg.hpp"
+#include "ghs/msg.hpp"
 
 Msg SrchPayload::to_msg(AgentID to, AgentID from){
   Msg m;

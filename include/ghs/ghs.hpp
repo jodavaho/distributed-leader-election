@@ -1,9 +1,9 @@
 #ifndef GHS_HPP
 #define GHS_HPP
 
-#include "msg.hpp"
-#include "graph.hpp"
-#include "seque.hpp"
+#include "ghs/msg.hpp"
+#include "ghs/graph.hpp"
+#include "seque/seque.hpp"
 #include <array>
 
 template <std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE>

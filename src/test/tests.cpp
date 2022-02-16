@@ -1,11 +1,11 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #include "doctest/doctest.h"
-#include "ghs.hpp"
-#include "ghs_printer.hpp"
-#include "msg.hpp"
-#include "msg_printer.hpp"
-#include "seque.hpp"
+#include "ghs/ghs.hpp"
+#include "ghs/ghs_printer.hpp"
+#include "ghs/msg.hpp"
+#include "ghs/msg_printer.hpp"
+#include "seque/seque.hpp"
 #include <fstream>
 
 template<std::size_t N, std::size_t BUF_SZ>

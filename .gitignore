@@ -1,5 +1,8 @@
 .vscode
 .hook_local*
+tags
+cpp
+*.msg
 local/
 deps/
 build/

@@ -122,6 +122,6 @@ class StaticQueue
 };
 
 
-#include "seque_impl.hpp"
+#include "seque/seque_impl.hpp"
 
 #endif

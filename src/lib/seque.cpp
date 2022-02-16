@@ -1,5 +1,5 @@
 #include <cstdlib>//size_t
-#include "seque.hpp"
+#include "seque/seque.hpp"
 
 bool Q_OK(const QueueRetcode &r)
 {

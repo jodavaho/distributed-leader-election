@@ -1,4 +1,4 @@
-#include "graph.hpp"
+#include "ghs/graph.hpp"
 
 Edge ghs_worst_possible_edge(){
   Edge ret;
