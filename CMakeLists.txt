@@ -1,12 +1,12 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.0.2)
 
 project(GHS)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS " -Wpedantic  -Wall -Werror ${CMAKE_CXX_FLAGS}")
+add_compile_options(-std=c++11)
+add_compile_options(-Wpedantic)
+add_compile_options(-Wall)
+add_compile_options(-Werror)
 
-include_directories(deps/doctest)
 include_directories(include)
 
 add_subdirectory(src/lib)
