@@ -10,12 +10,10 @@ catkin_package(
   LIBRARIES ghs ghs_ext
 )
 
-#include_directories(deps/doctest)
-#add_subdirectory(src/test)
-
 include_directories(include)
 
 add_subdirectory(src/lib)
 add_subdirectory(src/libtest)
+add_subdirectory(src/ghs-tests)
 add_subdirectory(src/tools)
 
