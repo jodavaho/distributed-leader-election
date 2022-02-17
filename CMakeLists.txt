@@ -14,6 +14,7 @@ find_package(catkin REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ghs ghs_ext
+  DEPENDS doctest-dev
 )
 
 
