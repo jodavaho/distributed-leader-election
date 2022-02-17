@@ -10,6 +10,7 @@ add_compile_options(-Werror)
 include_directories(include)
 
 find_package(catkin REQUIRED)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ghs ghs_ext
