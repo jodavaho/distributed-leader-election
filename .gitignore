@@ -1,8 +1,7 @@
-.vscode
-.hook_local*
-tags
-cpp
 *.msg
-local/
-deps/
-build/
+cmake/
+CMakeFiles/
+CTestTestfile.cmake
+Makefile
+catkin_generated/
+cmake_install.cmake
