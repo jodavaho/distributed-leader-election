@@ -1,3 +1,8 @@
+cpp
+tags
+build/
+.hook*
+.vscode
 *.msg
 cmake/
 CMakeFiles/
