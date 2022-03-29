@@ -1227,7 +1227,7 @@ TEST_CASE("integration-test opposite two nodes")
 TEST_CASE("sim-test 3 node frenzy")
 {
 
-  std::ofstream f("sim-test-3-node-frenzy.msg");
+  std::ofstream f("sim-test-3-node-frenzy.msgs");
 
   GhsState<4,32> states[3]={
     {0},{1},{2}
