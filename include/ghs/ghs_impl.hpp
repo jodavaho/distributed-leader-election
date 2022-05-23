@@ -86,16 +86,17 @@ template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const SrchPayload& data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
 {
 
+  bool valid_edge = has_edge(from);
   bool self_edge = from == my_id;
   bool mst_link = false;
 
   //we either sent to ourselves, OR we should have an edge to them
-  if (!has_edge(from) && from!=my_id){
+  if (!valid_edge && !self_edge){
     fatal("GHS Received msg from someone we do no have an edge to (and wasn't us!)");
     return GHS_MSG_INVALID_SENDER;
   }
 
-  if (from !=my_id){
+  if (!self_edge){//must be MST edge then
     Edge e;
     auto ret = get_edge(from, e);
     mst_link = e.status==MST;
@@ -105,7 +106,6 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
       return GHS_MSG_INVALID_SENDER;
     }
   }
-
 
   assert(self_edge || mst_link); // now that would be weird if it wasn't
 
@@ -117,6 +117,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
 
   if (waiting_count() != 0){
     fatal("We got a srch msg while still waiting for results!");
+    return GHS_INVALID_STATE;
   }
   
 
@@ -140,7 +141,10 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
   to_send.srch = SrchPayload{my_leader, my_level};
   size_t srch_sent=0;
   GhsError srch_ret = mst_broadcast(MsgType::SRCH, to_send, srchbuf,srch_sent);
-  GhsAssert(srch_ret);
+  if (!GhsOK(srch_ret)){
+    fatal("Could not send broadcast!");
+    return srch_ret;
+  }
 
   //then ping unknown edges
   //OPTIMIZATION: Ping neighbors in sorted order, rather than flooding
@@ -148,7 +152,11 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
   to_send.in_part = InPartPayload{my_leader, my_level};
   size_t part_sent=0;
   GhsError part_ret = typecast(EdgeStatus::UNKNOWN, MsgType::IN_PART, to_send, srchbuf, part_sent);
-  GhsAssert(part_ret);
+  
+  if (!GhsOK(part_ret)){
+    fatal("Could not send typecast!");
+    return part_ret;
+  }
 
   //remember who we sent to so we can wait for them:
   size_t srchbuf_sz = srchbuf.size();
@@ -181,13 +189,17 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
   if ( (buf.size() - buf_sz_before != srch_sent + part_sent )  )
   {
     fatal("Our buffer had too many or two few messages to send after we processed");
+    return GHS_INVALID_STATE;
   }
 
   //make sure to check_new_level, since our level may have changed, above,
   //which will handled delayed_count != 0;
   size_t old_msgs_processed=0;
   GhsError new_lvl = check_new_level(buf,old_msgs_processed);
-  GhsAssert(new_lvl);
+  if (!GhsOK(new_lvl)){
+    fatal("Could not check_new_leve!");
+    return new_lvl;
+  }
 
   qsz = srch_sent + part_sent + old_msgs_processed;
   return GHS_OK;
@@ -304,7 +316,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_nack_part(  AgentID from, con
 {
   assert(has_edge(from));
   //we now know that the sender is in our partition. Mark their edge as deleted
-  bool wf;
+  bool wf=false;
   auto ret = is_waiting_for(from, wf);
   if (!GhsOK(ret) || !wf)
   {
@@ -787,7 +799,9 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
   if (nothrow_has_index(who)){
     size_t idx=0;
     GhsError er = checked_index_of(who,idx);
-    assert(GhsOK(er));
+    if (!GhsOK(er)){
+      return er;
+    }
     outgoing_edges[idx].metric_val  =  e.metric_val;
     outgoing_edges[idx].status      =  e.status;
     return GHS_OK;

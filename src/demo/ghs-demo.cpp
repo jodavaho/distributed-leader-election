@@ -35,7 +35,7 @@ void initialize_ghs(GhsState<AN,QN>& ghs, ghs_config& cfg)
 template<size_t AN, size_t QN>
 void kill_edge(GhsState<AN,QN>& ghs, ghs_config & cfg, uint8_t agent_to)
 {
-  bool resp_req, waiting_for;
+  bool resp_req=false, waiting_for=false;
   ghs.set_edge( {agent_to, cfg.my_id, DELETED, 0} );
 
   ghs.is_response_required(agent_to, resp_req);
@@ -137,7 +137,7 @@ int main(int argc, char** argv){
     size_t sent;
     auto ret = ghs.start_round(ghs_buf, sent);
     if (ret != GHS_OK){
-      printf("[error] could not start ghs!\n");
+      printf("[error] could not start ghs! (%d)\n", ret);
       return 1;
     }
   } 

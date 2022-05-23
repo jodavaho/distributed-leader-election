@@ -211,7 +211,7 @@ MessageErrno DemoComms::send(Message& msg, MessageOptMask mask)
 
   //Create connection
   nng_dialer dialer;
-  printf("[info] Dialing: %s, ",endpoint);
+  printf("[info] Dialing: %s \n",endpoint);
 
   int ret = nng_dialer_create(&dialer, outgoing, endpoint);
   if (ret!=0){ 
@@ -222,11 +222,11 @@ MessageErrno DemoComms::send(Message& msg, MessageOptMask mask)
   //dialer exists...
   ret = nng_dialer_start(dialer,0);
   if (ret!=0){ goto send_cleanup; }
-  printf("Connected, ");
+  printf("[info] Connected: %s\n",endpoint);
 
   ret = nng_send(outgoing,(void*)&msg,sizeof(Message),0);
   if (ret!=0){ goto send_cleanup; } 
-  printf("Sent, ");
+  printf("[info] Sent to: %s\n",endpoint);
 
   recvsz = sizeof(ret_seq);
   ret = nng_recv( outgoing, (void*) &ret_seq, &recvsz, 0);
