@@ -23,14 +23,14 @@ add_subdirectory(src/libtest)
 endif (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO OR BUILD_EXT)
 
 if (ENABLE_ROS)
-  message("-- [ENABLE_ROS=On] Enabling ROS catkin integration")
+  message("---- [ENABLE_ROS=On] Enabling ROS catkin integration")
   find_package(catkin REQUIRED)
   catkin_package(
     INCLUDE_DIRS include
     LIBRARIES ghs ghs_ext
   )
 else()
-  message("-- [ENABLE_ROS=Off]")
+  message("---- [ENABLE_ROS=Off]")
 endif(ENABLE_ROS)
 
 # Some CLI tools for testing specific graphs very quickly
