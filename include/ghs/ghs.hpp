@@ -213,7 +213,7 @@ class GhsState
     bool                     algorithm_converged;
 
     std::array<AgentID,NUM_AGENTS>        peers;
-    std::size_t                           n_peers;
+    size_t                                n_peers;
     std::array<bool,NUM_AGENTS>           waiting_for_response;
     std::array<Edge,NUM_AGENTS>           outgoing_edges;
     std::array<InPartPayload,NUM_AGENTS>  response_prompt;

@@ -1,11 +1,6 @@
 #include "ghs.hpp"
 #include "msg.hpp"
-#include <algorithm>
-#include <assert.h>
-#include <deque>
-#include <stdexcept>
-#include <sstream>
-#include <string>
+#include "ghs_assert.hpp"
 
 using std::max;
 
@@ -64,11 +59,11 @@ Edge GhsState<GHS_MAX_AGENTS, BUF_SZ>::mwoe() const {
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process(const Msg &msg, StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t &qsz) {
   if (msg.from == my_id ){
-    assert(false && "Received message from self!");
+    fatal("Received message from self!");
     return GHS_MSG_INVALID_SENDER;
   }
   if (msg.to != my_id){
-    assert(false && "Received message to someone else!");
+    fatal( "Received message to someone else!");
     return GHS_MSG_INVALID_SENDER;
   }
   switch (msg.type){
@@ -80,7 +75,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process(const Msg &msg, StaticQueue<M
     case    (MsgType::JOIN_US):{      return  process_join_us(      msg.from, msg.data.join_us, outgoing_buffer, qsz);  }
     case    (MsgType::NOOP):{         return  process_noop( outgoing_buffer ); }
     default:{ 
-              assert(false&&"GHS Received invalid message type");
+              fatal("GHS Received invalid message type");
               return GHS_MSG_INVALID_TYPE; 
             }
   }
@@ -92,12 +87,12 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
 {
   //we either sent to ourselves, OR we should have an edge to them
   if (!has_edge(from) && from!=my_id){
-    assert(false&&"GHS Received msg from someone we do no have an edge to (and wasn't us!)");
+    fatal("GHS Received msg from someone we do no have an edge to (and wasn't us!)");
     return GHS_MSG_INVALID_SENDER;
   }
   
   if (from !=my_id && get_edge(from).status !=MST){
-    assert(false&&"GHS Received SRCH msg from someone off the MST!");
+    fatal("GHS Received SRCH msg from someone off the MST!");
     return GHS_MSG_INVALID_SENDER;
   }
 
@@ -105,11 +100,14 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
 
   if (this->waiting_count() != 0 )
   {
-    assert(false&&" Waiting but got SRCH ");
+    fatal(" Waiting but got SRCH ");
     return GHS_INVALID_STATE;
   }
 
-  assert(this->waiting_count() ==0 && " We got a srch msg while still waiting for results!");
+  if (waiting_count() == 0){
+    fatal("We got a srch msg while still waiting for results!");
+  }
+  
 
   //grab the new partition information, since only one node / partition sends srch() msgs.
   auto leader = data.your_leader;
@@ -171,7 +169,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
   //variable.
   if ( (buf.size() - buf_sz_before != srch_sent + part_sent )  )
   {
-    assert(false&&"Our buffer had too many or two few messages to send after we processed");
+    fatal("Our buffer had too many or two few messages to send after we processed");
   }
 
   //make sure to check_new_level, since our level may have changed, above,
@@ -199,13 +197,13 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch_ret(  AgentID from, cons
 {
 
   if (this->waiting_count() == 0){
-    assert(false && "Got a SRCH_RET but we aren't waiting for anyone -- did we reset()?");
+    fatal( "Got a SRCH_RET but we aren't waiting for anyone -- did we reset()?");
     return GHS_INVALID_SRCHR_REC;
   }
 
   if (! is_waiting_for(from) )
   {
-    assert(false && "Got a SRCH_RET from node we aren't waiting_for");
+    fatal( "Got a SRCH_RET from node we aren't waiting_for");
     return GHS_INVALID_SRCHR_REC;
   }
 
@@ -274,7 +272,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_ack_part(  AgentID from, cons
   //we now know that the sender is in our partition. Mark their edge as deleted
   if (!is_waiting_for(from))
   {
-    assert(false && "We got a IN_PART message from an agent, but we weren't waiting for one from them");
+    fatal( "We got a IN_PART message from an agent, but we weren't waiting for one from them");
     return GHS_INVALID_INPART_REC;
   }
   set_edge_status(from, DELETED);
@@ -287,7 +285,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_nack_part(  AgentID from, con
 {
   //we now know that the sender is in our partition. Mark their edge as deleted
   if (!is_waiting_for(from)){
-    assert(false && "We got a IN_PART message from an agent, but we weren't waiting for one from them");
+    fatal( "We got a IN_PART message from an agent, but we weren't waiting for one from them");
     return GHS_INVALID_STATE;
   }
   assert(has_edge(from));
@@ -381,11 +379,11 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
 
   if (not_involved){
     if (join_lead != my_leader){
-      assert(false && "We should never receive a JOIN_US with a different leader, unless we are on the partition boundary");
+      fatal( "We should never receive a JOIN_US with a different leader, unless we are on the partition boundary");
       return GHS_INVALID_JOIN_REC;
     }
     if (join_level != my_level){
-      assert(false && "We should never receive a JOIN_US with a different level, unless we are on the partition boundary");
+      fatal( "We should never receive a JOIN_US with a different level, unless we are on the partition boundary");
       return GHS_INVALID_JOIN_REC;
     }  
 
@@ -403,23 +401,23 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
     Edge join_peer_edge = get_edge(join_peer);
 
     if (join_lead != my_leader && join_peer_edge.status != MST){
-      assert(false && "We should never receive a JOIN_US with a different leader when we initiate");
+      fatal( "We should never receive a JOIN_US with a different leader when we initiate");
       return GHS_INVALID_JOIN_REC;
     }
     if (join_level != my_level){
-      assert(false && "We should never receive a JOIN_US with a different level when we initiate");
+      fatal( "We should never receive a JOIN_US with a different level when we initiate");
       return GHS_INVALID_JOIN_REC;
     }  
     assert(has_edge(join_peer));
     edge_to_other_part  = get_edge(join_peer);
   } else {
     if (join_lead == my_leader){
-      assert(false && "We should never receive a JOIN_US with same leader from a different partition");
+      fatal( "We should never receive a JOIN_US with same leader from a different partition");
       return GHS_INVALID_JOIN_REC;
     }
     //level can be same, lower (from another partition), but not higher (we shouldn't have replied)
     if (join_level > my_level){
-      assert(false && "We should never receive a JOIN_US with a higher level when we do not initiate (we shouldnt have replied to their IN_PART)");
+      fatal( "We should never receive a JOIN_US with a higher level when we do not initiate (we shouldnt have replied to their IN_PART)");
       return GHS_INVALID_JOIN_REC;
     }  
     assert(has_edge(join_root));
@@ -486,11 +484,11 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
         return GHS_OK;
       }   
     } else {
-      assert(false && "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
+      fatal( "unexpected library error: could not absorb / merge in 'join_us' processing b/c of unexpected edge type between partitions");
       return GHS_ERR_IMPL;
     }
 
-  assert(false && "unexpected library error: reached end of function somehow ");
+  fatal( "unexpected library error: reached end of function somehow ");
   return GHS_ERR_IMPL;
 }
 
@@ -505,7 +503,10 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::typecast(const EdgeStatus status, con
   size_t sent=0;
   for (size_t idx=0;idx<n_peers;idx++){
     const Edge &e = outgoing_edges[idx];
-    assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
+    if (e.root!=my_id){
+      fatal("Had an edge in outgoing_edges that was not rooted on me!");
+      return GHS_INVALID_EDGE;
+    }
     if ( e.status == status ){
       sent++;
       Msg to_send;
@@ -526,7 +527,10 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_broadcast(const MsgType m, const 
   size_t sent =0;
   for (size_t idx =0;idx<n_peers;idx++){
     const Edge&e = outgoing_edges[idx];
-    assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
+    if (e.root!=my_id){
+      fatal("Had an edge in outgoing_edges that was not rooted on me!");
+      return GHS_INVALID_EDGE;
+    }
     if (e.status == MST && e.peer != parent){
       sent++;
       Msg to_send;
@@ -546,7 +550,10 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_convergecast(const MsgType m, con
   size_t sent=0;
   for (size_t idx =0;idx<n_peers;idx++){
     const Edge&e = outgoing_edges[idx];
-    assert(e.root==my_id && "Had an edge in outgoing_edges that was not rooted on me!");
+    if (e.root!=my_id){
+      fatal("Had an edge in outgoing_edges that was not rooted on me!");
+      return GHS_INVALID_EDGE;
+    }
     if (e.status == MST && e.peer == parent){
       sent++;
       Msg to_send;
@@ -620,7 +627,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::checked_index_of(const AgentID& who, 
       return GHS_OK;
     }
   }
-  assert(false &&  "No such peer found: "+who);
+  fatal(  "No such peer found: "+who);
   return GHS_NO_SUCH_PEER;
 }
 
@@ -734,7 +741,7 @@ template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
 
   if (e.root != my_id){
-    assert(false && "Cannot add an edge that is not rooted on current node");
+    fatal( "Cannot add an edge that is not rooted on current node");
     return GHS_INVALID_EDGE;
   }
 
