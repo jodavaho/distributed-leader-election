@@ -107,3 +107,13 @@ QueueRetcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
   return OK;
 
 }
+
+
+template <typename T, std::size_t N>
+QueueRetcode StaticQueue<T,N>::clear()
+{
+  idx_front=0;
+  idx_back =0;
+  count    =0;
+  return OK;
+}

@@ -2,19 +2,11 @@
 #define msg_hpp
 
 #include "graph.hpp"
+#include <cstdint>
+#include <cstring>
 
+struct Msg;//the actual structure used internally
 
-/*
-typedef struct __attribute__((__packed__))
-{
-  int8_t to;
-  int8_t from;
-  int8_t data_byte;
-  int8_t crc8;
-} wire_msg; //example only, need 1 per type below
-*/
-
-struct Msg;
 
 struct NoopPayload{
 };
@@ -87,5 +79,8 @@ struct Msg
   MsgData data;
 
 };
+
+const size_t GHS_MAX_MSG_SZ= sizeof(Msg);
+
 
 #endif

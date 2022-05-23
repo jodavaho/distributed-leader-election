@@ -4,7 +4,6 @@ NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Con
 
 Should eventually be compliant with [this c++ style guide](https://cadregitlab.jpl.nasa.gov/cadre/cadre-gnc-docs/-/blob/main/cpp_guidelines/cpp_guidelines.pdf)
 
-
 # Building
 
 I use cmake.
@@ -15,7 +14,8 @@ And building is fairly standard.
 
 I have a few dependencies:
 
-- doctest
+- doctest-dev
+- libinih-dev
 
 which can be fetched locally using `get_deps.sh` on ubuntu. 
 
@@ -28,6 +28,8 @@ cmake ..
 popd
 ```
 
+If you're feeling brave, you can run `cmake .. -DUSE_COMPRESSION=On` instead of `cmake ..`, to enable (experimental) message compression.
+
 and build
 
 ```
@@ -37,10 +39,58 @@ make -C build
 Optionally, test. To the best of my knoweldge, the easiest eay to test using doctest is to build a test executable and run like this:
 
 ```
-build/test
+build/src/ghs-tests/ghs-doctest
 ```
 
 Code coverage checks and performance testing are not implemented. 
+
+# Trying
+
+You can try it out on various machines. You'll have to set up a config that describes the network, then run `ghs-demo` on each machine. you can run them all locally, just set the agent endpoints to something like `tcp://localhost:<a port per agent>` or `ipc:///tmp/a_file_per_agent`
+
+This should work fine for a the `le_config.ini` file:
+
+```ini
+[agents]
+; valid endpoints are sockets, so
+; hostname:port 
+; ipc://<file>
+; are both valid
+; Agents must have consecutive ids starting at 0
+0=tcp://localhost:5000
+1=tcp://localhost:5001
+2=tcp://localhost:5002
+3=tcp://localhost:5003
+
+; Or locally:
+;0=ipc:///tmp/agent0
+;1=ipc:///tmp/agent1
+;2=ipc:///tmp/agent2
+;3=ipc:///tmp/agent3
+
+; Or for real fun, on diff machines
+;0=tcp://192.168.1.100:5000
+;0=tcp://192.168.1.101:5000
+;0=tcp://192.168.1.102:5000
+;0=tcp://192.168.1.103:5000
+
+[runtime]
+retry_connections=false
+```
+
+Then, in four terminals, execute:
+
+`<le_config.ini ghs-demo --start -i <ID> -w <S>`
+
+(usually ghs-demo is in `build/src/demo/`)
+
+where:
+
+- `<ID>` is the id of the current node (so we know where to listen)
+- `<S>` is an optional wait-time in seconds. The node will wait before starting the algorithm this many seconds, to give you a chance to start all nodes. All nodes should be started in that many seconds!!
+
+
+If it works, you'll see `Converged!!` in all windows, and after a few seconds it should shut down.  You can also look at the step-by-step edges used by each node in the output stream, if you have the stomach to look through it.
 
 # Installing
 
@@ -126,16 +176,14 @@ As such, you'll notice all the work is done by `GhsState::process(...)`. *Every 
 - `start_round()` which is used to trigger a new MST calculation and returns the message to send to trigger all nodes. When this is called is a system implementation detail and is beyond the scope of the class. 
 - `reset()` which is used to completely wipe the current state of the MST calculation. Each node becomes isoated and the class is reverted to its startup state after the constructor was called. 
 - `set_edge(...)` which is to be used (in an as-yet determined way) to set the communications cost between agents)
-
-However, some informative ones for system implementation might be:
-
-- `get_partition()` which returns a `Partition` type, showing the leader node ID and current algorithm 'level'.
+- `is_converged()` which is used to know if the algorithm has converged.
 
 # Style
 
 ## File organization
 
 - `hpp` (header) and `cpp` (src files) are in the same folder: `src/`
+- This is not always well observed under `src/ghs-demo`
 
 ## Naming conventions
 
