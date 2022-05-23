@@ -382,7 +382,7 @@ TEST_CASE("unit-test process_srch, unknown peers")
   size_t sz;
   CHECK_EQ(GHS_OK,   s.start_round(buf, sz));
   CHECK_EQ(buf.size(),2);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
   while(buf.size()>0){ 
     //auto m = buf.front();
 
@@ -407,7 +407,7 @@ TEST_CASE("unit-test process_srch,  mst peers")
   CHECK_EQ(GHS_OK, s.process(m,buf, sz));
 
   CHECK_EQ(buf.size(),2);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
   //auto m = buf.front();
   CHECK( Q_OK( buf.front(m) ) );
   CHECK_EQ(m.type, MsgType::SRCH);
@@ -434,7 +434,7 @@ TEST_CASE("unit-test process_srch, discarded peers")
   s.process(m,buf, sz);
   //they should report no MWOE to parent. 
   CHECK_EQ(buf.size(),1);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
 }
 
 TEST_CASE("unit-test process_srch, mixed peers")
@@ -452,7 +452,7 @@ TEST_CASE("unit-test process_srch, mixed peers")
   s.process(m,buf, sz);
 
   CHECK_EQ(buf.size(),2);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
 
   //auto m = buf.front();
   CHECK( Q_OK( buf.front(m) ) );
@@ -490,7 +490,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   CHECK_EQ(err,GHS_OK);
 
   CHECK_EQ(buf.size(),1);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
 
   //auto m = buf.front();
   //
@@ -503,7 +503,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   CHECK_EQ(buf.size(),0);
   //now from non-parent
   m = SrchPayload{0,0}.to_msg(0,2);
-  CHECK_THROWS_AS(err = s.process(m,buf), const std::runtime_error&);
+  CHECK_THROWS_AS(err = s.process(m,buf,sz), const std::runtime_error&);
   CHECK(!GhsOK(err));
 }
 
@@ -552,7 +552,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
   s.start_round(buf, sz);
 
   CHECK_EQ(buf.size(),1); // SRCH
-  CHECK_EQ(buf.size(),s); // SRCH
+  CHECK_EQ(buf.size(),sz); // SRCH
   Msg m;
   CHECK( Q_OK( buf.front(m) ) );
   //CHECK_EQ(buf.front().type, MsgType::SRCH);
@@ -575,7 +575,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
 
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
   //in this case, we didn't create a good edge, so they assume there's none avail
   //CHECK_EQ(buf.front().type, MsgType::NOOP);
 
@@ -601,7 +601,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
   s.start_round(buf, sz);
 
   CHECK_EQ(buf.size(),1); // SRCH
-  CHECK_EQ(buf.size(),s); // SRCH
+  CHECK_EQ(buf.size(),sz); // SRCH
   //CHECK_EQ(buf.front().type, MsgType::SRCH);
   Msg m;
   CHECK( Q_OK( buf.front(m) ) );
@@ -627,7 +627,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
   //in this case, we have a candidate, that should join_us
   //Msg m;
   CHECK( Q_OK( buf.front(m) ) );
@@ -656,7 +656,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   CHECK_EQ(s.mwoe().peer, -1);
   CHECK_EQ(s.mwoe().metric_val, GHS_EDGE_WORST_METRIC);
   CHECK_EQ(buf.size(),1); // SRCH to 2
-  CHECK_EQ(buf.size(),s); 
+  CHECK_EQ(buf.size(),sz); 
 
   Msg buf_front;
   CHECK( Q_OK( buf.front(buf_front) ) );
@@ -676,7 +676,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
   //in this case, we have to tell parent
   CHECK ( Q_OK( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type, MsgType::SRCH_RET);
@@ -702,12 +702,12 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
   s.start_round(buf, sz);
   CHECK_EQ(1,s.waiting_count());
   CHECK_EQ(buf.size(),1);
-  CHECK_EQ(buf.size(),s);
+  CHECK_EQ(buf.size(),sz);
   buf.pop(); 
 
   Msg m = AckPartPayload{}.to_msg(0,1); 
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
-  CHECK_NOTHROW(s.process(m,buf));
+  CHECK_NOTHROW(s.process(m,buf,sz));
   CHECK_NOTHROW( s.get_edge(1,e));
   CHECK_EQ(e.status, DELETED);
 }
@@ -735,7 +735,7 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
   Edge tmp;
   CHECK_NOTHROW(s.get_edge(1,tmp));
-  CHECK_EQ(tmp, UNKNOWN); //<--unmodified!
+  CHECK_EQ(tmp.status, UNKNOWN); //<--unmodified!
 }
 
 TEST_CASE("unit-test process_ack_part, no edge"){
@@ -834,6 +834,7 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
   s.set_leader_id(0);
   s.set_level(0);
 
+  size_t sz;
   s.start_round(buf, sz);
   CHECK_EQ(buf.size(),2);
   buf.pop();buf.pop();
@@ -891,6 +892,7 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
 
   //send the start message
   m = SrchPayload{3,0}.to_msg(0,3);
+  size_t sz;
   CHECK_NOTHROW(s.process(m, buf, sz));
 
   CHECK_EQ(buf.size(),2);
@@ -950,6 +952,7 @@ TEST_CASE("unit-test join_us nodes pass")
   StaticQueue<Msg,32> buf;
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
+  size_t sz;
   CHECK_THROWS(s.process(m,buf, sz));
   s.set_leader_id(5);
   s.set_level(0);
@@ -984,6 +987,7 @@ TEST_CASE("unit-test join_us root relays to peer")
   StaticQueue<Msg,32> buf;
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
+  size_t sz;
   CHECK_NOTHROW(s.process(m,buf, sz));
   s.get_edge(1,e);
   CHECK_EQ(e.status , MST);
@@ -1021,6 +1025,7 @@ TEST_CASE("unit-test join_us response to higher level")
   Msg m = JoinUsPayload{0,1,1,1}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
   StaticQueue<Msg,32> buf;
   //error: we shoudl never receive a join_ from a partition with higher level!
+  size_t sz;
   CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error);
   s.set_leader_id(3);
   s.set_level(1);
@@ -1045,6 +1050,7 @@ TEST_CASE("unit-test join_us response to MST edge")
   s.set_edge_status(1,MST); //previous one-way join (see prior test case)
   Msg m = JoinUsPayload{0,1,1,0}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
   StaticQueue<Msg,32> buf;
+  size_t sz;
   CHECK_NOTHROW(s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);//No action: we are 0, JOIN_US was from new_leader.
   Edge e;
@@ -1070,6 +1076,7 @@ TEST_CASE("unit-test join_us merge")
 
   //FIRST, 0 gets the message that the edge 0-1 is the MWOE from partition with leader 3.
   m = JoinUsPayload{1,0,3,0}.to_msg(0,3);// 3 says to zero "add the edge 1<-0 to partition 3 with level 0. 
+  size_t sz;
   CHECK_NOTHROW(s.process(m,buf, sz));//shouldn't be a problem
   //ok, side effects are:
   //0 sends a message to 1 saying "Join our partition"
@@ -1084,7 +1091,7 @@ TEST_CASE("unit-test join_us merge")
   CHECK_EQ(buf_front.data.join_us.proposed_leader, 3);//<-- leader 
   CHECK_EQ(buf_front.data.join_us.proposed_level, 0);//<-- level is not changed during absorb
   Edge e;
-  GHECK_EQ(GHS_OK, s.get_edge(1,e));
+  CHECK_EQ(GHS_OK, s.get_edge(1,e));
   CHECK_EQ(e.status, MST);//<-- MST link established
 
 }
@@ -1108,6 +1115,7 @@ TEST_CASE("unit-test join_us merge leader-side")
 
   //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 2.
   m = JoinUsPayload{0,1,3,0}.to_msg(1,3); // 3 says to 1 "add the edge 1->0 to partition 3 with level 0. 
+  size_t sz;
   CHECK_NOTHROW(s.process(m,buf, sz));
   //ok, side effects are:
   //1 sends a message to 0 saying "Join our partition"
@@ -1161,6 +1169,7 @@ TEST_CASE("integration-test two nodes")
   GhsState<4,32> s1(1); s1.add_edge(Edge{0,1,UNKNOWN,2});
   StaticQueue<Msg,32> buf;
   //let's turn the crank and see what happens
+  size_t sz;
   s0.start_round(buf, sz);
   s1.start_round(buf, sz);
   CHECK_EQ(buf.size(),2);
@@ -1216,6 +1225,7 @@ TEST_CASE("integration-test opposite two nodes")
 
 
   //Trigger start
+  size_t sz;
   s1.start_round(buf, sz);
   s0.start_round(buf, sz);
 
@@ -1263,7 +1273,7 @@ TEST_CASE("integration-test opposite two nodes")
   CHECK_EQ(GHS_OK,s0.get_edge(1,es1));
   CHECK_EQ(es1.status, MST);
   CHECK_EQ(GHS_OK,s1.get_edge(0,es0));
-  CHECK_EQ(es0..status, MST);
+  CHECK_EQ(es0.status, MST);
 
   //nodes understand leader implicitly from prior JOIN_US msgs to be max(0,1)=1
   //... 
@@ -1315,7 +1325,8 @@ TEST_CASE("sim-test 3 node frenzy")
     f << "f: "<<states[m.from]<<std::endl;
     f << "t: "<<states[m.to]<<std::endl;
     f << "-  "<<m << std::endl;
-    states[m.to].process(m,added, s);
+    size_t sz;
+    states[m.to].process(m,added, sz);
     f << "t':"<< states[m.to]<<std::endl;
 
     int added_sz = added.size();

@@ -2,8 +2,6 @@
 #define msg_hpp
 
 #include "graph.hpp"
-#include <cstdint>
-#include <cstring>
 
 struct Msg;//the actual structure used internally
 
@@ -79,7 +77,7 @@ struct Msg
 
 };
 
-const size_t GHS_MAX_MSG_SZ= sizeof(Msg);
+const long long int GHS_MAX_MSG_SZ= sizeof(Msg);
 
 
 #endif
