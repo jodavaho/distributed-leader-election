@@ -14,10 +14,10 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
   GhsState<N,BUF_SZ> s(my_id);
   AgentID id=1;
   for (size_t i=0;i<n_unknown;i++, id++){
-    REQUIRE_EQ(1, s.set_edge( {id,my_id,UNKNOWN, id}));
+    REQUIRE_EQ(GHS_OK, s.set_edge( {id,my_id,UNKNOWN, id}));
     //twice --> none added
     REQUIRE(s.has_edge(1));
-    REQUIRE_EQ(0, s.set_edge( {id,my_id,UNKNOWN, id}));
+    REQUIRE_EQ(GHS_OK, s.set_edge( {id,my_id,UNKNOWN, id}));
     Edge e;
     CHECK_EQ(GHS_OK,s.get_edge(1,e));
     REQUIRE_EQ(e.peer,id);
@@ -27,7 +27,7 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
     REQUIRE_EQ(s.get_n_peers(), i+1);
   }
   for (size_t i=0;i<n_deleted;i++, id++){
-    REQUIRE_EQ(1, s.set_edge( {id,my_id,DELETED, id}));
+    REQUIRE_EQ(GHS_OK, s.set_edge( {id,my_id,DELETED, id}));
     Edge e;
     REQUIRE_NOTHROW(s.get_edge(id,e));
     CHECK_EQ(GHS_OK,s.get_edge(id,e));
@@ -37,7 +37,7 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
     REQUIRE_EQ(e.metric_val, id);
   }
   for (size_t i=0;i<n_MST;i++, id++){
-    REQUIRE_EQ(1, s.set_edge( {id,my_id,MST, id}));
+    REQUIRE_EQ(GHS_OK, s.set_edge( {id,my_id,MST, id}));
     Edge e;
     REQUIRE_NOTHROW(s.get_edge(id,e));
     CHECK_EQ(GHS_OK,s.get_edge(id,e));
@@ -64,8 +64,8 @@ TEST_CASE("unit-test get_state"){
 
 TEST_CASE("unit-test set_edge_status"){
   GhsState<4,32> s(0);
-  CHECK_EQ(1, s.set_edge( {1,0,DELETED, 1}));
-  CHECK_EQ(0, s.set_edge( {1,0,UNKNOWN, 1}));
+  CHECK_EQ(GHS_OK, s.set_edge( {1,0,DELETED, 1}));
+  CHECK_EQ(GHS_OK, s.set_edge( {1,0,UNKNOWN, 1}));
 
   Edge e;
   CHECK(!s.has_edge(2));
@@ -78,12 +78,13 @@ TEST_CASE("unit-test set_edge_status"){
   CHECK_EQ(e.status, UNKNOWN);
   CHECK_EQ(e.metric_val, 1);
 
-  CHECK_NOTHROW(s.set_edge_status(1,MST));
-  CHECK_NOTHROW(s.get_edge(1,e));
-  CHECK_EQ(e.peer, 1);
-  CHECK_EQ(e.root,0);
-  CHECK_EQ(e.status, MST);
-  CHECK_EQ(e.metric_val, 1);
+  Edge e2={9,10,UNKNOWN, 1000};
+  CHECK_EQ(GHS_OK, s.set_edge_status(1,MST));
+  CHECK_EQ(GHS_OK, s.get_edge(1,e2));
+  CHECK_EQ(e2.peer, 1);
+  CHECK_EQ(e2.root,0);
+  CHECK_EQ(e2.status, MST);
+  CHECK_EQ(e2.metric_val, 1);
 
   CHECK(!s.has_edge(2));
 }
@@ -504,7 +505,8 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   //now from non-parent
   m = SrchPayload{0,0}.to_msg(0,2);
   CHECK_THROWS_AS(err = s.process(m,buf,sz), const std::runtime_error&);
-  CHECK(!GhsOK(err));
+  //err not set, due to throw, bad test...
+  //CHECK(!GhsOK(err));
 }
 
 TEST_CASE("Guard against Edge refactoring"){
@@ -690,12 +692,12 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
   Edge e;
 
   //create edge to 1
-  int r;
+  GhsError r;
   Edge e1 = {1,0,UNKNOWN,10};
   CHECK_EQ(1, e1.peer);
   CHECK_EQ(0, e1.root);
   CHECK_NOTHROW(r = s.set_edge( e1 ));
-  CHECK_EQ(1,r);//<-- was it added?
+  CHECK_EQ(GHS_OK,r);//<-- was it added?
   CHECK_NOTHROW( s.get_edge(1,e));
   CHECK_EQ(e.status, UNKNOWN);
   size_t sz;
@@ -717,12 +719,12 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   StaticQueue<Msg,32> buf;
 
   //create edge to 1
-  int r;
+  GhsError r;
   Edge e1 = {1,0,UNKNOWN,10};
   CHECK_EQ(1, e1.peer);
   CHECK_EQ(0, e1.root);
   CHECK_NOTHROW(r = s.set_edge( e1 ));
-  CHECK_EQ(1,r);//<-- was it added?
+  CHECK_EQ(GHS_OK,r);//<-- was it added?
   Edge e;
   CHECK_NOTHROW(s.get_edge(1,e));
   CHECK_EQ(e.status, UNKNOWN);
@@ -795,7 +797,7 @@ TEST_CASE("unit-test in_part, happy-path"){
   s.add_edge( {1,0,UNKNOWN,999} );
   Msg m = InPartPayload{1,2}.to_msg(0,1);
   size_t sz;
-  s.process( m, buf, sz);
+  CHECK_EQ(GHS_OK, s.process( m, buf, sz));
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(s.waiting_count(),0);
   //no, I am not
@@ -805,20 +807,21 @@ TEST_CASE("unit-test in_part, happy-path"){
 
   //are you, node 0,  in partition led by agent 0 with level 2? 
   m = InPartPayload{0,2}.to_msg(0,1);
-  s.process( m, buf, sz);
+  CHECK_EQ(GHS_OK, s.process( m, buf, sz));
   CHECK_EQ(buf.size(),1);
+  CHECK_EQ(buf.size(),sz);
   CHECK_EQ(s.waiting_count(),0);
   //yes, I am
-  //CHECK_EQ(buf.front().type, MsgType::ACK_PART);
   CHECK (Q_OK(buf.front(m)));
   CHECK_EQ(m.type, MsgType::ACK_PART);
   buf.pop();
 
   //are you, node 0, in partition led by agent 0 with level 3?
   m = InPartPayload{0,3}.to_msg(0,1);
-  s.process( m, buf, sz);
+  CHECK_EQ(GHS_OK, s.process( m, buf, sz));
   //well, I can't say, I'm only level 2
   CHECK_EQ(buf.size(),0);
+  CHECK_EQ(buf.size(),sz);
   CHECK_EQ(s.waiting_count(),0);
   CHECK_EQ(s.delayed_count(),1);
 }
@@ -956,8 +959,9 @@ TEST_CASE("unit-test join_us nodes pass")
   CHECK_THROWS(s.process(m,buf, sz));
   s.set_leader_id(5);
   s.set_level(0);
-  CHECK_EQ(s.process(m,buf, sz), 1);
+  CHECK_EQ(s.process(m,buf, sz), GHS_OK);
   CHECK_EQ(buf.size(),        1);
+  CHECK_EQ(buf.size(),       sz);
   Msg buf_front;
   CHECK(Q_OK(buf.front(buf_front)));
   CHECK_EQ(buf_front.to,    1);

@@ -115,7 +115,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
     return GHS_INVALID_STATE;
   }
 
-  if (waiting_count() == 0){
+  if (waiting_count() != 0){
     fatal("We got a srch msg while still waiting for results!");
   }
   
@@ -759,7 +759,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge_status(const AgentID &to, co
 {
   size_t idx=0;
   GhsError found = checked_index_of(to,idx);
-  if (!found){ return found;}
+  if (!GhsOK(found )){ return found;}
   outgoing_edges[idx].status=status;
   return GHS_OK;
 }
@@ -816,7 +816,7 @@ size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::waiting_count() const
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::delayed_count() const 
 {
-  int delayed =0;
+  size_t delayed =0;
   for (size_t i=0;i<n_peers;i++){
     if (response_required[i]){
       delayed++;
@@ -835,7 +835,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_later(const AgentID&from, con
 {
   size_t idx=0;
   auto found = checked_index_of(from,idx);
-  if (GhsOK(found)) { return found; } 
+  if (!GhsOK(found)) { return found; } 
 
   response_required[idx]=true;
   response_prompt[idx]  =m;
