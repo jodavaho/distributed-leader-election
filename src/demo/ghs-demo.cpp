@@ -17,15 +17,16 @@ template<size_t AN, size_t QN>
 void initialize_ghs(GhsState<AN,QN>& ghs, ghs_config& cfg)
 {
   ghs.reset();
-  for (size_t i=0;i<cfg.n_agents;i++){
+  for (AgentID i=0;i<cfg.n_agents;i++){
     if (i!=cfg.my_id){
       ghs.set_edge( {i,cfg.my_id,UNKNOWN, i+cfg.my_id} ); 
-      printf("[info] Set edge: %zu from %d (check=%d)\n",
+      printf("[info] Set edge: %d from %d (check=%d)\n",
           i,
           cfg.my_id,
           ghs.has_edge(i));
-      auto e= ghs.get_edge(i);
-      printf("[info] (%zu<--%zu, %d %zu)\n",
+      Edge e;
+      ghs.get_edge(i,e);
+      printf("[info] (%d<--%d, %d %d)\n",
           e.peer,e.root,e.status,e.metric_val);
     }
   }
@@ -34,12 +35,18 @@ void initialize_ghs(GhsState<AN,QN>& ghs, ghs_config& cfg)
 template<size_t AN, size_t QN>
 void kill_edge(GhsState<AN,QN>& ghs, ghs_config & cfg, uint8_t agent_to)
 {
+  bool resp_req, waiting_for;
   ghs.set_edge( {agent_to, cfg.my_id, DELETED, 0} );
-  if (ghs.is_response_required(agent_to)){
+
+  ghs.is_response_required(agent_to, resp_req);
+  if (resp_req)
+  {
     printf("[info] response impossible: alerting GHS state machine to loss of agent\n");
     ghs.set_response_required(agent_to, false);
   }
-  if (ghs.is_waiting_for(agent_to)){
+
+  ghs.is_waiting_for(agent_to, waiting_for);
+  if (waiting_for){
     printf("[info] waiting illogical: alerting GHS state machine to loss of agent\n");
     ghs.set_waiting_for(agent_to, false);
   }
@@ -127,7 +134,12 @@ int main(int argc, char** argv){
 
   if (config.command==ghs_config::START){
     initialize_ghs(ghs,config);
-    ghs.start_round(ghs_buf);
+    size_t sent;
+    auto ret = ghs.start_round(ghs_buf, sent);
+    if (ret != GHS_OK){
+      printf("[error] could not start ghs!\n");
+      return 1;
+    }
   } 
 
   static bool wegood=true;
@@ -169,11 +181,16 @@ int main(int argc, char** argv){
             std::stringstream ss;
             ss<<lm;
             printf("[info] Received: %s\n",ss.str().c_str());
-            size_t new_msg_ct = ghs.process(lm,ghs_buf);
+            size_t new_msg_ct;
+            GhsError retval = ghs.process(lm,ghs_buf, new_msg_ct);
+            if (retval != GHS_OK){
+              printf("[error] could not call ghs.process()!");
+              return 1;
+            }
             printf("[info] # response msgs: %zu\n", new_msg_ct);
             printf("[info] GHS waiting: %zu\n", ghs.waiting_count());
             printf("[info] GHS delayed: %zu\n", ghs.delayed_count());
-            printf("[info] GHS leader: %zu parent: %zu & level: %zu\n", 
+            printf("[info] GHS leader: %d parent: %d & level: %d\n", 
                 ghs.get_leader_id(), 
                 ghs.get_parent_id(),
                 ghs.get_level());

@@ -2,10 +2,11 @@
 #define GHS_DEMO_MSGUTILS
 
 #include "ghs/msg.hpp"
+#include <cstring>
 
 //quick and dirty static-sized message move
 template <std::size_t NUM>
-Msg from_bytes(uint8_t b[NUM]){
+Msg from_bytes(unsigned char b[NUM]){
   static_assert(NUM>=GHS_MAX_MSG_SZ,"from_bytes only accepts statically-sized arrays >= sizeof(Msg)");
   Msg r;
   void* rp = (void*)&r;
@@ -14,7 +15,7 @@ Msg from_bytes(uint8_t b[NUM]){
 }
 
 template <std::size_t NUM>
-void to_bytes(const Msg&m, uint8_t b[NUM]){
+void to_bytes(const Msg&m, unsigned char b[NUM]){
 #ifndef USE_COMPRESSION
   static_assert(NUM>=GHS_MAX_MSG_SZ,"from_bytes only accepts statically-sized arrays >= sizeof(Msg)");
   void* mp = (void*)&m;
@@ -27,7 +28,7 @@ void to_bytes(const Msg&m, uint8_t b[NUM]){
 }
 
 //non-static versions (w/ or w/o compression)
-Msg from_bytes(uint8_t *b, size_t b_sz);
-void to_bytes(const Msg&m, uint8_t* b, size_t &b_sz);
+Msg from_bytes(unsigned char *b, size_t b_sz);
+void to_bytes(const Msg&m, unsigned char* b, size_t &b_sz);
 
 #endif 

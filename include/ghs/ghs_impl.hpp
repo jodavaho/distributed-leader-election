@@ -718,6 +718,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_response_required(const AgentID &w
   GhsError found = checked_index_of(who,idx);
   if (!GhsOK(found)) {return found;}
   res_req = response_required[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
