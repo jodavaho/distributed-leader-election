@@ -10,7 +10,7 @@
 using std::max;
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsState<GHS_MAX_AGENTS, BUF_SZ>::GhsState(AgentID my_id) noexcept{
+GhsState<GHS_MAX_AGENTS, BUF_SZ>::GhsState(AgentID my_id) {
   this->my_id =  my_id;
   reset();
 }
@@ -22,7 +22,7 @@ GhsState<GHS_MAX_AGENTS, BUF_SZ>::~GhsState(){}
  * Reset the algorithm status completely
  */
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::reset() noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::reset() {
   set_leader_id(my_id);
   set_level(GHS_LEVEL_START);
   set_parent_id(my_id);
@@ -47,7 +47,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::reset() noexcept{
  *
  */
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::start_round(StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t & qsz) noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::start_round(StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t & qsz) {
   //If I'm leader, then I need to start the process. Otherwise wait.
   if (my_leader == my_id){
     //nobody tells us what to do but ourselves
@@ -57,12 +57,12 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::start_round(StaticQueue<Msg,BUF_SZ> &
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-Edge GhsState<GHS_MAX_AGENTS, BUF_SZ>::mwoe() const noexcept{
+Edge GhsState<GHS_MAX_AGENTS, BUF_SZ>::mwoe() const {
   return best_edge;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process(const Msg &msg, StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t &qsz) noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process(const Msg &msg, StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t &qsz) {
   if (msg.from == my_id ){
     assert(false && "Received message from self!");
     return GHS_MSG_INVALID_SENDER;
@@ -139,7 +139,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Sr
   to_send.in_part = InPartPayload{my_leader, my_level};
   size_t part_sent=0;
   GhsError part_ret = typecast(EdgeStatus::UNKNOWN, MsgType::IN_PART, to_send, srchbuf, part_sent);
-  GhsAsserT(part_ret);
+  GhsAssert(part_ret);
 
   //remember who we sent to so we can wait for them:
   size_t srchbuf_sz = srchbuf.size();
@@ -420,7 +420,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
     //level can be same, lower (from another partition), but not higher (we shouldn't have replied)
     if (join_level > my_level){
       assert(false && "We should never receive a JOIN_US with a higher level when we do not initiate (we shouldnt have replied to their IN_PART)");
-      return GHS_INAVALID_JOIN_REC;
+      return GHS_INVALID_JOIN_REC;
     }  
     assert(has_edge(join_root));
     edge_to_other_part = get_edge(join_root);
@@ -501,7 +501,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_noop(StaticQueue<Msg,BUF_SZ> 
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::typecast(const EdgeStatus status, const MsgType m, const MsgData &data, StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz)const noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::typecast(const EdgeStatus status, const MsgType m, const MsgData &data, StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz)const {
   size_t sent=0;
   for (size_t idx=0;idx<n_peers;idx++){
     const Edge &e = outgoing_edges[idx];
@@ -522,7 +522,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::typecast(const EdgeStatus status, con
 
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_broadcast(const MsgType m, const MsgData &data, StaticQueue<Msg,BUF_SZ> &buf, size_t&qsz)const noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_broadcast(const MsgType m, const MsgData &data, StaticQueue<Msg,BUF_SZ> &buf, size_t&qsz)const {
   size_t sent =0;
   for (size_t idx =0;idx<n_peers;idx++){
     const Edge&e = outgoing_edges[idx];
@@ -542,7 +542,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_broadcast(const MsgType m, const 
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_convergecast(const MsgType m, const MsgData& data, StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz)const noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_convergecast(const MsgType m, const MsgData& data, StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz)const {
   size_t sent=0;
   for (size_t idx =0;idx<n_peers;idx++){
     const Edge&e = outgoing_edges[idx];
@@ -563,7 +563,7 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::mst_convergecast(const MsgType m, con
 
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_parent_id(const AgentID& id) noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_parent_id(const AgentID& id) {
 
   //case 1: self-loop ok
   if (id==get_id()){
@@ -581,40 +581,53 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_parent_id(const AgentID& id) noex
 
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_parent_id() const noexcept{
+AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_parent_id() const {
   return parent;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_leader_id() const noexcept{
+AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_leader_id() const {
   return my_leader;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-void GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_leader_id(const AgentID& leader) noexcept{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_leader_id(const AgentID& leader) {
   my_leader = leader;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_level() const noexcept{
+Level GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_level() const {
   return my_level;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-void GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_level(const Level & l){
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_level(const Level & l){
   my_level = l;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_converged() const noexcept{
+bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_converged() const {
   return algorithm_converged;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::index_of(const AgentID& who, size_t &idx) const{
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::checked_index_of(const AgentID& who, size_t &idx) const{
   for (size_t i=0;i<n_peers;i++){
     if (peers[i] == who){
       idx = i;
+      return GHS_OK;
+    }
+  }
+  assert(false &&  "No such peer found: "+who);
+  return GHS_NO_SUCH_PEER;
+}
+
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
+bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::nothrow_has_index(const AgentID who) const{
+  for (size_t i=0;i<n_peers;i++){
+    if (peers[i] == who){
       return true;
     }
   }
@@ -624,134 +637,127 @@ bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::index_of(const AgentID& who, size_t &idx)
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_waiting_for(const AgentID &who, bool waiting){
   size_t idx=0;
-  GhsError found = index_of(who,idx);
+  GhsError found = checked_index_of(who,idx);
   
-  if (GhsOK(found)) {
-    waiting_for_response[idx]=waiting;
-    return GHS_OK;
-  }
-  assert (false && "Could not find peer: "+who);
-  return GHS_NO_SUCH_PEER;
+  if (!GhsOK(found)) { return found; }
+  waiting_for_response[idx]=waiting;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_waiting_for(const AgentID& who, bool &waiting){
   size_t idx=0;
-  GhsError found = index_of(who,idx);
-  if (GhsOK(found)) {
-    waiting = waiting_for_response[idx];
-    return GHS_OK;
-  }
-  assert (false && "Could not find peer: "+who);
-  return GHS_NO_SUCH_PEER;
+  GhsError found = checked_index_of(who,idx);
+
+  if (!GhsOK(found)) return found;
+  waiting = waiting_for_response[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_response_required(const AgentID &who, bool resp)
 {
   size_t idx=0;
-  GhsError found= index_of(who,idx);
-  if (GhsOK(found)){
-    response_required[idx]=resp;
-    return GHS_OK;
-  }
+  GhsError found= checked_index_of(who,idx);
 
-  assert (false && "Could not find peer: "+who);
-  return GHS_NO_SUCH_PEER;
+  if (!GhsOK(found)){return found;}
+  response_required[idx]=resp;
+  return GHS_OK;
+
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_response_required(const AgentID &who, bool & res_req){
   size_t idx=0;
-  GhsError found = index_of(who,idx);
-  if (GhsOK(found)){
-    res_req = response_required[idx];
-    return GHS_OK;
-  }
-  assert (false && "Could not find peer: "+who);
-  return GHS_NO_SUCH_PEER;
+  GhsError found = checked_index_of(who,idx);
+  if (!GhsOK(found)){return found;}
+  res_req = response_required[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_response_prompt(const AgentID &who, const InPartPayload& m){
   size_t idx=0;
-  GhsError found = index_of(who,idx);
-  if (GhsOK(found)){
-    response_prompt[idx]=m;
-    return GHS_OK;
-  }
-  assert (index_of(who,idx) && "Could not find peer: "+who);
-  return GHS_NO_SUCH_PEER;
+  GhsError found = checked_index_of(who,idx);
+  if (!GhsOK(found)){ return found; }
+  response_prompt[idx]=m;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>:: get_response_prompt(const AgentID &who, InPartPayload &out){
   size_t idx=0;
-  GhsError found = index_of(who,idx);
-  if (GhsOK(found)){
-  }
-  assert (index_of(who,idx) && "Could not find peer: "+who);
-  return response_prompt[idx];
+  GhsError found = checked_index_of(who,idx);
+  if (!GhsOK(found)){ return found; }
+  out = response_prompt[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::has_edge(const AgentID& to) const{
   size_t idx=0;
-  return index_of(to,idx);
+  return nothrow_has_index(to);
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-Edge GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_edge(const AgentID& to)  const
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_edge(const AgentID& to, Edge &out)  const
 {
   size_t idx=0;
-  assert (index_of(to,idx) && "Could not find peer: "+to);
-  return outgoing_edges[idx];
+  auto found = checked_index_of(to,idx);
+  if (!GhsOK(found)){ return found; }
+  out = outgoing_edges[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 
-void GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge_status(const AgentID &to, const EdgeStatus &status)
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge_status(const AgentID &to, const EdgeStatus &status)
 {
   size_t idx=0;
-  assert (index_of(to,idx) && "Could not find peer: "+to);
+  GhsError found = checked_index_of(to,idx);
+  if (!found){ return found;}
   outgoing_edges[idx].status=status;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-void GhsState<GHS_MAX_AGENTS, BUF_SZ>::add_edge_to(const AgentID& who ) {
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::add_edge_to(const AgentID& who ) {
   Edge e;
   e.peer=who;
   e.root=my_id;
   e.status=UNKNOWN;
   e.metric_val=0;
-  add_edge(e);
+  return add_edge(e);
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-int GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
 
   if (e.root != my_id){
-    throw std::invalid_argument("Cannot add an edge that is not rooted on current node");
+    assert(false && "Cannot add an edge that is not rooted on current node");
+    return GHS_INVALID_EDGE;
   }
 
-  size_t idx=0;
   AgentID who = e.peer;
-  if (index_of(who,idx)){
+  if (nothrow_has_index(who)){
+    size_t idx=0;
+    GhsError er = checked_index_of(who,idx);
+    assert(GhsOK(er));
     outgoing_edges[idx].metric_val  =  e.metric_val;
     outgoing_edges[idx].status      =  e.status;
-    return 0;
+    return GHS_OK;
   } else {
     //if we got this far, we didn't find the peer yet. 
     assert(n_peers<GHS_MAX_AGENTS);
     peers[n_peers]=e.peer;
     outgoing_edges[n_peers] = e;
     n_peers++;
-    return 1;
+    return GHS_OK;
   }
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::waiting_count() const noexcept
+size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::waiting_count() const 
 {
   int waiting =0;
   //count them up. 
@@ -764,7 +770,7 @@ size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::waiting_count() const noexcept
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::delayed_count() const noexcept
+size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::delayed_count() const 
 {
   int delayed =0;
   for (size_t i=0;i<n_peers;i++){
@@ -776,18 +782,18 @@ size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::delayed_count() const noexcept
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_id() const noexcept {
+AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_id() const {
   return my_id;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-void GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_later(const AgentID&from, const InPartPayload &m)
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_later(const AgentID&from, const InPartPayload m)
 {
-  int idx=0;
-  bool found = index_of(from,idx);
-  if (!found){
-    assert(false&&"Could not find agent that we are trying to save message from!");
-  }
+  size_t idx=0;
+  auto found = checked_index_of(from,idx);
+  if (GhsOK(found)) { return found; } 
+
   response_required[idx]=true;
   response_prompt[idx]  =m;
+  return GHS_OK;
 }
