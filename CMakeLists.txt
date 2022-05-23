@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.15)
-include(ExternalProject)
 
 project(ghs)
 
@@ -7,6 +6,7 @@ OPTION(BUILD_DEMO "Build ghs-demo" OFF)
 OPTION(BUILD_DOCTEST "Build ghs-doctest" OFF) 
 OPTION(BUILD_EXT "Build libghs_ext.so" OFF) 
 OPTION(BUILD_TOOLS "(DEPRECATED) CLI testing tools" OFF) 
+OPTION(ENABLE_ROS "Set up ROS and Catkin CMakeLists.txt" OFF) 
 
 set (CMAKE_CXX_STANDARD 11)
 
@@ -21,6 +21,17 @@ add_subdirectory(src/lib)
 if (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO OR BUILD_EXT)
 add_subdirectory(src/libtest)
 endif (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO OR BUILD_EXT)
+
+if (ENABLE_ROS)
+  message("-- [ENABLE_ROS=On] Enabling ROS catkin integration")
+  find_package(catkin REQUIRED)
+  catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES ghs ghs_ext
+  )
+else()
+  message("-- [ENABLE_ROS=Off]")
+endif(ENABLE_ROS)
 
 # Some CLI tools for testing specific graphs very quickly
 if (BUILD_TOOLS)
