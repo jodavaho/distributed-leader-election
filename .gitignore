@@ -4,6 +4,7 @@ build/
 .hook*
 .vscode
 *.msg
+ext/
 cmake/
 CMakeFiles/
 CTestTestfile.cmake
