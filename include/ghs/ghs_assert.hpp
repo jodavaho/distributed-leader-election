@@ -1,16 +1,15 @@
 #ifndef GHS_ASSERT
 #define GHS_ASSERT
 
+//replace me
+#include <cassert>
+#include <stdexcept>
+#define ghs_assert(x) assert(x)
 
 #ifndef NDEBUG
-
-#include <stdexcept>
-#define fatal(x) throw std::runtime_error(x)
-#define assert(x) if ( !(x) ) { fatal("x failed!"); }
-
+#define ghs_fatal(x) throw std::runtime_error(x)
 #else
-#define fatal(x) if(false){}
-#define assert(x) if(false){}
+#define ghs_fatal(x) if(false){}
 
 #endif //NDEBUG
 #endif //GHS_ASSERT

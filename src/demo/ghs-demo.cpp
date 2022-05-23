@@ -28,6 +28,8 @@ void initialize_ghs(GhsState<AN,QN>& ghs, ghs_config& cfg)
       ghs.get_edge(i,e);
       printf("[info] (%d<--%d, %d %d)\n",
           e.peer,e.root,e.status,e.metric_val);
+    }else{
+      printf("[info] Ignoring: %d (it's me)\n", i);
     }
   }
 }
