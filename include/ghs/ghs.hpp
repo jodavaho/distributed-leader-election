@@ -135,7 +135,6 @@ class GhsState
     //getters
     size_t waiting_count() const noexcept;
     size_t delayed_count() const noexcept;
-    std::string  dump_edges()const noexcept;
 
     Edge mwoe() const noexcept;
 
@@ -201,6 +200,7 @@ class GhsState
 
     bool                     index_of(const AgentID&, size_t& out_idx) const;
     void                     respond_later(const AgentID&, const InPartPayload &m);
+    size_t  respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>& );
 
     AgentID                  my_id;
     AgentID                  my_leader;

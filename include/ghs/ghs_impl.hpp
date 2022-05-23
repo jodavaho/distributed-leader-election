@@ -133,9 +133,23 @@ size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Srch
 
   //remember who we sent to so we can wait for them:
   size_t srchbuf_sz = srchbuf.size();
-  size_t buf_sz = buf.size();
   assert(srchbuf_sz == srch_sent + part_sent);
 
+  //at this point, we may not have sent any msgs, because:
+  //1) There are no unknown outgoing edges
+  //2) There are no children to relay the srch to
+  //
+  //If that's the case, we can safely respond with "No MWOE" and that's it.
+  if (srchbuf_sz == 0 && delayed_count() ==0){
+    return respond_no_mwoe(buf);
+  }
+
+  //past here, we know we either had srchbuf msgs, or a delayed msg. 
+
+  //first handle srchbuf msgs
+  //push temporarily cache'd messages to outgoingn buf, and note the receiver
+  //ID so we can track their response later.
+  size_t buf_sz_before = buf.size();
   for (size_t i=0;i<srchbuf_sz;i++){
     Msg m;
     srchbuf.pop(m);
@@ -143,10 +157,26 @@ size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_srch(  AgentID from, const Srch
     buf.push(m);
   }
 
-  assert( (buf.size() - buf_sz == srch_sent + part_sent)  );
+  //asserts are factored out in release code, so tell compiler to ignore that
+  //variable.
+  if ( (buf.size() - buf_sz_before != srch_sent + part_sent )  )
+  {
+    assert(false&&"Our buffer had too many or two few messages to send after we processed");
+  }
 
-  //make sure to check_new_level, since our level may have changed, above. 
+  //make sure to check_new_level, since our level may have changed, above,
+  //which will handled delayed_count != 0;
   return srch_sent + part_sent + check_new_level(buf);
+}
+
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
+size_t  GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_no_mwoe( StaticQueue<Msg, BUF_SZ> &buf )
+{
+  MsgData pld;
+  pld.srch_ret.to=0;
+  pld.srch_ret.from=0;
+  pld.srch_ret.metric = ghs_worst_possible_edge().metric_val;
+  return mst_convergecast(SRCH_RET, pld, buf);
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
@@ -625,6 +655,16 @@ void GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge_status(const AgentID &to, const 
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
+void GhsState<GHS_MAX_AGENTS, BUF_SZ>::add_edge_to(const AgentID& who ) {
+  Edge e;
+  e.peer=who;
+  e.root=my_id;
+  e.status=UNKNOWN;
+  e.metric_val=0;
+  add_edge(e);
+}
+
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 size_t GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
 
   if (e.root != my_id){
@@ -680,8 +720,11 @@ AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_id() const noexcept {
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 void GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_later(const AgentID&from, const InPartPayload &m)
 {
-  size_t idx;
-  assert( index_of(from,idx) );
+  size_t idx=0;
+  bool found = index_of(from,idx);
+  if (!found){
+    assert(false&&"Could not find agent that we are trying to save message from!");
+  }
   response_required[idx]=true;
   response_prompt[idx]  =m;
 }
