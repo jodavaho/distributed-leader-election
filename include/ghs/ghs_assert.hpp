@@ -8,7 +8,7 @@
 #define fatal(x) throw std::runtime_error(x)
 #define assert(x) if ( !(x) ) { fatal("x failed!"); }
 
-#else 
+#else
 #define fatal(x) if(false){}
 #define assert(x) if(false){}
 
