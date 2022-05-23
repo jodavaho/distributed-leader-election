@@ -14,33 +14,33 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
   GhsState<N,BUF_SZ> s(my_id);
   AgentID id=1;
   for (size_t i=0;i<n_unknown;i++, id++){
-    REQUIRE_EQ(1, s.set_edge( {id,0,UNKNOWN, id}));
+    REQUIRE_EQ(1, s.set_edge( {id,my_id,UNKNOWN, id}));
     //twice --> none added
     REQUIRE(s.has_edge(1));
-    REQUIRE_EQ(0, s.set_edge( {id,0,UNKNOWN, id}));
+    REQUIRE_EQ(0, s.set_edge( {id,my_id,UNKNOWN, id}));
     Edge e;
     e = s.get_edge(1);
     REQUIRE_EQ(e.peer,id);
-    REQUIRE_EQ(e.root,0);
+    REQUIRE_EQ(e.root,my_id);
     REQUIRE_EQ(e.status, UNKNOWN);
     REQUIRE_EQ(e.metric_val, id);
     REQUIRE_EQ(s.get_n_peers(), i+1);
   }
   for (size_t i=0;i<n_deleted;i++, id++){
-    REQUIRE_EQ(1, s.set_edge( {id,0,DELETED, id}));
+    REQUIRE_EQ(1, s.set_edge( {id,my_id,DELETED, id}));
     Edge e;
     REQUIRE_NOTHROW(e=s.get_edge(id));
     REQUIRE_EQ(e.peer,id);
-    REQUIRE_EQ(e.root,0);
+    REQUIRE_EQ(e.root,my_id);
     REQUIRE_EQ(e.status, DELETED);
     REQUIRE_EQ(e.metric_val, id);
   }
   for (size_t i=0;i<n_MST;i++, id++){
-    REQUIRE_EQ(1, s.set_edge( {id,0,MST, id}));
+    REQUIRE_EQ(1, s.set_edge( {id,my_id,MST, id}));
     Edge e;
     REQUIRE_NOTHROW(e=s.get_edge(id));
     REQUIRE_EQ(e.peer,id);
-    REQUIRE_EQ(e.root,0);
+    REQUIRE_EQ(e.root,my_id);
     REQUIRE_EQ(e.status, MST);
     REQUIRE_EQ(e.metric_val, id);
   }
@@ -285,6 +285,7 @@ TEST_CASE("unit-test start_round() on leader, discarded peers")
   s.set_edge({1, 0,DELETED,1});
   s.set_edge({2, 0,DELETED,1});
   s.start_round(buf);
+  //do they report no MWOE to parent? No, no parent
   CHECK_EQ(buf.size(),0);
 }
 
@@ -415,7 +416,8 @@ TEST_CASE("unit-test process_srch, discarded peers")
   s.set_parent_id(3);
   Msg m = SrchPayload{3,0}.to_msg(0,3);
   s.process(m,buf);
-  CHECK_EQ(buf.size(),0);
+  //they should report no MWOE to parent. 
+  CHECK_EQ(buf.size(),1);
 }
 
 TEST_CASE("unit-test process_srch, mixed peers")

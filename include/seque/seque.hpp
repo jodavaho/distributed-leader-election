@@ -1,6 +1,6 @@
 #ifndef seque_hpp
 #define seque_hpp
-
+#include <cstdlib>
 /** 
  *
  * Using enums allows compile time checks you are handling all possible
@@ -101,6 +101,7 @@ class StaticQueue
     QueueRetcode at(const size_t idx, T &out_item ) const;
 
 
+    QueueRetcode clear();
     /**
      * A possible C++17 implementation of operator[]
      */
