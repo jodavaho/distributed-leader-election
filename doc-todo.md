@@ -1,0 +1,2 @@
+- inih is stack-only
+- nng _should_ be static mem, if you use single objects
