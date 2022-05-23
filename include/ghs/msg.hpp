@@ -7,7 +7,6 @@
 
 struct Msg;//the actual structure used internally
 
-
 struct NoopPayload{
 };
 
@@ -20,7 +19,7 @@ struct SrchPayload{
 struct SrchRetPayload{
   AgentID to;
   AgentID from;
-  size_t metric;
+  EdgeMetric metric;
   Msg to_msg(AgentID to, AgentID from);
 };
 

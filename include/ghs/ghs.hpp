@@ -6,6 +6,26 @@
 #include "seque/seque.hpp"
 #include <array>
 
+typedef int GhsError
+const GhsError  GHS_OK                 = 0;
+const GhsError  GHS_MSG_INVALID_SENDER =-1;
+const GhsError  GHS_MSG_INVALID_TYPE   =-2;
+const GhsError  GHS_INVALID_STATE      =-3;
+const GhsError  GHS_INVALID_INPART_REC =-4;
+const GhsError  GHS_INVALID_SRCHR_REC  =-5;
+const GhsError  GHS_INAVLID_JOIN_REC   =-6;
+const GhsError  GHS_ERR_IMPL           =-7;
+const GhsError  GHS_ERR_NO_SUCH_PARENT =-8;
+const GhsError  GHS_NO_SUCH_PEER       =-9;
+
+bool GhsOK(const GhsError &e){
+  return e>0;
+}
+
+void GhsAssert(const GhsError&e){
+  assert(e>0);
+}
+
 template <std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE>
 class GhsState
 {
@@ -33,9 +53,9 @@ class GhsState
      *
      * This method is basically @deprecated
      *
-     * @Return: 0 if edge updated. 1 if it was inserted (it's new)
+     * @Return: 0 if edge updated. 1 if it was inserted (it's new), or <0 on error
      */
-    size_t set_edge(const Edge &e);
+    int set_edge(const Edge &e);
 
     //shims:
     void add_edge(const Edge &e){ set_edge(e);}
@@ -89,8 +109,8 @@ class GhsState
      * @throws invalid_argument if you attempt to modify an edge that doesn't
      * exist. 
      */
-    void set_edge_metric(const AgentID &to, size_t);
-    size_t get_edge_metric(const AgentID &to);
+    void set_edge_metric(const AgentID &to, EdgeMetric m);
+    EdgeMetric get_edge_metric(const AgentID &to);
 
     void set_leader_id(const AgentID &leader);
     void set_level(const Level &level);
@@ -142,25 +162,25 @@ class GhsState
     //TODO: These apis are ugly -- accept a Payload instead of MsgData and type.
     /**
      * Sends to MST child links only
-     * @return number of messages sent
+     * @return number of messages sent, or <0 on error
      */
-    size_t mst_broadcast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf) const noexcept;
+    int mst_broadcast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const noexcept;
 
     /**
      * Sends to parent MST link only
-     * @return number of mssages sent (it had better be 1 or 0 if this is a root)
+     * @return number of mssages sent (it had better be 1 or 0 if this is a root), or <0 on error
      */
-    size_t mst_convergecast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE>&buf)const noexcept;
+    int mst_convergecast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE>&buf, size_t&)const noexcept;
 
     /**
      * Filters edges by `msgtype`, and sends outgoing message along those that match.
-     * @return number of messages sent
+     * @return number of messages sent, or <0 on error
      */
-    size_t typecast(const EdgeStatus status, const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf) const noexcept;
+    int typecast(const EdgeStatus status, const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const noexcept;
 
-    //stateful algorithm steps
-    size_t start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs) noexcept;
-    size_t process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer);
+    //stateful algorithm steps, each returns # of msgs sent (>=0), or <0 on error
+    int start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs, size_t&) noexcept;
+    int process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer, size_t&);
 
     //reset the algorithm state
     bool reset() noexcept;
@@ -180,28 +200,25 @@ class GhsState
 
     /* Search stage messages */
     //each of srch, srch_ret, in_part, ack_part, nack_part are deterministic and straightfoward
-    //TODO: This is so ugly in practice, just parent-class the type() data and change these apis
-    //TODO: OR just override process() to accept different payloads
-    size_t  process_srch(        AgentID from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_srch_ret(    AgentID from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_in_part(     AgentID from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_ack_part(    AgentID from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_nack_part(   AgentID from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_noop( StaticQueue<Msg, MSG_Q_SIZE>& );
+    int process_srch(        AgentID from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    int process_srch_ret(    AgentID from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    int process_in_part(     AgentID from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    int process_ack_part(    AgentID from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    int process_nack_part(   AgentID from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    int process_noop( StaticQueue<Msg, MSG_Q_SIZE>&,  size_t&);
     //This does moderate lifting to determine if the search is complete for the
     //current node, and if so, returns the results to our leader
-    size_t  check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&);
+    int check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
 
     /* Join / Merge / Absorb stage message */
     //join_us does some heavy lifting to determine how partitions should be restructured and joined
-    size_t  process_join_us(     AgentID from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    int process_join_us(     AgentID from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
     //After a level change, we may have to do some cleanup responses, this will handle that.
-    size_t  check_new_level( StaticQueue<Msg, MSG_Q_SIZE>& );
+    int check_new_level( StaticQueue<Msg, MSG_Q_SIZE>&, size_t& );
 
     bool                     index_of(const AgentID&, size_t& out_idx) const;
     void                     respond_later(const AgentID&, const InPartPayload &m);
-    size_t  respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>& );
-
+    int                      respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>& );
     AgentID                  my_id;
     AgentID                  my_leader;
     AgentID                  parent;

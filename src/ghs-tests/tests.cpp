@@ -92,7 +92,7 @@ TEST_CASE("unit-test typecast")
   GhsState<4,32> s(0);
   MsgData d;
   d.srch = SrchPayload{0,0};
-  size_t sent = s.typecast(EdgeStatus::UNKNOWN, MsgType::SRCH, d, buf);
+  int sent = s.typecast(EdgeStatus::UNKNOWN, MsgType::SRCH, d, buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -152,7 +152,7 @@ TEST_CASE("unit-test mst_broadcast")
   GhsState<4,32> s(0);
   MsgData pld;
   pld.srch={0,0};
-  size_t sent = s.mst_broadcast(MsgType::SRCH, pld,  buf);
+  int sent = s.mst_broadcast(MsgType::SRCH, pld,  buf);
   //nobody to send to
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
@@ -194,7 +194,7 @@ TEST_CASE("unit-test mst_convergecast")
 
   StaticQueue<Msg,32> buf;
   GhsState<4,32> s(0);
-  size_t sent;
+  int sent;
   MsgData pld;
   pld.srch={0,0};
   sent =   s.mst_convergecast(MsgType::SRCH, pld,  buf);
@@ -501,7 +501,7 @@ TEST_CASE("unit-test ghs_worst_possible_edge()")
   CHECK(y.root== 1);
   CHECK(y.metric_val== 1000);
   y = edge;
-  CHECK_EQ(y.metric_val,GHS_GRAPH_WORST_EDGE_METRIC );
+  CHECK_EQ(y.metric_val,GHS_EDGE_WORST_METRIC );
 }
 
 TEST_CASE("unit-test process_srch_ret throws when not waiting")
@@ -543,7 +543,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
   //did not accept their edge
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
-  CHECK_EQ(s.mwoe().metric_val, GHS_GRAPH_WORST_EDGE_METRIC);
+  CHECK_EQ(s.mwoe().metric_val, GHS_EDGE_WORST_METRIC);
 
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
@@ -579,7 +579,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
   CHECK_EQ(s.waiting_count(),1);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
-  CHECK_EQ(s.mwoe().metric_val, GHS_GRAPH_WORST_EDGE_METRIC);
+  CHECK_EQ(s.mwoe().metric_val, GHS_EDGE_WORST_METRIC);
   
   //pretend node 1 returned a good edge (1-->2, wt=0)
   //send a return message 
@@ -620,7 +620,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   s.process( m, buf);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
-  CHECK_EQ(s.mwoe().metric_val, GHS_GRAPH_WORST_EDGE_METRIC);
+  CHECK_EQ(s.mwoe().metric_val, GHS_EDGE_WORST_METRIC);
   CHECK_EQ(buf.size(),1); // SRCH to 2
 
   Msg buf_front;
@@ -1234,11 +1234,11 @@ TEST_CASE("sim-test 3 node frenzy")
   GhsState<4,32> states[3]={
     {0},{1},{2}
   };
-  for (size_t i=0;i<3;i++){
-    for (size_t j=0;j<3;j++){
+  for (int i=0;i<3;i++){
+    for (int j=0;j<3;j++){
       if (i!=j){
         //add N^2 edges
-        Edge to_add = {i,j,UNKNOWN,(size_t)( (1<<i) + (1<<j))};
+        Edge to_add = {i,j,UNKNOWN,(EdgeMetric)( (1<<i) + (1<<j))};
         states[j].set_edge(to_add);
       }
     }
@@ -1261,8 +1261,8 @@ TEST_CASE("sim-test 3 node frenzy")
     states[m.to].process(m,added);
     f << "t':"<< states[m.to]<<std::endl;
 
-    size_t added_sz = added.size();
-    for (size_t i=0;i<added_sz;i++){
+    int added_sz = added.size();
+    for (int i=0;i<added_sz;i++){
       added.pop(m);
       f <<"+  "<< m <<std::endl;
       buf.push(m);
@@ -1274,13 +1274,23 @@ TEST_CASE("sim-test 3 node frenzy")
   CHECK_LT(msg_count, msg_limit);
 
   //do we have a single partition?
-  for (size_t i=0;i<3;i++){
+  for (int i=0;i<3;i++){
     CHECK(states[i].is_converged());
-    for (size_t j=0;j<3;j++){
+    for (int j=0;j<3;j++){
       if (i!=j){
         CHECK_EQ(states[i].get_leader_id(), states[j].get_leader_id());
       }
     }
   }
 
+}
+
+TEST_CASE("ghs_metric")
+{
+  EdgeMetric m= GHS_EDGE_METRIC_NOT_SET;
+  CHECK(!ghs_metric_is_valid(m));
+  m= GHS_EDGE_WORST_METRIC;
+  CHECK(!ghs_metric_is_valid(m));
+  m=1;
+  CHECK(ghs_metric_is_valid(m));
 }
