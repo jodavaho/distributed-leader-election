@@ -222,18 +222,15 @@ MessageErrno DemoComms::send(Message& msg, MessageOptMask mask)
   //dialer exists...
   ret = nng_dialer_start(dialer,0);
   if (ret!=0){ goto send_cleanup; }
-  printf("[info] Connected: %s\n",endpoint);
 
   ret = nng_send(outgoing,(void*)&msg,sizeof(Message),0);
   if (ret!=0){ goto send_cleanup; } 
-  printf("[info] Sent to: %s\n",endpoint);
 
   recvsz = sizeof(ret_seq);
   ret = nng_recv( outgoing, (void*) &ret_seq, &recvsz, 0);
   if (ret!=0){ goto send_cleanup; } 
-  printf("Conf! %zu vs %zu\n", ret_seq, msg.sequence);
+  printf("[info] Sent # %zu, conf= %zu\n", ret_seq, msg.sequence);
   assert(ret_seq == msg.sequence);
-
   outgoing_seq++;
 
 send_cleanup:
