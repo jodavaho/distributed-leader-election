@@ -5,6 +5,7 @@ project(ghs)
 
 OPTION(BUILD_DEMO "Build ghs-demo" OFF) 
 OPTION(BUILD_DOCTEST "Build ghs-doctest" OFF) 
+OPTION(BUILD_EXT "Build libghs_ext.so" OFF) 
 OPTION(BUILD_TOOLS "(DEPRECATED) CLI testing tools" OFF) 
 
 set (CMAKE_CXX_STANDARD 11)
@@ -17,9 +18,9 @@ include_directories(include)
 add_subdirectory(src/lib)
 
 # Supporting library that doesn't need to be built for ROS / deployment
-if (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO)
+if (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO OR BUILD_EXT)
 add_subdirectory(src/libtest)
-endif (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO)
+endif (BUILD_TOOLS OR BUILD_DOCTEST OR BUILD_DEMO OR BUILD_EXT)
 
 # Some CLI tools for testing specific graphs very quickly
 if (BUILD_TOOLS)

@@ -4,56 +4,62 @@ NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Con
 
 Should eventually be compliant with [this c++ style guide](https://cadregitlab.jpl.nasa.gov/cadre/cadre-gnc-docs/-/blob/main/cpp_guidelines/cpp_guidelines.pdf)
 
-# Building
+This rep provides a few things:
 
-I use cmake.
+- A C++ GHS implementation library `libghs.so`
+- A C++ statically-sized messager queue that is based on a circular buffer `libghs_seque.so`
+- An optional set of extensions that help to build algorithms around it `libghs_ext.so` (configure with `-DBUILD_EXT=On`)
+- An optional set of tools to help with studies of performance on various graphs, and to output meaningful visuals using the `dot` linux utility `to-dot`, `random-graph`, `ghs-score` (configure with `-DBUILD_TOOLS=On`)
+- An optional doctest executable, that will unit-test the currently built library `ghs-doctest` (configure with `-DBUILD_DOCTEST=On`)
+- An optional demo executable, that is suitable for integration-type testing on multi-machine, multi-process environments `ghs-demo` (configure with `-DBUILD_DEMO=On`)
+- An experimental integration of `miniz` to do message compressing in `ghs-demo` (configure with `-DENABLE_COMPRESSION=On`)
 
-`apt install cmake`
+# Dependencies
 
-And building is fairly standard.
+The union of all dependencies can be obtained by running `get_deps.sh` on an ubuntu-like system.
 
-I have a few dependencies:
+- `libghs.so` and `libghs_seque.so`: `C++11`
+- `libghs_ext.so`: as above, and `std::`
+- The tools: all of previous
+- `ghs-doctest`: all of previous, and `libdoctest-dev` or a similar doctest installation
+- `ghs-demo`: all of previous, and `libnng-dev`, `libinih-dev` and `miniz` checked out in `ext/miniz` if compression is enabled
 
-- doctest-dev
-- libinih-dev
+There's also ROS support, which brings with it a lot of dependencies not handled by this repo or `get_deps.sh`
 
-which can be fetched locally using `get_deps.sh` on ubuntu. 
+# Configuring
 
-Set up cmake:
+I use cmake.  `apt install cmake`
+
+To configure,
 
 ```
 mkdir build
 pushd build
-cmake ..
+cmake .. -D<option>=On -D<option 2>=On 
 popd
 ```
 
-If you're feeling brave, you can run `cmake .. -DUSE_COMPRESSION=On` instead of `cmake ..`, to enable (experimental) message compression.
+See `CMakeLists.txt` for details, but the set of `<options>` are:
 
-and build
-
-```
-make -C build
-```
-
-Optionally, test. To the best of my knoweldge, the easiest eay to test using doctest is to build a test executable and run like this:
-
-```
-build/src/ghs-tests/ghs-doctest
-```
+- `BUILD_EXT` (default=Off): build `libghs_ext.so`
+- `BUILD_DOCTEST` (default=Off): build `ghs-doctest`. Implies `BUILD_EXT`
+- `BUILD_DEMO` (default=Off): build `ghs-demo`. Implies `BUILD_EXT`
+- `ENABLE_ROS` (default=Off): Add some CMake sugar to play well with catkin and ROS
+- `ENABLE_COMPRESSION` (default=Off): Try out experimental (i.e., not really working) libz compression 
+- `BUILD_TOOLS` (default=Off): build the utilities `ghs-score`, `to-dot`, and `random-graph` for testing and visualization.
 
 Code coverage checks and performance testing are not implemented. 
 
-# Trying
+# Trying it out using ghs-demo
 
-You can try it out on various machines. You'll have to set up a config that describes the network, then run `ghs-demo` on each machine. you can run them all locally, just set the agent endpoints to something like `tcp://localhost:<a port per agent>` or `ipc:///tmp/a_file_per_agent`
+You can try it out on various machines. You'll have to set up a config that describes the network, then run `ghs-demo` on each machine. you can run them all locally, just set the agent endpoints to something like `tcp://localhost:<a port per agent>` or `ipc:///tmp/agent0`, `ip:///tmp/agent1` etc
 
 This should work fine for a the `le_config.ini` file:
 
 ```ini
 [agents]
 ; valid endpoints are sockets, so
-; hostname:port 
+; tcp://hostname:port 
 ; ipc://<file>
 ; are both valid
 ; Agents must have consecutive ids starting at 0
@@ -87,8 +93,7 @@ Then, in four terminals, execute:
 where:
 
 - `<ID>` is the id of the current node (so we know where to listen)
-- `<S>` is an optional wait-time in seconds. The node will wait before starting the algorithm this many seconds, to give you a chance to start all nodes. All nodes should be started in that many seconds!!
-
+- `<S>` is an optional wait-time in seconds. The node will wait before starting the algorithm this many seconds, to give you a chance to start all nodes. All nodes should be started before any wait timer expires!!
 
 If it works, you'll see `Converged!!` in all windows, and after a few seconds it should shut down.  You can also look at the step-by-step edges used by each node in the output stream, if you have the stomach to look through it.
 
@@ -97,6 +102,8 @@ If it works, you'll see `Converged!!` in all windows, and after a few seconds it
 There is no `install` target configured at this time. 
 
 # Implementation
+
+You don't need to read any of the following, but you may be interested.
 
 ## Algorithm
 
