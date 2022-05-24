@@ -2,11 +2,8 @@
 #define msg_hpp
 
 #include "graph.hpp"
-#include <cstdint>
-#include <cstring>
 
 struct Msg;//the actual structure used internally
-
 
 struct NoopPayload{
 };
@@ -20,7 +17,7 @@ struct SrchPayload{
 struct SrchRetPayload{
   AgentID to;
   AgentID from;
-  size_t metric;
+  EdgeMetric metric;
   Msg to_msg(AgentID to, AgentID from);
 };
 
@@ -43,7 +40,7 @@ struct JoinUsPayload{
   AgentID join_root;
   AgentID proposed_leader;
   Level proposed_level;
-  Msg to_msg(AgentID to, AgentID from) const;
+  Msg to_msg(AgentID to, AgentID from);
 };
 
 enum MsgType
@@ -80,7 +77,7 @@ struct Msg
 
 };
 
-const size_t GHS_MAX_MSG_SZ= sizeof(Msg);
+const long long int GHS_MAX_MSG_SZ= sizeof(Msg);
 
 
 #endif

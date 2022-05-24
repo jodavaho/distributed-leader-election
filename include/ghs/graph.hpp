@@ -1,20 +1,29 @@
 #ifndef graph_hpp
 #define graph_hpp
 
-#include <stdlib.h> //size_t
 
-#ifndef GHS_GRAPH_WORST_EDGE_METRIC
-#define GHS_GRAPH_WORST_EDGE_METRIC 99999999
+//The algorithm "level" for partitions of the graph
+#define GHS_LEVEL_START 0
+typedef int Level;
+
+#define GHS_NO_AGENT -1
+typedef int AgentID;
+bool ghs_agent_is_valid(const AgentID&);
+
+#define GHS_EDGE_METRIC_NOT_SET 0
+#ifndef GHS_EDGE_WORST_METRIC
+#define GHS_EDGE_WORST_METRIC 99999999
 #endif
 
-typedef size_t AgentID;
-typedef size_t Level;
+typedef int EdgeMetric;
+bool ghs_metric_is_valid(const EdgeMetric&);
 
 typedef enum {
   UNKNOWN = 0,
   MST     = 1,
   DELETED =-1,
 } EdgeStatus;
+
 
 /*
  * There's a todo here.
@@ -32,16 +41,23 @@ typedef enum {
  *
  * Alternatively, just implement <=> operator using that information. 
  */ 
-typedef struct {
-  AgentID    peer;//to
-  AgentID    root;//from
+struct Edge{
+  Edge(AgentID p=GHS_NO_AGENT, AgentID r=GHS_NO_AGENT, EdgeStatus e=UNKNOWN, EdgeMetric m=GHS_EDGE_WORST_METRIC): 
+    peer(p), root(r), status(e), metric_val(m) {}
+  AgentID    peer;
+  AgentID    root;
   EdgeStatus status;
   //Lower is better
-  size_t        metric_val;
-} Edge;
+  EdgeMetric metric_val;
+  bool is_valid();
+};
+
+//we sometimes pass around invalid edges to say "no such edge exists"
+bool ghs_edge_is_valid(const Edge &e);
 
 /**
- * For comparison
+ * For comparison, an edge that is both invalid, and
+ * "larger than" all other edges (by metric_val)
  */
 Edge ghs_worst_possible_edge();
 

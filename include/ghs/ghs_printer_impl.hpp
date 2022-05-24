@@ -8,7 +8,8 @@ std::string  dump_edges(const GhsState<A,B> &s) {
   ss<<"( ";
   for (std::size_t i=0;i<A;i++){
     if (s.has_edge(i)){
-      Edge e =s.get_edge(i);
+      Edge e;
+      s.get_edge(i,e);
       ss<<" ";
       ss<<e.root<<"-->"<<e.peer<<" ";
       switch (e.status){

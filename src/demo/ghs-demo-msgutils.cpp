@@ -1,6 +1,6 @@
 #include "ghs-demo-msgutils.hpp"
 
-Msg from_bytes(uint8_t *b, size_t c_sz)
+Msg from_bytes(unsigned char *b, size_t c_sz)
 {
   Msg r;
   void* rp = (void*)&r;
@@ -8,7 +8,7 @@ Msg from_bytes(uint8_t *b, size_t c_sz)
   return r;
 }
 
-void to_bytes(const Msg&m, uint8_t* b, size_t &bsz){
+void to_bytes(const Msg&m, unsigned char* b, size_t &bsz){
 
   void* mp = (void*)&m;
   void* bp = (void*)&b[0];
