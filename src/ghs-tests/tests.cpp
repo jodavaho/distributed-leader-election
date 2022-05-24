@@ -61,6 +61,17 @@ TEST_CASE("unit-test get_state"){
   auto s = get_state<32,32>(0,1,1,1,false,false);
   (void)s;
 }
+TEST_CASE("unit-test checked_index_of")
+{
+  auto s = get_state<32,32>(0,1,1,1,false,false);
+  size_t idx;
+  CHECK_EQ(GHS_OK, s.checked_index_of(1,idx));
+  CHECK_EQ(GHS_OK, s.checked_index_of(2,idx));
+  CHECK_EQ(GHS_OK, s.checked_index_of(3,idx));
+  CHECK_EQ(GHS_NO_SUCH_PEER, s.checked_index_of(4,idx));
+  CHECK_EQ(GHS_NO_SUCH_PEER, s.checked_index_of(-1,idx));
+  CHECK_EQ(GHS_IMPL_REQ_PEER_MY_ID, s.checked_index_of(0,idx));
+}
 
 TEST_CASE("unit-test set_edge_status"){
   GhsState<4,32> s(0);
@@ -529,18 +540,17 @@ TEST_CASE("unit-test ghs_worst_possible_edge()")
   CHECK_EQ(y.metric_val,GHS_EDGE_WORST_METRIC );
 }
 
-TEST_CASE("unit-test process_srch_ret throws when not waiting")
+TEST_CASE("unit-test process throws with no edge")
 {
 
   StaticQueue<Msg,32> buf;
   GhsState<4,32> s(0);
-  s.set_edge({1,0,UNKNOWN,1});
-  Msg m = SrchRetPayload{}.to_msg(0,1);
   size_t sz;
-  CHECK_EQ(GHS_UNEXPECTED_SRCH_RET, s.process(m,buf,sz));
+  Msg m = SrchRetPayload{}.to_msg(0,1);
+  CHECK_EQ(GHS_PROCESS_NO_EDGE_FOUND, s.process(m,buf,sz));
 }
 
-TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
+TEST_CASE("unit-test process_srch_ret")
 {
 
   StaticQueue<Msg,32> buf;
@@ -565,8 +575,6 @@ TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
 
   //send a return message 
   auto srch_ret_msg = SrchRetPayload{1,2,bad_edge.metric_val}.to_msg(0,1);
-  //auto srch_ret_msg = Msg{MsgType::SRCH_RET,0,1, MsgData{.srch_ret{1,2,bad_edge.metric_val}} };
-
   CHECK_EQ(GHS_OK,s.process( srch_ret_msg, buf, sz));
   CHECK_EQ(s.waiting_count(),0);
   //did not accept their edge
@@ -735,27 +743,6 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   CHECK_EQ(tmp.status, UNKNOWN); //<--unmodified!
 }
 
-TEST_CASE("unit-test process no edge"){
-  GhsState<4,32> s(0);
-  StaticQueue<Msg,32> buf;
-  Edge e;
-
-  //create edge to 1
-  Edge e1 = {1,0,UNKNOWN,10};
-  CHECK_EQ(1, e1.peer);
-  CHECK_EQ(0, e1.root);
-  CHECK( !s.has_edge(1) );
-  s.add_edge(e1);
-  CHECK( s.has_edge(1) );
-  CHECK_EQ(GHS_OK, s.get_edge(1,e));
-  CHECK_EQ(0,s.waiting_count());
-
-  Msg m = AckPartPayload{}.to_msg(0,1);
-  CHECK_EQ(m.from,1);//<-- code should modify using "from" field
-  size_t sz;
-  CHECK_EQ(GHS_PROCESS_NO_EDGE_FOUND,s.process(m,buf, sz));
-}
-
 TEST_CASE("unit-test process_ack_part, no edge"){
   GhsState<4,32> s(0);
   StaticQueue<Msg,32> buf;
@@ -774,7 +761,7 @@ TEST_CASE("unit-test process_ack_part, no edge"){
   Msg m = AckPartPayload{}.to_msg(0,1);
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   size_t sz;
-  CHECK_EQ(GHS_PROCESS_NO_EDGE_FOUND,s.process(m,buf, sz));
+  CHECK_EQ(GHS_ACK_NOT_WAITING,s.process(m,buf, sz));
 }
 
 TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
@@ -800,7 +787,7 @@ TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
   CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(1,s.waiting_count()); //<-- got data we need from 2
   //send msg again:
-  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
+  CHECK_EQ(GHS_ACK_NOT_WAITING,s.process(m,buf, sz));
 }
 
 TEST_CASE("unit-test in_part, happy-path"){
@@ -866,7 +853,8 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
   CHECK_EQ(s.mwoe().metric_val, 20);
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        2);
-  CHECK_EQ(GHS_OK, s.process(m,buf, sz));
+  //can't do twice
+  CHECK_EQ(GHS_ACK_NOT_WAITING, s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);
 
 
@@ -888,7 +876,8 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
   Edge e;
   CHECK_EQ(GHS_OK,s.get_edge(s.mwoe().peer,e));
   CHECK_EQ(e.status,MST);
-  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
+  //again, twice doesn't fly
+  CHECK_EQ(GHS_ACK_NOT_WAITING,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),1);
   
 }
@@ -928,13 +917,15 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        2);
   //check error condition
-  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
+  CHECK_EQ(GHS_ACK_NOT_WAITING,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);
 
   //send message from 1 --> not in partition
   m = NackPartPayload{}.to_msg(0,1);
-  s.process(m,buf, sz);
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
+  CHECK_EQ(GHS_ACK_NOT_WAITING,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),           1);
+  CHECK_EQ(buf.size(),          sz);
   CHECK_EQ(s.waiting_count(),    0);
   CHECK_EQ(s.mwoe().metric_val,  10);
   CHECK_EQ(s.mwoe().root,        0);
@@ -949,9 +940,8 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   CHECK_EQ(buf_front.from,  0);
   //should not add edge yet
   Edge e; 
-  s.get_edge(s.mwoe().peer,e);
+  CHECK_EQ(GHS_OK,s.get_edge(s.mwoe().peer,e));
   CHECK_EQ(e.status, UNKNOWN);
-  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),1);
 
 }
@@ -972,7 +962,7 @@ TEST_CASE("unit-test join_us nodes pass")
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
   size_t sz;
-  CHECK_THROWS(s.process(m,buf, sz));
+  CHECK_EQ(GHS_JOIN_BAD_LEADER, s.process(m,buf, sz));
   s.set_leader_id(5);
   s.set_level(0);
   CHECK_EQ(s.process(m,buf, sz), GHS_OK);
@@ -1042,14 +1032,17 @@ TEST_CASE("unit-test join_us response to higher level")
   //and we should trigger an obsorb of 1's partition.
   s.set_leader_id(3);
   s.set_level(0);
-  Msg m = JoinUsPayload{0,1,1,1}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
+  Msg m_one = JoinUsPayload{0,1,1,1}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 1" across edge 0-1
   StaticQueue<Msg,32> buf;
-  //error: we shoudl never receive a join_ from a partition with higher level!
+  //error: we shoudl never receive a join_ from a this person with this level
   size_t sz;
-  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
-  s.set_leader_id(3);
+  //we detect that they should not have recieved our response to reply to, yet, since they are higher level
+  CHECK_EQ(GHS_JOIN_UNEXPECTED_REPLY,s.process(m_one,buf, sz));
+  //let's assume we are at their level
   s.set_level(1);
-  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
+  Edge e;
+  CHECK_EQ(GHS_OK, s.get_edge(m_one.from, e));
+  CHECK_EQ(GHS_OK, s.process(m_one,buf, sz));
   CHECK_EQ(buf.size(),0);//no msgs to send
   Edge tmp;
   CHECK_EQ(GHS_OK,s.get_edge(1,tmp));

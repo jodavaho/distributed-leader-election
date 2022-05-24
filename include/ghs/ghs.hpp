@@ -32,6 +32,7 @@ enum GhsError{
   GHS_PARENT_UNRECOGNIZED,
   GHS_PARENT_REQ_MST,
   GHS_NO_SUCH_PEER,
+  GHS_IMPL_REQ_PEER_MY_ID,
   GHS_TOO_MANY_AGENTS,
 };
 
@@ -198,6 +199,9 @@ class GhsState
      */
     size_t get_n_peers() const { return n_peers; }
 
+    //publid for testing purposes
+    GhsError                 checked_index_of(const AgentID&, size_t& ) const;
+
 
   private:
 
@@ -219,7 +223,6 @@ class GhsState
     //After a level change, we may have to do some cleanup responses, this will handle that.
     GhsError check_new_level( StaticQueue<Msg, MSG_Q_SIZE>&, size_t& );
 
-    GhsError                 checked_index_of(const AgentID&, size_t& ) const;
     GhsError                 respond_later(const AgentID&, const InPartPayload);
     GhsError                 respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>&, size_t & );
     AgentID                  my_id;

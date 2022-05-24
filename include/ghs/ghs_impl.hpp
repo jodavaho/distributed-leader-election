@@ -3,9 +3,11 @@
 
 #ifndef NDEBUG
 #include <stdexcept>
-#define ghs_fatal(s) throw std::runtime_error(ghs_strerror(s))
+#define ghs_fatal(s) throw std::runtime_error(std::to_string(__LINE__)+":"+ghs_strerror(s))
+#define ghs_fatal_msg(s,m) throw std::runtime_error(std::to_string(__LINE__)+":"+ghs_strerror(s)+"--"+std::to_string(m))
 #else
-#define ghs_fatal(s) if(false){}
+#define ghs_fatal(__VA_ARGS__) if(false){}
+#define ghs_fatal_msg(__VA_ARGS__) if (false) {}
 #endif
 
 using std::max;
@@ -445,13 +447,14 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
   if (in_initiating_partition){
     //leader CAN be different, even though we're initating, IF we're on an MST
     //link to them
-    Edge join_peer_edge;
     GhsError retcode;
+    Edge join_peer_edge;
     retcode = get_edge(join_peer, join_peer_edge);
     if (retcode != GHS_OK){
       return retcode;
     }
 
+    //check join_peer status (better be MST)
     if (join_lead != my_leader && join_peer_edge.status != MST){
       return GHS_JOIN_INIT_BAD_LEADER;
     }
@@ -460,8 +463,12 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
     }  
     //found the correct edge
     retcode = get_edge(join_peer, edge_to_other_part);
-    if (GHS_OK != retcode){ return retcode; }
+    if (GHS_OK != retcode)
+    { 
+      return retcode; 
+    }
   } else {
+    //we aren't in initiating partition, and yet it includes our partition, this is a problem!
     if (join_lead == my_leader){
       return GHS_JOIN_MY_LEADER;
     }
@@ -470,8 +477,12 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
       return GHS_JOIN_UNEXPECTED_REPLY;
     }  
     //found the correct edge
-    auto ger = get_edge(join_peer, edge_to_other_part);
-    if (GHS_OK != ger){ return ger; }
+    auto ger = get_edge(join_root, edge_to_other_part);
+    if (GHS_OK != ger)
+    { 
+      //ghs_fatal_msg(ger,join_root);
+      return ger; 
+    }
   }
 
   //after all that, we found the edge
@@ -506,7 +517,12 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::process_join_us(  AgentID from, const
         //they would not have responded to our search (see process_in_part). So
         //this absorb request is valid and setting their link as MST is OK. 
         set_edge_status(join_peer, MST);
-        Msg to_send = data.to_msg(join_peer,my_id);
+        Msg to_send = JoinUsPayload{
+          data.join_peer,
+            data.join_root,
+            data.proposed_leader,
+            data.proposed_level
+        }.to_msg(join_peer,my_id);
         buf.push(to_send);
         qsz=1;
         return GHS_OK;
@@ -681,6 +697,9 @@ bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_converged() const {
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::checked_index_of(const AgentID& who, size_t &idx) const{
+  if (who == my_id){
+    return GHS_IMPL_REQ_PEER_MY_ID;
+  }
   for (size_t i=0;i<n_peers;i++){
     if (peers[i] == who){
       idx = i;
@@ -692,104 +711,105 @@ GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::checked_index_of(const AgentID& who, 
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_waiting_for(const AgentID &who, bool waiting){
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == who){
-      waiting_for_response[i]=waiting;
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+
+  size_t idx;
+  GhsError retcode=checked_index_of(who,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  waiting_for_response[idx]=waiting;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_waiting_for(const AgentID& who, bool& waiting_for){
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == who){
-      waiting_for = waiting_for_response[i];
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(who,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  waiting_for = waiting_for_response[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_response_required(const AgentID &who, bool resp)
 {
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == who){
-      response_required[i]=resp;
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(who,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  response_required[idx]=resp;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::is_response_required(const AgentID &who, bool &res_req ){
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == who){
-      res_req = response_required[i];
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(who,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  res_req = response_required[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_response_prompt(const AgentID &who, const InPartPayload& m){
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == who){
-      response_prompt[i]=m;
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(who,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  response_prompt[idx]=m;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>:: get_response_prompt(const AgentID &who, InPartPayload &out){
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == who){
-      out = response_prompt[i];
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(who,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  out = response_prompt[idx];
+  return GHS_OK;
+}
+
+template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
+GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_later(const AgentID&from, const InPartPayload m)
+{
+  size_t idx;
+  GhsError retcode=checked_index_of(from,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  response_required[idx]=true;
+  response_prompt[idx]  =m;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 bool GhsState<GHS_MAX_AGENTS, BUF_SZ>::has_edge(const AgentID& to) const{
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == to){
-      return true;
-    }
-  }
-  return false;
+  size_t idx;
+  return GHS_OK==checked_index_of(to,idx);
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_edge(const AgentID& to, Edge &out)  const
 {
-  for (size_t i=0;i<n_peers;i++){
-    if (peers[i] == to){
-      out = outgoing_edges[i];
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(to,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  out = outgoing_edges[idx];
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
 
 GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::set_edge_status(const AgentID &to, const EdgeStatus &status)
 {
-  for (size_t idx=0;idx<n_peers;idx++){
-    if (peers[idx] == to){
-      outgoing_edges[idx].status=status;
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
+  size_t idx;
+  GhsError retcode=checked_index_of(to,idx);
+  if (retcode!=GHS_OK){return retcode;}
+
+  outgoing_edges[idx].status=status;
+  return GHS_OK;
 }
 
 template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
@@ -869,15 +889,3 @@ AgentID GhsState<GHS_MAX_AGENTS, BUF_SZ>::get_id() const {
   return my_id;
 }
 
-template <std::size_t GHS_MAX_AGENTS, std::size_t BUF_SZ>
-GhsError GhsState<GHS_MAX_AGENTS, BUF_SZ>::respond_later(const AgentID&from, const InPartPayload m)
-{
-  for (size_t idx=0; idx<n_peers;idx++){
-    if (peers[idx]==from){
-      response_required[idx]=true;
-      response_prompt[idx]  =m;
-      return GHS_OK;
-    }
-  }
-  return GHS_NO_SUCH_PEER;
-}

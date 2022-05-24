@@ -28,6 +28,7 @@ const char* ghs_strerror( const GhsError & e){
     case GHS_PARENT_UNRECOGNIZED:{return "cannot set parent to unrecognized node (no edge)";}
     case GHS_PARENT_REQ_MST:{return "cannot set parent to non-MST node (bad edge type)";}
     case GHS_NO_SUCH_PEER:{return "Cannot find peer idx -- no edge or unrecognized id?";}
+    case GHS_IMPL_REQ_PEER_MY_ID:{return "Cannot treat my_id as peer -- likely implementation error or malformed msg";}
     case GHS_TOO_MANY_AGENTS:{return "set/add edge operation failed b/c too many agents";}
 
     default: {return "Developer error: Unknown Error Code";}

@@ -40,7 +40,7 @@ struct JoinUsPayload{
   AgentID join_root;
   AgentID proposed_leader;
   Level proposed_level;
-  Msg to_msg(AgentID to, AgentID from) const;
+  Msg to_msg(AgentID to, AgentID from);
 };
 
 enum MsgType
