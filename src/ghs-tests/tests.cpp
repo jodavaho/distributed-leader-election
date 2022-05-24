@@ -29,7 +29,7 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
   for (size_t i=0;i<n_deleted;i++, id++){
     REQUIRE_EQ(GHS_OK, s.set_edge( {id,my_id,DELETED, id}));
     Edge e;
-    REQUIRE_NOTHROW(s.get_edge(id,e));
+    REQUIRE_EQ(GHS_OK,s.get_edge(id,e));
     CHECK_EQ(GHS_OK,s.get_edge(id,e));
     REQUIRE_EQ(e.peer,id);
     REQUIRE_EQ(e.root,my_id);
@@ -39,7 +39,7 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
   for (size_t i=0;i<n_MST;i++, id++){
     REQUIRE_EQ(GHS_OK, s.set_edge( {id,my_id,MST, id}));
     Edge e;
-    REQUIRE_NOTHROW(s.get_edge(id,e));
+    REQUIRE_EQ(GHS_OK,s.get_edge(id,e));
     CHECK_EQ(GHS_OK,s.get_edge(id,e));
     REQUIRE_EQ(e.peer,id);
     REQUIRE_EQ(e.root,my_id);
@@ -48,10 +48,10 @@ GhsState<N,BUF_SZ> get_state(AgentID my_id=0, size_t n_unknown=1, size_t n_delet
   }
   if (!is_root){
     //just set the last MST link as the one to the root
-    REQUIRE_NOTHROW(s.set_edge( {id-1,0,MST,id-1} ));
-    REQUIRE_NOTHROW(s.set_parent_id(id-1));
-    REQUIRE_NOTHROW(s.set_leader_id( id-1));
-    REQUIRE_NOTHROW(s.set_level( 0 ) );
+    REQUIRE_EQ(GHS_OK,s.set_edge( {id-1,0,MST,id-1} ));
+    REQUIRE_EQ(GHS_OK,s.set_parent_id(id-1));
+    REQUIRE_EQ(GHS_OK,s.set_leader_id( id-1));
+    REQUIRE_EQ(GHS_OK,s.set_level( 0 ) );
 
   }
   return s;
@@ -71,7 +71,7 @@ TEST_CASE("unit-test set_edge_status"){
   CHECK(!s.has_edge(2));
   CHECK( s.has_edge(1));
   CHECK_EQ( s.get_n_peers(), 1);
-  CHECK_NOTHROW(s.get_edge(1,e));
+  CHECK_EQ(GHS_OK,s.get_edge(1,e));
   CHECK_EQ(GHS_OK,s.get_edge(1,e));
   CHECK_EQ(e.peer, 1);
   CHECK_EQ(e.root,0);
@@ -362,14 +362,17 @@ TEST_CASE("unit-test process_srch() checks recipient"){
   s.set_edge({1,0,MST,1});
   //from rando
   Msg m = SrchPayload{1,0}.to_msg(0,2);
-  size_t sz;
-  CHECK_THROWS_AS(s.process( m, buf, sz), const std::runtime_error&);
+  //for documentation:
+  CHECK_EQ(m.from, 2);
+  size_t sz=111;
+  CHECK_EQ(GHS_PROCESS_NO_EDGE_FOUND, s.process( m, buf, sz));
+  CHECK_EQ(sz,111);//didn't touch it!
   //from leader is ok
   m.from=1;
   CHECK_EQ(GHS_OK, s.process( m , buf, sz));
   //from self not allowed
   m.from=0;
-  CHECK_THROWS_AS(s.process( m, buf, sz), const std::runtime_error&);
+  CHECK_EQ(GHS_PROCESS_SELFMSG, s.process( m, buf, sz));
     
 }
 
@@ -380,7 +383,7 @@ TEST_CASE("unit-test process_srch, unknown peers")
   REQUIRE_EQ(buf.size(),0);
   CHECK_EQ(GHS_OK, s.set_edge({1, 0,UNKNOWN,1}));
   CHECK_EQ(GHS_OK,   s.set_edge({2, 0,UNKNOWN,1}));
-  size_t sz;
+  size_t sz=111;
   CHECK_EQ(GHS_OK,   s.start_round(buf, sz));
   CHECK_EQ(buf.size(),2);
   CHECK_EQ(buf.size(),sz);
@@ -486,10 +489,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   s.set_parent_id(3);
   Msg m = SrchPayload{3,0}.to_msg(0,3);
   size_t sz;
-  GhsError err;
-  CHECK_NOTHROW(err = s.process(m,buf, sz));
-  CHECK_EQ(err,GHS_OK);
-
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(buf.size(),sz);
 
@@ -502,11 +502,9 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   CHECK_EQ(m.type,MsgType::SRCH);
 
   CHECK_EQ(buf.size(),0);
-  //now from non-parent
+  //now from non-parent, and btw we're busy
   m = SrchPayload{0,0}.to_msg(0,2);
-  CHECK_THROWS_AS(err = s.process(m,buf,sz), const std::runtime_error&);
-  //err not set, due to throw, bad test...
-  //CHECK(!GhsOK(err));
+  CHECK_EQ(GHS_SRCH_STILL_WAITING, s.process(m,buf,sz));
 }
 
 TEST_CASE("Guard against Edge refactoring"){
@@ -536,9 +534,10 @@ TEST_CASE("unit-test process_srch_ret throws when not waiting")
 
   StaticQueue<Msg,32> buf;
   GhsState<4,32> s(0);
+  s.set_edge({1,0,UNKNOWN,1});
   Msg m = SrchRetPayload{}.to_msg(0,1);
   size_t sz;
-  CHECK_THROWS_AS(s.process( m, buf, sz), const std::runtime_error&);
+  CHECK_EQ(GHS_UNEXPECTED_SRCH_RET, s.process(m,buf,sz));
 }
 
 TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
@@ -568,7 +567,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, no edge found ")
   auto srch_ret_msg = SrchRetPayload{1,2,bad_edge.metric_val}.to_msg(0,1);
   //auto srch_ret_msg = Msg{MsgType::SRCH_RET,0,1, MsgData{.srch_ret{1,2,bad_edge.metric_val}} };
 
-  CHECK_NOTHROW(s.process( srch_ret_msg, buf, sz));
+  CHECK_EQ(GHS_OK,s.process( srch_ret_msg, buf, sz));
   CHECK_EQ(s.waiting_count(),0);
   //did not accept their edge
   CHECK_EQ(s.mwoe().root, 0);
@@ -618,7 +617,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
   //send a return message 
   auto srch_ret_msg = SrchRetPayload{2,1,1}.to_msg(0,1);
 
-  CHECK_NOTHROW(s.process( srch_ret_msg, buf, sz));
+  CHECK_EQ(GHS_OK,s.process( srch_ret_msg, buf, sz));
 
   //that should be the repsponse it was looking for
   CHECK_EQ(s.waiting_count(),0);
@@ -670,7 +669,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   
   auto srch_ret_msg = SrchRetPayload{3,2,1}.to_msg(0,2);
 
-  CHECK_NOTHROW(s.process( srch_ret_msg, buf, sz));
+  CHECK_EQ(GHS_OK,s.process( srch_ret_msg, buf, sz));
   CHECK_EQ(s.waiting_count(),0);
   CHECK_EQ(s.mwoe().root, 2);
   CHECK_EQ(s.mwoe().peer, 3);
@@ -692,13 +691,11 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
   Edge e;
 
   //create edge to 1
-  GhsError r;
   Edge e1 = {1,0,UNKNOWN,10};
   CHECK_EQ(1, e1.peer);
   CHECK_EQ(0, e1.root);
-  CHECK_NOTHROW(r = s.set_edge( e1 ));
-  CHECK_EQ(GHS_OK,r);//<-- was it added?
-  CHECK_NOTHROW( s.get_edge(1,e));
+  CHECK_EQ(GHS_OK,s.set_edge( e1 ));
+  CHECK_EQ(GHS_OK,s.get_edge(1,e));
   CHECK_EQ(e.status, UNKNOWN);
   size_t sz;
   s.start_round(buf, sz);
@@ -709,8 +706,8 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
 
   Msg m = AckPartPayload{}.to_msg(0,1); 
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
-  CHECK_NOTHROW(s.process(m,buf,sz));
-  CHECK_NOTHROW( s.get_edge(1,e));
+  CHECK_EQ(GHS_OK,s.process(m,buf,sz));
+  CHECK_EQ(GHS_OK, s.get_edge(1,e));
   CHECK_EQ(e.status, DELETED);
 }
 
@@ -719,14 +716,12 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   StaticQueue<Msg,32> buf;
 
   //create edge to 1
-  GhsError r;
   Edge e1 = {1,0,UNKNOWN,10};
   CHECK_EQ(1, e1.peer);
   CHECK_EQ(0, e1.root);
-  CHECK_NOTHROW(r = s.set_edge( e1 ));
-  CHECK_EQ(GHS_OK,r);//<-- was it added?
+  CHECK_EQ(GHS_OK,s.set_edge( e1 ));
   Edge e;
-  CHECK_NOTHROW(s.get_edge(1,e));
+  CHECK_EQ(GHS_OK, s.get_edge(1,e));
   CHECK_EQ(e.status, UNKNOWN);
 
   CHECK_EQ(0,s.waiting_count());
@@ -734,10 +729,31 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   Msg m = AckPartPayload{}.to_msg(0,1);
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   size_t sz;
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_ACK_NOT_WAITING, s.process(m,buf,sz));
   Edge tmp;
-  CHECK_NOTHROW(s.get_edge(1,tmp));
+  CHECK_EQ(GHS_OK, s.get_edge(1,tmp));
   CHECK_EQ(tmp.status, UNKNOWN); //<--unmodified!
+}
+
+TEST_CASE("unit-test process no edge"){
+  GhsState<4,32> s(0);
+  StaticQueue<Msg,32> buf;
+  Edge e;
+
+  //create edge to 1
+  Edge e1 = {1,0,UNKNOWN,10};
+  CHECK_EQ(1, e1.peer);
+  CHECK_EQ(0, e1.root);
+  CHECK( !s.has_edge(1) );
+  s.add_edge(e1);
+  CHECK( s.has_edge(1) );
+  CHECK_EQ(GHS_OK, s.get_edge(1,e));
+  CHECK_EQ(0,s.waiting_count());
+
+  Msg m = AckPartPayload{}.to_msg(0,1);
+  CHECK_EQ(m.from,1);//<-- code should modify using "from" field
+  size_t sz;
+  CHECK_EQ(GHS_PROCESS_NO_EDGE_FOUND,s.process(m,buf, sz));
 }
 
 TEST_CASE("unit-test process_ack_part, no edge"){
@@ -752,13 +768,13 @@ TEST_CASE("unit-test process_ack_part, no edge"){
   CHECK( !s.has_edge(1) );
   s.add_edge(e1);
   CHECK( s.has_edge(1) );
-  CHECK_NOTHROW( s.get_edge(1,e));
+  CHECK_EQ(GHS_OK, s.get_edge(1,e));
   CHECK_EQ(0,s.waiting_count());
 
   Msg m = AckPartPayload{}.to_msg(0,1);
   CHECK_EQ(m.from,1);//<-- code should modify using "from" field
   size_t sz;
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_PROCESS_NO_EDGE_FOUND,s.process(m,buf, sz));
 }
 
 TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
@@ -769,8 +785,8 @@ TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
   //create edge to 1
   Edge e1 = {1,0,UNKNOWN,10};
   Edge e2 = {2,0,UNKNOWN,10};
-  CHECK_NOTHROW(s.set_edge( e1 ));
-  CHECK_NOTHROW(s.set_edge( e2 ));
+  CHECK_EQ(GHS_OK,s.set_edge( e1 ));
+  CHECK_EQ(GHS_OK,s.set_edge( e2 ));
   size_t sz;
   s.start_round(buf, sz);
   CHECK_EQ(2,s.waiting_count());
@@ -779,12 +795,12 @@ TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
   buf.pop(); 
 
   Msg m = AckPartPayload{}.to_msg(0,2); 
-  CHECK_NOTHROW( s.get_edge(2,e));
+  CHECK_EQ(GHS_OK, s.get_edge(2,e));
   CHECK_EQ(m.from,2);   //<-- code should modify using "from" field
-  CHECK_NOTHROW(s.process(m,buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(1,s.waiting_count()); //<-- got data we need from 2
   //send msg again:
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
 }
 
 TEST_CASE("unit-test in_part, happy-path"){
@@ -832,8 +848,8 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
   StaticQueue<Msg,32> buf;
   Msg m;
 
-  CHECK_NOTHROW(s.set_edge({1,0,UNKNOWN,10}));
-  CHECK_NOTHROW(s.set_edge({2,0,UNKNOWN,20}));
+  CHECK_EQ(GHS_OK,s.set_edge({1,0,UNKNOWN,10}));
+  CHECK_EQ(GHS_OK,s.set_edge({2,0,UNKNOWN,20}));
   s.set_leader_id(0);
   s.set_level(0);
 
@@ -844,18 +860,18 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
 
   CHECK_EQ(s.waiting_count(),2);
   m = NackPartPayload{}.to_msg(0,2); 
-  REQUIRE_NOTHROW(s.process(m,buf, sz));
+  REQUIRE_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),           0);
   CHECK_EQ(s.waiting_count(),    1);
   CHECK_EQ(s.mwoe().metric_val, 20);
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        2);
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_OK, s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);
 
 
   m = NackPartPayload{}.to_msg(0,1); 
-  REQUIRE_NOTHROW(s.process(m,buf, sz));
+  REQUIRE_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),           1);
   CHECK_EQ(s.waiting_count(),    0);
   CHECK_EQ(s.mwoe().metric_val,  10);
@@ -870,9 +886,9 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
   CHECK_EQ(buf_front.from,  s.mwoe().root);
   CHECK_EQ(buf_front.from,  0);
   Edge e;
-  CHECK_NOTHROW(s.get_edge(s.mwoe().peer,e));
+  CHECK_EQ(GHS_OK,s.get_edge(s.mwoe().peer,e));
   CHECK_EQ(e.status,MST);
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),1);
   
 }
@@ -884,19 +900,19 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   Msg m;
 
   //add two outgoing unkonwn edges
-  CHECK_NOTHROW(s.set_edge({1,0,UNKNOWN,10}));
-  CHECK_NOTHROW(s.set_edge({2,0,UNKNOWN,20}));
+  CHECK_EQ(GHS_OK,s.set_edge({1,0,UNKNOWN,10}));
+  CHECK_EQ(GHS_OK,s.set_edge({2,0,UNKNOWN,20}));
   //add leader
-  CHECK_NOTHROW(s.set_edge({3,0,MST,20}));
-  CHECK_NOTHROW(s.set_parent_id(3));
-  CHECK_NOTHROW(s.set_leader_id(3));
-  CHECK_NOTHROW(s.set_level(0));
+  CHECK_EQ(GHS_OK,s.set_edge({3,0,MST,20}));
+  CHECK_EQ(GHS_OK,s.set_parent_id(3));
+  CHECK_EQ(GHS_OK,s.set_leader_id(3));
+  CHECK_EQ(GHS_OK,s.set_level(0));
 
 
   //send the start message
   m = SrchPayload{3,0}.to_msg(0,3);
   size_t sz;
-  CHECK_NOTHROW(s.process(m, buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m, buf, sz));
 
   CHECK_EQ(buf.size(),2);
   buf.pop();
@@ -912,7 +928,7 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        2);
   //check error condition
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);
 
   //send message from 1 --> not in partition
@@ -935,7 +951,7 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   Edge e; 
   s.get_edge(s.mwoe().peer,e);
   CHECK_EQ(e.status, UNKNOWN);
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error&);
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),1);
 
 }
@@ -992,7 +1008,7 @@ TEST_CASE("unit-test join_us root relays to peer")
   CHECK_EQ(m.from,2);
   CHECK_EQ(m.to,  0);
   size_t sz;
-  CHECK_NOTHROW(s.process(m,buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   s.get_edge(1,e);
   CHECK_EQ(e.status , MST);
   CHECK_EQ(buf.size(),        1);
@@ -1002,7 +1018,7 @@ TEST_CASE("unit-test join_us root relays to peer")
   CHECK_EQ(buf_front.to,    1);
   CHECK_EQ(buf_front.from,  0);
   CHECK_EQ(buf_front.type,  MsgType::JOIN_US);
-  CHECK_NOTHROW(s.get_edge(1,e));
+  CHECK_EQ(GHS_OK,s.get_edge(1,e));
   //he updated edge
   CHECK_EQ(e.status, MST);
   //check data payload
@@ -1030,10 +1046,10 @@ TEST_CASE("unit-test join_us response to higher level")
   StaticQueue<Msg,32> buf;
   //error: we shoudl never receive a join_ from a partition with higher level!
   size_t sz;
-  CHECK_THROWS_AS(s.process(m,buf, sz), std::runtime_error);
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   s.set_leader_id(3);
   s.set_level(1);
-  CHECK_NOTHROW(s.process(m,buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);//no msgs to send
   Edge tmp;
   CHECK_EQ(GHS_OK,s.get_edge(1,tmp));
@@ -1055,7 +1071,7 @@ TEST_CASE("unit-test join_us response to MST edge")
   Msg m = JoinUsPayload{0,1,1,0}.to_msg(0,1);// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
   StaticQueue<Msg,32> buf;
   size_t sz;
-  CHECK_NOTHROW(s.process(m,buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);//No action: we are 0, JOIN_US was from new_leader.
   Edge e;
   CHECK_EQ(GHS_OK,s.get_edge(1,e));
@@ -1081,7 +1097,7 @@ TEST_CASE("unit-test join_us merge")
   //FIRST, 0 gets the message that the edge 0-1 is the MWOE from partition with leader 3.
   m = JoinUsPayload{1,0,3,0}.to_msg(0,3);// 3 says to zero "add the edge 1<-0 to partition 3 with level 0. 
   size_t sz;
-  CHECK_NOTHROW(s.process(m,buf, sz));//shouldn't be a problem
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));//shouldn't be a problem
   //ok, side effects are:
   //0 sends a message to 1 saying "Join our partition"
   CHECK_EQ(buf.size(), 1);
@@ -1120,7 +1136,7 @@ TEST_CASE("unit-test join_us merge leader-side")
   //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 2.
   m = JoinUsPayload{0,1,3,0}.to_msg(1,3); // 3 says to 1 "add the edge 1->0 to partition 3 with level 0. 
   size_t sz;
-  CHECK_NOTHROW(s.process(m,buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   //ok, side effects are:
   //1 sends a message to 0 saying "Join our partition"
   CHECK_EQ(buf.size(), 1);
@@ -1145,7 +1161,7 @@ TEST_CASE("unit-test join_us merge leader-side")
   m = JoinUsPayload{0,1,3,0}.to_msg(1,3); 
   CHECK_EQ(GHS_OK, s.get_edge(0,e));
   CHECK_EQ(e.status, MST); //<-- still part of the gang
-  CHECK_NOTHROW(s.process(m,buf, sz));
+  CHECK_EQ(GHS_OK,s.process(m,buf, sz));
   CHECK_EQ(e.status, MST); //<-- still part of the gang, STILL
   CHECK_EQ(s.get_parent_id(),       1); //This changes because we start_round on ourselves as new leader, which process_srch's on ourselves, setting ourselves as new leader. Desired, but obtuse.
   CHECK_EQ(s.get_level(), 1); //level auto-increment b/c we detected merge()

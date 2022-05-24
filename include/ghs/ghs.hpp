@@ -6,22 +6,40 @@
 #include "seque/seque.hpp"
 #include <array>
 
-typedef int GhsError;
-const GhsError  GHS_OK                 = 0;
-const GhsError  GHS_MSG_INVALID_SENDER =-1;
-const GhsError  GHS_MSG_INVALID_TYPE   =-2;
-const GhsError  GHS_INVALID_STATE      =-3;
-const GhsError  GHS_INVALID_INPART_REC =-4;
-const GhsError  GHS_INVALID_SRCHR_REC  =-5;
-const GhsError  GHS_INVALID_JOIN_REC   =-6;
-const GhsError  GHS_ERR_IMPL           =-7;
-const GhsError  GHS_ERR_NO_SUCH_PARENT =-8;
-const GhsError  GHS_NO_SUCH_PEER       =-9;
-const GhsError  GHS_INVALID_EDGE      =-10;
 
-bool GhsOK(const GhsError &e);
+enum GhsError{
+  GHS_OK = 0,
+  GHS_PROCESS_SELFMSG,
+  GHS_PROCESS_NOTME,
+  GHS_PROCESS_INVALID_TYPE,
+  GHS_PROCESS_REQ_MST,
+  GHS_SRCH_INAVLID_SENDER,
+  GHS_SRCH_STILL_WAITING,
+  GHS_ERR_QUEUE_MSGS,
+  GHS_PROCESS_NO_EDGE_FOUND,
+  GHS_UNEXPECTED_SRCH_RET,
+  GHS_ACK_NOT_WAITING,
+  GHS_BAD_MSG,
+  GHS_JOIN_BAD_LEADER,
+  GHS_JOIN_BAD_LEVEL,
+  GHS_JOIN_INIT_BAD_LEADER,
+  GHS_JOIN_INIT_BAD_LEVEL,
+  GHS_JOIN_MY_LEADER,
+  GHS_JOIN_UNEXPECTED_REPLY,
+  GHS_ERR_IMPL,
+  GHS_CAST_INVALID_EDGE,
+  GHS_SET_INVALID_EDGE,
+  GHS_PARENT_UNRECOGNIZED,
+  GHS_PARENT_REQ_MST,
+  GHS_NO_SUCH_PEER,
+  GHS_TOO_MANY_AGENTS,
+};
 
-void GhsAssert(const GhsError&e);
+const char* ghs_strerror( const GhsError &);
+
+#ifndef ghs_perror
+#define ghs_perror(x) fprintf(stderr,"[error] %d:%s", x, ghs_strerror(x))
+#endif
 
 template <std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE>
 class GhsState
@@ -204,7 +222,6 @@ class GhsState
     GhsError                 checked_index_of(const AgentID&, size_t& ) const;
     GhsError                 respond_later(const AgentID&, const InPartPayload);
     GhsError                 respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>&, size_t & );
-    bool                     nothrow_has_index(const AgentID) const;
     AgentID                  my_id;
     AgentID                  my_leader;
     AgentID                  parent;
@@ -212,8 +229,8 @@ class GhsState
     Level                    my_level;
     bool                     algorithm_converged;
 
-    std::array<AgentID,NUM_AGENTS>        peers;
     size_t                                n_peers;
+    std::array<AgentID,NUM_AGENTS>        peers;
     std::array<bool,NUM_AGENTS>           waiting_for_response;
     std::array<Edge,NUM_AGENTS>           outgoing_edges;
     std::array<InPartPayload,NUM_AGENTS>  response_prompt;

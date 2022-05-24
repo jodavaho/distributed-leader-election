@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <unistd.h> //sleep
 #include <sstream> //better than iostream
+#include <cassert>
 
 #include "ghs-demo-inireader.h"
 #include "ghs-demo-msgutils.hpp"
