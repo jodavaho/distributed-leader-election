@@ -6,6 +6,42 @@
 #include "seque/seque.hpp"
 #include <array>
 
+
+enum GhsError{
+  GHS_OK = 0,
+  GHS_PROCESS_SELFMSG,
+  GHS_PROCESS_NOTME,
+  GHS_PROCESS_INVALID_TYPE,
+  GHS_PROCESS_REQ_MST,
+  GHS_SRCH_INAVLID_SENDER,
+  GHS_SRCH_STILL_WAITING,
+  GHS_ERR_QUEUE_MSGS,
+  GHS_PROCESS_NO_EDGE_FOUND,
+  GHS_UNEXPECTED_SRCH_RET,
+  GHS_ACK_NOT_WAITING,
+  GHS_BAD_MSG,
+  GHS_JOIN_BAD_LEADER,
+  GHS_JOIN_BAD_LEVEL,
+  GHS_JOIN_INIT_BAD_LEADER,
+  GHS_JOIN_INIT_BAD_LEVEL,
+  GHS_JOIN_MY_LEADER,
+  GHS_JOIN_UNEXPECTED_REPLY,
+  GHS_ERR_IMPL,
+  GHS_CAST_INVALID_EDGE,
+  GHS_SET_INVALID_EDGE,
+  GHS_PARENT_UNRECOGNIZED,
+  GHS_PARENT_REQ_MST,
+  GHS_NO_SUCH_PEER,
+  GHS_IMPL_REQ_PEER_MY_ID,
+  GHS_TOO_MANY_AGENTS,
+};
+
+const char* ghs_strerror( const GhsError &);
+
+#ifndef ghs_perror
+#define ghs_perror(x) fprintf(stderr,"[error] %d:%s", x, ghs_strerror(x))
+#endif
+
 template <std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE>
 class GhsState
 {
@@ -20,7 +56,7 @@ class GhsState
      * operation is identical to adding them after initialization
      *
      */
-    GhsState(AgentID my_id) noexcept;
+    GhsState(AgentID my_id);
     ~GhsState(); 
 
     /**
@@ -28,31 +64,25 @@ class GhsState
      * pass in does not exist, then it will be added.  Edges are considered
      * identical only if they are to-and-from the same nodes. 
      *
-     * @throws invalid_argument if you attempt to add an edge
-     * that is rooted on another node. 
-     *
-     * This method is basically @deprecated
-     *
-     * @Return: 0 if edge updated. 1 if it was inserted (it's new)
      */
-    size_t set_edge(const Edge &e);
+    GhsError set_edge(const Edge &e);
 
     //shims:
-    void add_edge(const Edge &e){ set_edge(e);}
+    GhsError add_edge(const Edge &e){ return set_edge(e);}
 
     /**
      *
      * Ensures that an edge to the agent is added, with default metric and UNKNOWN status
      *
      */
-    void add_edge_to(const AgentID &to);
+    GhsError add_edge_to(const AgentID &to);
 
     /**
      * Returns the Edge, but only if has_edge(to) would return true.
      *
      * Otherwise, will assert
      */
-    Edge get_edge(const AgentID& to) const;
+    GhsError get_edge(const AgentID& to, Edge& out) const;
 
     /**
      * Returns true if any of the following will work:
@@ -67,9 +97,7 @@ class GhsState
      * set_response_prompt(to, ... ) 
      * get_response_prompt(to)
      *
-     * If it returns false, all fo them will fail:
-     * - For now, with either assert( has_edge(to) ), or std::invalid_argument
-     * - Eventually, with only assert( has_edge(to) )
+     * If it returns false, all of them will fail by asserting.
      */
     bool has_edge( const AgentID &to) const;
 
@@ -80,128 +108,123 @@ class GhsState
      * @throws invalid_argument if you attempt to modify an edge that doesn't
      * exist. 
      */
-    void set_edge_status(const AgentID &to, const EdgeStatus &status);
-    EdgeStatus get_edge_status(const AgentID&to);
+    GhsError set_edge_status(const AgentID &to, const EdgeStatus &status);
+    GhsError get_edge_status(const AgentID&to, EdgeStatus& out);
 
     /**
      * Changes the edge weight of the edge connecting this node to the AgentID given
-     *
-     * @throws invalid_argument if you attempt to modify an edge that doesn't
-     * exist. 
+     * Returns error / asserts if the edge does not exist
      */
-    void set_edge_metric(const AgentID &to, size_t);
-    size_t get_edge_metric(const AgentID &to);
+    GhsError set_edge_metric(const AgentID &to, const EdgeMetric m);
+    GhsError get_edge_metric(const AgentID &to, EdgeMetric& m);
 
-    void set_leader_id(const AgentID &leader);
-    void set_level(const Level &level);
+    GhsError set_leader_id(const AgentID &leader);
+    GhsError set_level(const Level &level);
 
-    void set_waiting_for(const AgentID &who, bool waiting_for);
-    bool is_waiting_for(const AgentID& who);
+    GhsError set_waiting_for(const AgentID &who, const bool waiting_for);
+    GhsError is_waiting_for(const AgentID& who, bool & out_waiting_for);
 
-    void set_response_required(const AgentID &who, bool response_required);
-    bool is_response_required(const AgentID &who);
+    GhsError set_response_required(const AgentID &who, const bool response_required);
+    GhsError is_response_required(const AgentID &who, bool & response_required);
 
-    void set_response_prompt(const AgentID &who, const InPartPayload& m);
-    InPartPayload  get_response_prompt(const AgentID &who);
+    GhsError set_response_prompt(const AgentID &who, const InPartPayload& m);
+    GhsError get_response_prompt(const AgentID &who, InPartPayload &m);
 
     /**
      * Returns whatever was set (or initialized) as the AgentID
      *
      * Never fails to return
      */
-    AgentID get_id() const noexcept;
+    AgentID get_id() const;
 
     /**
      * Returns whatever I believe my parent is
      */
-    AgentID get_parent_id() const noexcept;
+    AgentID get_parent_id() const;
 
     /**
-     * Throws if the id is not on an MST link. Do that first.
+     * Error: if the id is not on an MST link. Do that first.
      */
-    void set_parent_id(const AgentID& id);
+    GhsError set_parent_id(const AgentID& id);
 
 
     /**
      * Returns whatever I believe my leader is
      */
-    AgentID get_leader_id() const noexcept;
+    AgentID get_leader_id() const;
 
     /**
      * Returns whatever I believe this partition's level is
      */
-    Level get_level() const noexcept;
+    Level get_level() const;
 
     //getters
-    size_t waiting_count() const noexcept;
-    size_t delayed_count() const noexcept;
+    size_t waiting_count() const;
+    size_t delayed_count() const;
 
-    Edge mwoe() const noexcept;
+    Edge mwoe() const;
 
-    //useful operations
-    //TODO: These apis are ugly -- accept a Payload instead of MsgData and type.
     /**
      * Sends to MST child links only
-     * @return number of messages sent
+     * @return number of messages sent, or <0 on error
      */
-    size_t mst_broadcast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf) const noexcept;
+    GhsError mst_broadcast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
 
     /**
      * Sends to parent MST link only
-     * @return number of mssages sent (it had better be 1 or 0 if this is a root)
+     * @return number of mssages sent (it had better be 1 or 0 if this is a root), or <0 on error
      */
-    size_t mst_convergecast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE>&buf)const noexcept;
+    GhsError mst_convergecast(const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE>&buf, size_t&)const;
 
     /**
      * Filters edges by `msgtype`, and sends outgoing message along those that match.
-     * @return number of messages sent
+     * @return number of messages sent, or <0 on error
      */
-    size_t typecast(const EdgeStatus status, const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf) const noexcept;
+    GhsError typecast(const EdgeStatus status, const MsgType, const MsgData&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
 
-    //stateful algorithm steps
-    size_t start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs) noexcept;
-    size_t process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer);
+    //stateful algorithm steps, each returns # of msgs sent (>=0), or <0 on error
+    GhsError start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs, size_t&);
+    GhsError process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer, size_t&);
 
     //reset the algorithm state
-    bool reset() noexcept;
+    GhsError reset();
 
     //Get the algorithm state
-    bool is_converged() const noexcept;
+    bool is_converged() const;
 
     /**
      *
      * Returns the number of peers, which is a counter that is incremented
      * every time you add_edge_to(id) (or variant), with a new id. 
      */
-    size_t get_n_peers()const { return n_peers; }
+    size_t get_n_peers() const { return n_peers; }
+
+    //publid for testing purposes
+    GhsError                 checked_index_of(const AgentID&, size_t& ) const;
 
 
   private:
 
     /* Search stage messages */
     //each of srch, srch_ret, in_part, ack_part, nack_part are deterministic and straightfoward
-    //TODO: This is so ugly in practice, just parent-class the type() data and change these apis
-    //TODO: OR just override process() to accept different payloads
-    size_t  process_srch(        AgentID from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_srch_ret(    AgentID from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_in_part(     AgentID from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_ack_part(    AgentID from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_nack_part(   AgentID from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
-    size_t  process_noop( StaticQueue<Msg, MSG_Q_SIZE>& );
+    GhsError process_srch(        AgentID from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    GhsError process_srch_ret(    AgentID from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    GhsError process_in_part(     AgentID from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    GhsError process_ack_part(    AgentID from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    GhsError process_nack_part(   AgentID from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+    GhsError process_noop( StaticQueue<Msg, MSG_Q_SIZE>&,  size_t&);
     //This does moderate lifting to determine if the search is complete for the
     //current node, and if so, returns the results to our leader
-    size_t  check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&);
+    GhsError check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
 
     /* Join / Merge / Absorb stage message */
     //join_us does some heavy lifting to determine how partitions should be restructured and joined
-    size_t  process_join_us(     AgentID from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&);
+    GhsError process_join_us(     AgentID from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
     //After a level change, we may have to do some cleanup responses, this will handle that.
-    size_t  check_new_level( StaticQueue<Msg, MSG_Q_SIZE>& );
+    GhsError check_new_level( StaticQueue<Msg, MSG_Q_SIZE>&, size_t& );
 
-    bool                     index_of(const AgentID&, size_t& out_idx) const;
-    void                     respond_later(const AgentID&, const InPartPayload &m);
-    size_t  respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>& );
-
+    GhsError                 respond_later(const AgentID&, const InPartPayload);
+    GhsError                 respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>&, size_t & );
     AgentID                  my_id;
     AgentID                  my_leader;
     AgentID                  parent;
@@ -209,8 +232,8 @@ class GhsState
     Level                    my_level;
     bool                     algorithm_converged;
 
+    size_t                                n_peers;
     std::array<AgentID,NUM_AGENTS>        peers;
-    std::size_t                           n_peers;
     std::array<bool,NUM_AGENTS>           waiting_for_response;
     std::array<Edge,NUM_AGENTS>           outgoing_edges;
     std::array<InPartPayload,NUM_AGENTS>  response_prompt;

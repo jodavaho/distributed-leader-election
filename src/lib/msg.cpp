@@ -46,7 +46,7 @@ Msg NackPartPayload::to_msg(AgentID to, AgentID from){
   return m;
 }
 
-Msg JoinUsPayload::to_msg(AgentID to, AgentID from) const{
+Msg JoinUsPayload::to_msg(AgentID to, AgentID from) {
   Msg m;
   m.to=to;
   m.from=from;
