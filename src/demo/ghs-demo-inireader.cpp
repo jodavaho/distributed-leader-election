@@ -37,25 +37,23 @@ int ghs_read_cfg_item(void* user, const char* section, const char* name, const c
 {
 
   //this is more than enough, but note this is coupled to MAX_N
-  static char agent_str[16]={0};
+  static char agent_str[32]={0};
 
   ghs_config * config = (ghs_config*) user;
-
 
   if (!user){
     printf("[warn] ignored %s.%s=%s\n",section,name,value);
     return 0;
   }
 
-  //valid sections are "agents", "runtime"
-  //process "agents" section
-  if (strcmp(section,"agents")==0){
+  //process "ghs" section
+  if (strcmp(section,"ghs")==0){
     //process agent.
     assert(config->n_agents < GHS_MAX_N);
     //create a string for comparison, from the next agent id,
     //which, becasue they are zero-indexed, is simply 
     //the size of the set of current agents.
-    snprintf(agent_str,16,"%d",config->n_agents);
+    snprintf(agent_str,32,"%d",config->n_agents);
   
     //we currently only accept <id>=<hostname> pairs
     //of the form [agent], 0=<hostname>, so "0" is the name string
@@ -73,13 +71,50 @@ int ghs_read_cfg_item(void* user, const char* section, const char* name, const c
 
     //}else if (...) {
     //If you had other things to parse, put them here...
-    } else {
+    } 
+
+    else if (strcmp(name,"latency_period_s")==0){
+      config->latency_period_ms=(int)(1000.0*atof(value));
+      return 1;
+    }
+
+    else if (strcmp(name,"latency_period_ms")==0){
+      config->latency_period_ms=(int)atof(value);
+      return 1;
+    }
+
+    else if (strcmp(name,"retry_connections")==0)
+    {
+      if (strcmp(value,"true")==0){
+        config->retry_connections=true;
+        return 1;
+      }
+      if (strcmp(value,"1")==0){
+        config->retry_connections=true;
+        return 1;
+      }
+      if (strcmp(value,"0")==0){
+        config->retry_connections=false;
+        return 1;
+      }
+      if (strcmp(value,"false")==0){
+        config->retry_connections=false;
+        return 1;
+      }
+      return 0;
+    }
+
+    else {
       printf("[warn] unrecognized: '%s.%s'=%s\n",section,name,config->endpoints[config->n_agents]);
       return 0;
     }
 
+    //fall through covered
+    return 0;
+
   //Process "runtime"
-  } else if (strcmp(section,"runtime")==0){
+  } else if (strcmp(section,"runtime")==0)
+  {
     if (strcmp(name,"debug")==0){
       printf("[warn] ok, but unimplemented: %s.%s=%s\n",section,name,value);
       return 1;
@@ -87,25 +122,10 @@ int ghs_read_cfg_item(void* user, const char* section, const char* name, const c
       printf("[warn] unrecognized: %s.%s=%s\n",section,name,value);
       return 0;
     }
-  }else if (strcmp(name,"retry_connections")==0){
-    if (strcmp(value,"false")==0){
-      config->retry_connections=false;
-      return 1;
-    }
-    if (strcmp(value,"true")==0){
-      config->retry_connections=true;
-      return 1;
-    }
-    if (strcmp(value,"1")==0){
-      config->retry_connections=true;
-      return 1;
-    }
-    if (strcmp(value,"0")==0){
-      config->retry_connections=false;
-      return 1;
-    }
-    return 0;
-  } else {
+
+
+  } else 
+  {
     printf("[warn] unrecognized: %s.%s=%s\n",section,name,value);
     return 0;
   }

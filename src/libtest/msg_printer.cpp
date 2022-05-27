@@ -20,25 +20,46 @@ std::ostream& operator << ( std::ostream& outs, const MsgType & type )
   return outs << to_string(type);
 }
 
-std::ostream& operator << ( std::ostream& outs, const MsgData & d)
-{
-  MsgData local = d;
-  size_t * v=reinterpret_cast<size_t*>(&local);
-  outs << "(";
-  outs << v[0]<<" ";
-  outs << v[1]<<" ";
-  outs << v[2]<<" ";
-  outs << v[3];
-  outs<<")";
-  return outs;
-}
 
 std::ostream& operator << ( std::ostream& outs, const Msg & m)
 {
   outs << "("<<m.from<<"-->"<< m.to<<") "<< m.type<<" {";
-  outs << m.type<<" ";
-  outs << m.data;
-  outs<<" }";
+  switch (m.type){
+    case NOOP:
+      { break; }
+    case SRCH:
+      {
+        outs<<"ldr:"<<m.data.srch.your_leader<<" ";
+        outs<<"lvl:"<<m.data.srch.your_level;
+        break;
+      }
+    case SRCH_RET:
+      {
+        outs<<"peer"<<m.data.srch_ret.to<<" ";
+        outs<<"root:"<<m.data.srch_ret.from<<" ";
+        outs<<"val:"<<m.data.srch_ret.metric;
+        break;
+      }
+    case IN_PART:
+      {
+        outs<<"ldr:"<<m.data.in_part.leader<<" ";
+        outs<<"lvl:"<<m.data.in_part.level;
+        break;
+      }
+    case ACK_PART:
+      { break; }
+    case NACK_PART:
+      { break; }
+    case JOIN_US:
+      {
+        outs<<"peer:"<<m.data.join_us.join_peer<<" ";
+        outs<<"root:"<<m.data.join_us.join_root<<" ";
+        outs<<"root-ldr:"<<m.data.join_us.proposed_leader<<" ";
+        outs<<"root-lvl:"<<m.data.join_us.proposed_level;
+        break;
+      }
+  }
+  outs<<"}";
   return outs;
 }
 

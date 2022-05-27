@@ -8,6 +8,8 @@
 #include <cstring>  //mem operations
 #include <cstdio>   //printf and such
 #include <unistd.h> //sleep
+#include <mutex>
+#include <chrono>
 
 static DemoComms static_inst;
 
@@ -118,12 +120,15 @@ int DemoComms::recv(Message &buf)
 {
 
   Message local_msg;
-  //this line saves 100 lines of C++ in the definition of Message?
-  auto local_buf =  (uint8_t*) &local_msg ;
+  //this line saves 100 lines of C++ in the definition of Message (constructing
+  //from buffer)
+  auto local_msg_charptr =  (uint8_t*) &local_msg ;
   size_t recvsz=sizeof(Message);
 
   printf("[info] RECV: waiting for msg ... \n");
-  int ret = nng_recv( incoming, static_cast<void*>(local_buf), &recvsz, 0);
+  int ret = nng_recv( incoming, static_cast<void*>(local_msg_charptr), &recvsz, 0);
+  //Note, local_msg is now populated
+  
   const char* errstr = nng_strerror(ret);
   printf("[info] RECV: %s\n",errstr);
 
@@ -140,15 +145,20 @@ int DemoComms::recv(Message &buf)
     default: {printf("[error] RECV: Unknown error! %d:%s", ret, errstr);return -ret;}
   }
 
-  printf("[info] RECV: Read %zu :", recvsz);
-  for (size_t i=0;i<sizeof(Message);i++){
-    printf("%x",local_buf[i]);
-  }
-  printf("\n");
+  /*
+  if (debug){
+    printf("[info] RECV: Read %zu :", recvsz);
+    for (size_t i=0;i<recvsz;i++){
+      printf("%x",local_msg_charptr[i]);
+    }
+    printf("\n");
+  }*/
 
   printf("[info] RECV: sending confirmation\n");
-  recvsz = sizeof(size_t);
-  ret = nng_send(incoming,(void*)&local_msg.sequence,recvsz,0);
+  SequenceCounter msg_seq = local_msg.control.sequence;
+  recvsz = sizeof(SequenceCounter);
+  auto from = local_msg.header.agent_from;
+  ret = nng_send(incoming,(void*)&msg_seq,recvsz,0);
   if (ret!=0){ 
     printf("[error] RECV: failure to send confirmation: %s\n", nng_strerror(ret));
   }
@@ -156,89 +166,33 @@ int DemoComms::recv(Message &buf)
   //nng_sock assures delivery before returning, but may send multiple times.
   //So we use sequence #s to drop duplicates. But warn if it appears order is
   //violated, for debugging.
-  if (local_msg.sequence == 0) {
-    printf("[warn] RECV: error on sending side, received seq==0\n");
+
+  if (msg_seq == 0) {
+    printf("[warn] RECV: error on sending side, received seq==0 (payload not set?)\n");
     return 0;
-  } else if (sequence_counters[local_msg.agent_from]>local_msg.sequence){
+  } else if (sequence_counters[from]>msg_seq){
     printf("[warn] RECV: msg seq indicates reorder!!, dropping and proceeding anyway\n");
     return 0;
-  } else if (sequence_counters[local_msg.agent_from]==local_msg.sequence){
+  } else if (sequence_counters[from]==msg_seq){
     printf("[info] RECV: msg seq indicates duplicate, dropping\n");
     return 0;
   } else {
-    sequence_counters[local_msg.agent_from]=local_msg.sequence;
+    sequence_counters[from]=msg_seq;
   }
 
   if (recvsz==0){
     printf("[error] RECV: no bytes read by nng, but message returned. Fatal.\n");
     return -1;
   } else {
-    printf("[info] RECV: Decompressing\n");
-
     printf("[info] RECV: Copying to user buf\n");
     memmove(
         static_cast<void*>(&buf),
         static_cast<void*>(&local_msg),
-        sizeof(Message)
+        local_msg.bus_size()
         );
   }
 
   return recvsz;
-}
-
-MessageErrno DemoComms::send(Message& msg, MessageOptMask mask)
-{
-
-  size_t recvsz = sizeof(Message);
-  size_t ret_seq = 0;
-
-  MessageDest destination = msg.agent_to;
-  if (destination == MESSAGE_DEST_UNSET){
-    return ERR_DEST_UNSET;
-  }
-
-  //infer endpoint from destination / subsystem pairs
-  const char* endpoint; 
-  switch (msg.payload.type){
-    case (PAYLOAD_TYPE_NOT_SET):{ return ERR_NO_PAYLOAD_TYPE ;}
-    case (PAYLOAD_TYPE_CONTROL):{ endpoint = ghs_cfg.endpoints[destination]; break;}
-    case (PAYLOAD_TYPE_GHS):{ endpoint = ghs_cfg.endpoints[destination]; break;}
-    default: { return ERR_UNRECOGNIZED_PAYLOAD_TYPE; }
-  }
-
-  //// Msg is OK, endpoint is ok
-  msg.sequence = outgoing_seq;
-
-  //Create connection
-  nng_dialer dialer;
-  printf("[info] Dialing: %s \n",endpoint);
-
-  int ret = nng_dialer_create(&dialer, outgoing, endpoint);
-  if (ret!=0){ 
-    printf("[error] send() error: %s\n", nng_strerror(ret)); 
-    return ret;
-  }
-
-  //dialer exists...
-  ret = nng_dialer_start(dialer,0);
-  if (ret!=0){ goto send_cleanup; }
-
-  ret = nng_send(outgoing,(void*)&msg,sizeof(Message),0);
-  if (ret!=0){ goto send_cleanup; } 
-
-  recvsz = sizeof(ret_seq);
-  ret = nng_recv( outgoing, (void*) &ret_seq, &recvsz, 0);
-  if (ret!=0){ goto send_cleanup; } 
-  printf("[info] Sent # %zu, conf= %zu\n", ret_seq, msg.sequence);
-  assert(ret_seq == msg.sequence);
-  outgoing_seq++;
-
-send_cleanup:
-
-  if (ret!=0){ printf("[error] send() error: %s\n", nng_strerror(ret)); }
-  assert(0==nng_dialer_close(dialer));
-
-  return ret; 
 }
 
 void DemoComms::read_loop()
@@ -248,32 +202,44 @@ void DemoComms::read_loop()
 
     Message m;
     int ret = recv(m);
-    if (ret<0){
-      //fatal
+
+    if (ret<0){ //fatal
       read_continues = false;
-    } else if (ret==0) {
-      //nonfatal
+    } else if (ret==0) { //nonfatal
       continue;
-    } else {
-      //push
-      std::lock_guard<std::mutex> guard(q_mut);
-      QueueRetcode ret;
-      if ( (ret= in_q.push(m)) != OK)
-      {
-        switch (ret)
-        {
-          case ERR_QUEUE_FULL: { 
-                                 printf("[error] Queue full!"); 
-                                 read_continues=false; 
-                                 break; 
-                               }
-          default: {
-                     printf("[error] unexpected queue return: %d", ret); 
-                     read_continues=false; 
-                     break;}
-        }
+    } else { //take action by type
+      switch (m.header.type){
+        case PAYLOAD_TYPE_GHS:
+          {
+            std::lock_guard<std::mutex> guard(q_mut);
+            QueueRetcode ret;
+            if ( (ret= in_q.push(m)) != OK)
+            {
+              printf("[error] queue err: %s", seque::strerr(ret)); 
+            }
+            break;
+          }
+        case PAYLOAD_TYPE_METRICS:
+          {
+            auto from = m.header.agent_from;
+            auto prior = kbps[from];
+            auto sent  = *(Kbps*)&m.bytes[0];
+            kbps[from] = std::min(prior, sent);;
+            printf("[info] updated metrics to %u from %u b/c rec %u\n",kbps[from],prior, sent);
+            break;
+          }
+        case PAYLOAD_TYPE_CONTROL: 
+          {break;}
+        case PAYLOAD_TYPE_PING: 
+          {break;}
+        default: 
+          {
+            printf("[error] unrecognized msg type: %d",m.header.type);
+            break;
+          }
       }
     }
+    //while...
   }
 }
 
@@ -291,27 +257,165 @@ bool DemoComms::get_next(Message&m){
     } else {
       switch(ret)
       {
-        case ERR_QUEUE_EMPTY:{
-                               printf("[error] Queue empty unexpectedly!");
-                               break;
-                             }
-        case ERR_BAD_IDX:{
-                           printf("[error] Queue error, no element 0!");
-                           break;
-                         }
-        case ERR_NO_SUCH_ELEMENT:{
-                                   printf("[error] Queue error, no element 0!");
-                                   break;
-                                 }
-        default:{
-                  printf("[error] unexpected queue return: %d", ret); 
-                  read_continues=false; 
-                  break;
-                }
+        case ERR_QUEUE_EMPTY:
+          {
+            printf("[error] Queue empty unexpectedly!");
+            break;
+          }
+        case ERR_BAD_IDX:
+          {
+            printf("[error] Queue error, no element 0!");
+            break;
+          }
+        case ERR_NO_SUCH_ELEMENT:
+          {
+            printf("[error] Queue error, no element 0!");
+            break;
+          }
+        default:
+          {
+            printf("[error] unexpected queue return: %d", ret); 
+            read_continues=false; 
+            break;
+          }
       }
     }
   }
   return false;
+}
+
+MessageErrno DemoComms::send(Message& msg, MessageOptMask mask)
+{
+
+  MessageDest destination = msg.header.agent_to;
+  if (destination == MESSAGE_DEST_UNSET){
+    return ERR_DEST_UNSET;
+  }
+
+  //infer endpoint from destination / subsystem pairs
+  const char* endpoint; 
+  switch (msg.header.type){
+    case (PAYLOAD_TYPE_NOT_SET):{ return ERR_NO_PAYLOAD_TYPE ;}
+    case (PAYLOAD_TYPE_GHS):{ endpoint = ghs_cfg.endpoints[destination]; break;}
+    default: { return ERR_UNRECOGNIZED_PAYLOAD_TYPE; }
+  }
+  long us_rt;
+  return internal_send(msg,endpoint,us_rt);
+}
+
+void DemoComms::exchange_iperf()
+{
+  for (int i=0;i<ghs_cfg.n_agents;i++){
+    if (i==ghs_cfg.my_id) continue;
+
+    Message m;
+    m.header.type = PAYLOAD_TYPE_METRICS;
+    m.header.agent_from = ghs_cfg.my_id;
+    auto metric = kbps[i];
+    printf("[info] sending: %u to %d\n",metric,i);
+    auto msz    = sizeof(metric);
+    m.header.payload_size=msz;
+    memmove(m.bytes,&metric,msz);
+    m.header.agent_to = i;
+    const char* endpoint = ghs_cfg.endpoints[i];
+
+    long us_rt;
+    MessageErrno ret;
+    ret = internal_send(m,endpoint,us_rt);
+    if (ret!=0){
+      printf("Ignoring error: %d",ret);
+    }
+    //blithely ignore failures here
+  }
+}
+
+void DemoComms::little_iperf(){
+  //infer endpoint from destination / subsystem pairs
+  size_t sz = std::min(PAYLOAD_MAX_SZ, 1024);
+  Message m;
+  memset(m.bytes,0,sz);
+  m.header.type = PAYLOAD_TYPE_PING;
+  m.header.agent_from = ghs_cfg.my_id;
+  m.header.payload_size=sz;
+  for (int i=0;i<ghs_cfg.n_agents;i++){
+    kbps[i]=0;
+  }
+  for (int repeat=0;repeat<10;repeat++){
+    for (int i=0;i<ghs_cfg.n_agents;i++){
+
+      if (i==ghs_cfg.my_id) continue;
+
+      const char* endpoint = ghs_cfg.endpoints[i];
+      m.header.agent_to = i;
+      long us_rt;
+      if (internal_send(m,endpoint,us_rt)==0){
+        kbps[i]+=(2e6*m.bus_size())/(us_rt*10);//2e5, really, but that's annoying
+      }//if err: assume 0 kbps (adding 0 does nothing)
+    }
+  }
+}
+
+void DemoComms::print_iperf(){
+  for (int i=0;i<ghs_cfg.n_agents;i++){
+    printf("[info] avg kbps[%d]=%d\n",i,kbps[i]);
+  }
+}
+
+MessageErrno DemoComms::internal_send(Message&m, const char* endpoint, long &us_rt)
+{
+  std::lock_guard<std::mutex> guard(send_mut);
+  m.control.sequence=outgoing_seq;
+  void* outbuf = (void*)&m;
+  size_t obsz = m.bus_size();
+  size_t return_seq=0;
+  size_t return_seq_sz = sizeof(return_seq);
+  std::chrono::time_point<std::chrono::steady_clock> start;
+  std::chrono::time_point<std::chrono::steady_clock> end;
+
+  //Create connection
+  nng_dialer dialer;
+  printf("[info] Dialing: %s \n",endpoint);
+
+  int ret = nng_dialer_create(&dialer, this->outgoing, endpoint);
+  if (ret!=0){ 
+    printf("[error] send() error: %s\n", nng_strerror(ret)); 
+    return ret;
+  }
+
+  //dialer exists...
+  ret = nng_dialer_start(dialer,0);
+  if (ret!=0){ goto send_cleanup; }
+
+  start = std::chrono::steady_clock::now();
+  ret = nng_send(this->outgoing,outbuf,obsz,0);
+  if (ret!=0){ goto send_cleanup; } 
+  if (obsz!=m.bus_size()){
+    printf("[error] sent: %zu/%zu\n",obsz,m.bus_size());
+  }
+
+  ret = nng_recv( this->outgoing, (void*) &return_seq, &return_seq_sz, 0);
+  if (ret!=0){ goto send_cleanup; } 
+  printf("[info] Sent w/%zu, conf= %zu\n", m.control.sequence, return_seq);
+  assert(return_seq == m.control.sequence);
+  outgoing_seq++;
+
+send_cleanup:
+
+  if (ret!=0){ 
+    printf("[error] send() error: %s\n", nng_strerror(ret)); 
+    //TODO: handle ret, for example dialer error not avail means kbps=0.
+  }
+  else {
+    //capture metrics
+    end = std::chrono::steady_clock::now();
+    auto diff = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+    us_rt = diff.count();
+    printf("[info] Round-trip time: %ld \xC2\xB5s\n", us_rt);
+  }
+
+  assert(0==nng_dialer_close(dialer));
+
+  return ret; 
 }
 
 void DemoComms::start_receiver(){
@@ -323,3 +427,10 @@ void DemoComms::stop_receiver(){
   read_continues=false;
   reader_thread.join();
 }
+
+//Globally unique, symmetric metric.
+uint64_t DemoComms::unique_link_metric_to(const uint16_t agent_id) const
+{
+  return sym_metric(agent_id, ghs_cfg.my_id, kbps[agent_id]);
+}
+

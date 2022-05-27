@@ -1,26 +1,28 @@
-#ifndef GHS_DEMO_INIREADER
-#define GHS_DEMO_INIREADER
+#ifndef GHS_DEMO_CONFIG
+#define GHS_DEMO_CONFIG
 
-#define GHS_MAX_N 16
+#define GHS_MAX_N 8
 #define GHS_MAX_ENDPOINT_SZ 256
 #define GHS_N_UNSET 0
-#define GHS_ID_UNSET 255
+#define GHS_ID_UNSET -1
 
 #include <cstdint>
 
 struct ghs_config
 {
   int wait_s= 0 ;
-  uint8_t n_agents=GHS_N_UNSET;
+  int n_agents=GHS_N_UNSET;
   char endpoints[GHS_MAX_N][GHS_MAX_ENDPOINT_SZ]={0};
-  uint8_t my_id=GHS_ID_UNSET;
+  int test=0;
+  int my_id=GHS_ID_UNSET;
   enum {
     LOAD=0,
     TEST,
     START,
   }command=LOAD;
   bool retry_connections=false;
-  bool test = false;
+  int latency_period_ms=0;
+
 };
 
 //gcc: instead realize, there is no bool.

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-add_library(ghs 
+add_library(
+  ghs 
   SHARED 
   ghs.cpp 
   graph.cpp 
