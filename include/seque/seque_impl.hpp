@@ -90,7 +90,7 @@ QueueRetcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
     return ERR_QUEUE_EMPTY;
   }
 
-  if (idx>N){
+  if (idx>=N){
     return ERR_BAD_IDX;
   }
 

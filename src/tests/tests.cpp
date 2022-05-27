@@ -1313,8 +1313,8 @@ TEST_CASE("sim-test 3 node frenzy")
   GhsState<4,32> states[3]={
     {0},{1},{2}
   };
-  for (int i=0;i<3;i++){
-    for (int j=0;j<3;j++){
+  for (unsigned int i=0;i<3;i++){
+    for (unsigned int j=0;j<3;j++){
       if (i!=j){
         //add N^2 edges
         Edge to_add = {i,j,UNKNOWN,(EdgeMetric)( (1<<i) + (1<<j))};

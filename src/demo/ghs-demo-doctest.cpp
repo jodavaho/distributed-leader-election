@@ -3,6 +3,15 @@
 #include "doctest/doctest.h"
 #include "ghs/msg.hpp"
 #include "ghs-demo-msgutils.hpp"
+#include "ghs-demo-config.h"
+#include "ghs-demo-comms.hpp"
+
+ghs_config get_cfg(int a=4){
+  ghs_config ret;
+  ret.my_id=0;
+  ret.n_agents=a;
+  return ret;
+}
 
 TEST_CASE("to_bytes"){
   InPartPayload pld{2,3};
@@ -21,3 +30,30 @@ TEST_CASE("to_bytes"){
   CHECK_EQ(ghs_again.data.in_part.level,3);
 }
 
+TEST_CASE("unique_metric")
+{
+  CHECK_EQ(
+      sym_metric(1,0,100) ,
+      sym_metric(0,1,100) 
+      );
+
+  CHECK_LT(
+      sym_metric(1,0,101) ,
+      sym_metric(0,1,100) 
+      );
+
+  CHECK_GT(
+      sym_metric(1,0,100) ,
+      sym_metric(0,1,101) 
+      );
+
+  CHECK_NE(
+      sym_metric(1,0,101) ,
+      sym_metric(1,0,100) 
+      );
+
+  CHECK_NE(
+      sym_metric(0,1,101) ,
+      sym_metric(0,1,100) 
+      );
+}

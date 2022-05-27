@@ -22,6 +22,10 @@ enum QueueRetcode{
  */
 bool Q_OK(const QueueRetcode &r);
 
+namespace seque{
+  const char* strerr(const QueueRetcode &r);
+}
+
 template<typename T, std::size_t N>
 class StaticQueue
 {

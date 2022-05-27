@@ -4,7 +4,7 @@
 #include <sstream> //better than iostream
 #include <cassert>
 
-#include "ghs-demo-inireader.h"
+#include "ghs-demo-config.h"
 #include "ghs-demo-msgutils.hpp"
 #include "ghs-demo-comms.hpp"
 #include "ghs/ghs_printer.hpp" //dump_edges
@@ -15,19 +15,20 @@
 #include "seque/seque.hpp"
 
 template<size_t AN, size_t QN>
-void initialize_ghs(GhsState<AN,QN>& ghs, ghs_config& cfg)
+void initialize_ghs(GhsState<AN,QN>& ghs, ghs_config& cfg, DemoComms& c)
 {
   ghs.reset();
-  for (AgentID i=0;i<cfg.n_agents;i++){
+  for (int i=0;i<cfg.n_agents;i++){
     if (i!=cfg.my_id){
-      ghs.set_edge( {i,cfg.my_id,UNKNOWN, i+cfg.my_id} ); 
+      EdgeMetric link_wt = (EdgeMetric) c.unique_link_metric_to(i);
+      ghs.set_edge( { (AgentID)i, (AgentID)cfg.my_id, UNKNOWN, link_wt, } ); 
       printf("[info] Set edge: %d from %d (check=%d)\n",
           i,
           cfg.my_id,
           ghs.has_edge(i));
       Edge e;
       ghs.get_edge(i,e);
-      printf("[info] (%d<--%d, %d %d)\n",
+      printf("[info] (%d<--%d, %d %lu)\n",
           e.peer,e.root,e.status,e.metric_val);
     }else{
       printf("[info] Ignoring: %d (it's me)\n", i);
@@ -39,7 +40,7 @@ template<size_t AN, size_t QN>
 void kill_edge(GhsState<AN,QN>& ghs, ghs_config & cfg, uint8_t agent_to)
 {
   bool resp_req=false, waiting_for=false;
-  ghs.set_edge( {agent_to, cfg.my_id, DELETED, 0} );
+  ghs.set_edge( {agent_to, (AgentID) cfg.my_id, DELETED, 0} );
 
   ghs.is_response_required(agent_to, resp_req);
   if (resp_req)
@@ -56,35 +57,23 @@ void kill_edge(GhsState<AN,QN>& ghs, ghs_config & cfg, uint8_t agent_to)
 }
 
 int do_test_and_die(DemoComms& comms, ghs_config &config){
-  printf("Waiting 10 s and then dying\n");
+  printf("[info] running connectivity test after %ds!\n",config.wait_s);
+  sleep(config.wait_s);
   comms.start_receiver();
-  if (config.my_id==0){
-    printf("Sending to %d agents ... \n ", config.n_agents);
-    for (int s =1;s<=10;s++){
-      sleep(1);
-      for (int i=1;i<config.n_agents;i++){
-        printf("%d ... \n ", i);
-        Message m;
-        m.agent_to=i;
-        m.agent_from=config.my_id;
-        m.payload.type=PAYLOAD_TYPE_CONTROL;
-        m.sequence=s;
-        comms.send(m);
-      }
-    }
-  } else {
-    for (int s =0;s<10;s++){
-      sleep (1);
-      if (comms.has_msg()){
-        Message m;
-        comms.get_next(m);
-        printf("Received from%d seq=%zu!\n",m.agent_from,m.sequence);
-      } else {
-        printf("%d\n",s);
-      }
-    }
-  }
-  printf("test done!\n");
+  sleep(1);
+  comms.little_iperf();
+  sleep(1);
+  printf("[info]================= measured\n");
+  comms.print_iperf();
+  sleep(1);
+  printf("[info]================= exchanging \n");
+  comms.exchange_iperf();
+  sleep(1);
+  printf("[info]================= post-exchange\n");
+  comms.print_iperf();
+  sleep(1);
+  printf("[info]================= again\n");
+  comms.print_iperf();
   comms.stop_receiver();
   return 0;
 }
@@ -94,6 +83,7 @@ int do_test_and_die(DemoComms& comms, ghs_config &config){
 int main(int argc, char** argv){
 
   ghs_config config;
+  static const size_t COMMS_Q_SZ=256;
 
   //can we read configs without allocating memory!?
   //Yes we can!
@@ -106,11 +96,6 @@ int main(int argc, char** argv){
     return 1;
   }
 
-  printf("[info] Sizeof(Message)=%zu\n",sizeof(Message));
-  printf("[info] Sizeof(Msg)=%zu\n",sizeof(Msg));
-  printf("[info] Sizeof(ghs_config)=%zu\n",sizeof(ghs_config));
-
-#define COMMS_Q_SZ 256
 
   //initialize the buffer used for input & output to get response messages from
   //those state machines. 
@@ -120,30 +105,22 @@ int main(int argc, char** argv){
   //initialize all the message-driven state machines that need msg callbacks.
   //In this case. Just GHS...
   GhsState<GHS_MAX_N,COMMS_Q_SZ> ghs(config.my_id);
+
   //here's the queue to/from ghs TODO: unify message types.
   StaticQueue<Msg,COMMS_Q_SZ> ghs_buf;
+
   //Now the stateful comms handler, to send/ receive those messages.
   //static allocated...
   auto& comms = DemoComms::inst().with_config(config);
 
   if (!comms.ok()){
-    fprintf(stderr,"[error] Cannot create comms from config\n");
+    printf("[error] Cannot create comms from config\n");
     return 1;
   }
 
   if (config.test==1){
     return do_test_and_die(comms,config);
   }
-
-  if (config.command==ghs_config::START){
-    initialize_ghs(ghs,config);
-    size_t sent;
-    auto ret = ghs.start_round(ghs_buf, sent);
-    if (ret != GHS_OK){
-      printf("[error] could not start ghs! (%d)\n", ret);
-      return 1;
-    }
-  } 
 
   static bool wegood=true;
 
@@ -159,76 +136,98 @@ int main(int argc, char** argv){
   }
 
   comms.start_receiver();
+  comms.little_iperf();
+  comms.print_iperf();
+  sleep(1);
+  comms.exchange_iperf();
+  comms.print_iperf();
+  sleep(1);
+  comms.print_iperf();
+
+  if (config.command==ghs_config::START){
+    initialize_ghs(ghs,config,comms);
+    size_t sent;
+    auto ret = ghs.start_round(ghs_buf, sent);
+    if (ret != GHS_OK){
+      printf("[error] could not start ghs! (%d)\n", ret);
+      return 1;
+    }
+  } 
+
+
   while (wegood){
 
     Message in;
-    //printf("[----] tick ... \n");
-
+    //retrieve next message from background reader.
     bool ok = comms.get_next(in);
 
     if (ok){
-      printf("[info] recv'd msg from %d to %d\n",in.agent_from, in.agent_to);
+      printf("[info] recv'd msg from %d to %d\n",in.header.agent_from, in.header.agent_to);
 
       //no shenanegans plz
-      assert(in.agent_to==config.my_id);
+      assert(in.header.agent_to==config.my_id);
 
-      switch (in.payload.type){
+      //there might be other types, like link metrics, control messages, or
+      //other subsystems to prod. etc
+      switch (in.header.type){
+        case PAYLOAD_TYPE_CONTROL:
+          { 
+            break;
+          }
         case PAYLOAD_TYPE_GHS:
           {
             //with static size checking:
-            //Msg lm=from_bytes<GHS_MAX_MSG_SZ>(in.payload.bytes); 
-            //or with compression
-            Msg lm = from_bytes(in.payload.bytes, in.payload.size);
-
-            //do recv work
+            //Msg payload_msg=from_bytes<GHS_MAX_MSG_SZ>(in.bytes); 
+            //or with compression / variable sizes
+            Msg payload_msg = from_bytes(in.bytes, in.header.payload_size);
+            //push msg to the subsystem
             std::stringstream ss;
-            ss<<lm;
-            printf("[info] Received: %s\n",ss.str().c_str());
-            size_t new_msg_ct;
-            GhsError retval = ghs.process(lm,ghs_buf, new_msg_ct);
+            ss<<payload_msg;
+            printf("[info] received GHS msg: %s\n",ss.str().c_str());
+            size_t new_msg_ct=0;
+            GhsError retval = ghs.process(payload_msg,ghs_buf, new_msg_ct);
             if (retval != GHS_OK){
-              printf("[error] could not call ghs.process()!");
+              printf("[error] could not call ghs.process():%s",ghs_strerror(retval));
               return 1;
             }
             printf("[info] # response msgs: %zu\n", new_msg_ct);
-            printf("[info] GHS waiting: %zu\n", ghs.waiting_count());
-            printf("[info] GHS delayed: %zu\n", ghs.delayed_count());
-            printf("[info] GHS leader: %d parent: %d & level: %d\n", 
+            printf("[info] GHS waiting: %zu, delayed: %zu, leader: %d, parent: %d, level: %d\n", 
+                ghs.waiting_count(),
+                ghs.delayed_count(),
                 ghs.get_leader_id(), 
                 ghs.get_parent_id(),
                 ghs.get_level());
-            printf("[info] edges: %s\n", dump_edges(ghs).c_str());
+            printf("[info] Edges: %s\n",
+                dump_edges(ghs).c_str());
             break;
           }
-        default: { fprintf(stderr,"[error] unknown payload type: %d\n", in.payload.type); wegood=false; break;}
+        default: { printf("[error] unknown payload type: %d\n", in.header.type); wegood=false; break;}
       }
 
 
     }
 
+
+    //now process the outgoing msgs 
+    //ghs example, others are similar:
+    //You don't really *need* to wrap messages like this ... 
     while(ghs_buf.size()>0){
-      printf("[info] Have %zu msgs to send\n", ghs_buf.size());
       Message out;
+      //ghs msgs:
       Msg out_pld;
 
+      printf("[info] Have %zu msgs to send\n", ghs_buf.size());
       if (OK!=ghs_buf.pop(out_pld)){
         wegood=false;
         break;
       }
-
-
-      out.agent_to=out_pld.to;
-      out.agent_from=out_pld.from;
-      out.payload.type=PAYLOAD_TYPE_GHS;
-      out.payload.size=sizeof(out_pld);
-
-      //w/compression:
-      size_t bsz = PAYLOAD_MAX_SZ;
-      to_bytes(out_pld,out.payload.bytes,bsz);
-      out.payload.size=bsz;
-      //vs with size type checking
-      //to_bytes<PAYLOAD_MAX_SZ>(out_pld, out.payload.bytes);
-
+      out.header.agent_to=out_pld.to;
+      out.header.agent_from=out_pld.from;
+      out.header.type=PAYLOAD_TYPE_GHS;
+      out.header.payload_size=sizeof(out_pld);
+      size_t bsz = sizeof(out_pld);
+      to_bytes(out_pld,out.bytes,bsz);
+      assert(bsz==sizeof(out_pld));
       int retval=comms.send(out);
 
       if (retval==0){
@@ -237,17 +236,18 @@ int main(int argc, char** argv){
         printf("[info] Sent: %s\n",ss.str().c_str());
       } else if (retval>0){
         if (config.retry_connections){
-          fprintf(stderr,"[error] Could not send, will retry: %d\n",retval);
+          printf("[error] Could not send, will retry: %d\n",retval);
           ghs_buf.push(out_pld);
           break;
         } else {
-          fprintf(stderr,"[error] Could not send, assuming gone: %d\n",retval);
-          kill_edge(ghs, config, out.agent_to);
+          printf("[error] Could not send, assuming gone: %d\n",retval);
+          kill_edge(ghs, config, out.header.agent_to);
         }
       } else {
-        fprintf(stderr,"[error] system error. ghs-demo-comms.cpp should have printed an nng msg: %d\n",-retval);
+        printf("[error] system error. ghs-demo-comms.cpp should have printed an nng msg: %d\n",-retval);
       }
     }
+
     if (ghs.is_converged()){
       printf("Converged!\n");
       wegood=false;
@@ -255,15 +255,10 @@ int main(int argc, char** argv){
 
   }
 
+  printf("[info] waiting a bit for cleanup ... \n");
+  sleep(3);
   comms.stop_receiver();
-
   printf("[info] DemoComms stopped ... Exiting\n");
-
-  //recv and reply OK
-  //plug into ghs
-  //for each resulting msg
-  //send
-  //reply
 
   return 0;
 }

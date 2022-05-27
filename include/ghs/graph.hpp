@@ -1,21 +1,23 @@
 #ifndef graph_hpp
 #define graph_hpp
 
+#include <limits>
 
 //The algorithm "level" for partitions of the graph
 #define GHS_LEVEL_START 0
 typedef int Level;
 
+//TODO: namespace ghs{
 #define GHS_NO_AGENT -1
-typedef int AgentID;
+typedef unsigned int AgentID;
 bool ghs_agent_is_valid(const AgentID&);
 
 #define GHS_EDGE_METRIC_NOT_SET 0
 #ifndef GHS_EDGE_WORST_METRIC
-#define GHS_EDGE_WORST_METRIC 99999999
+#define GHS_EDGE_WORST_METRIC std::numeric_limits<EdgeMetric>::max()
 #endif
 
-typedef int EdgeMetric;
+typedef unsigned long EdgeMetric;
 bool ghs_metric_is_valid(const EdgeMetric&);
 
 typedef enum {
