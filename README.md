@@ -1,4 +1,4 @@
-# Leader Election
+# What is this
 
 NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021
 
@@ -41,6 +41,7 @@ popd
 
 See `CMakeLists.txt` for details, but the set of `<options>` are:
 
+- `BUILD_DOCS` (default=On): build doxygen docs
 - `BUILD_EXT` (default=Off): build `libghs_ext.so`
 - `BUILD_DOCTEST` (default=Off): build `ghs-doctest`. Implies `BUILD_EXT`
 - `BUILD_DEMO` (default=Off): build `ghs-demo`. Implies `BUILD_EXT`
@@ -189,7 +190,8 @@ As such, you'll notice all the work is done by `GhsState::process(...)`. *Every 
 
 ## File organization
 
-- `hpp` (header) and `cpp` (src files) are in the same folder: `src/`
+- `h` (header) and `cpp` (src files) are in the same folder: `src/`
+- Implementation headers `hpp` are, too
 - This is not always well observed under `src/ghs-demo`
 
 ## Naming conventions
@@ -199,30 +201,4 @@ As such, you'll notice all the work is done by `GhsState::process(...)`. *Every 
 - methods are `snake_case`
 - class members are `snake_case`
 - files are `flying-snake-case`
-
-## Design decisions
-
-### Exceptions, Assertions, Error Codes, and Return Values
-
-- All functions are labeled `noexcept` where the library code will not generate an exception. 
-- All functions are labelled `const` where they will not modify internal state.
-- Input arguments are validated, rather than trusted. 
-- `std::optional` is used whenever the caller requests data that may not exist but the caller would not necessarily have known that. This provides a concise way of both retrieving and testing for the existence of a member. 
-- Each function or constructor specifies (in comments) the assumptions and pre/post conditions. A violation of preconditions or assumptoions on input will generate an Exception.  For example, if the class `A` provides a `size()` method and is list-like, then requesting more than `size()` elements will generate an exception -- it's not possible and caller should have known better.
-- An assertion will trigger to indicate a programmer error that results in an unworkable state, rather than trying to recover to a partially useable state. 
-- More specifically, Assertions are used to check the internal (not user modifyable) state of the library. For example, if the internal state does not support the operation, but the caller provided good data and the library was in a good state prior, then there is nothing to do but crash, as the current object is obviously corrupted. 
-- Return values are used to indicate a side effect has been triggered. For example, returning the number of internal structures added. This is helpful for caller code testing their assumptions. 
-
-### Signatures, References, and Pointers
-
-- `int set_X()` and `X get_X()` are preferred over `void set(X)` and `X X()`. Often, the int returns some useful information about what was modified internally, or `void` if no such information is possible. Compare `set_edge` vs `set_parent_edge`. 
-- Pointers are used to indicate a variable that *is expected to be modified*. References are preferred over values when passing arguments.
-- `std::shared_ptr` is **not currently** used over raw points, but can easiliy be changed
-
-### Data structures
-
-- Wherever possible, hash-based data structures are avoided until I can get approval to use them. There are places in the code where a `std::unordered_set` would have made life much easier, but given the small numbers of agents for our use case, I often use lists instead. 
-- When `N` is known, all refs to `std::vector<T>` should be replaced with `std::array<T,N>`, and all `std_unordered_set<T>` can become `std::array<T,N>` as well. 
-
-
 

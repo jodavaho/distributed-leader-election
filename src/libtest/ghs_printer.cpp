@@ -1,3 +1,3 @@
-#include "ghs/ghs_printer.hpp"
+#include "ghs/ghs_printer.h"
 #include <sstream>
 

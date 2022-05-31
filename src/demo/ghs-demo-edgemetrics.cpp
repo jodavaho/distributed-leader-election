@@ -1,4 +1,4 @@
-#include "ghs-demo-edgemetrics.hpp"
+#include "ghs-demo-edgemetrics.h"
 #include <algorithm>
 
 CommsEdgeMetric sym_metric(
