@@ -1,13 +1,15 @@
 #include <cstdlib>//size_t
-#include "seque/seque.hpp"
+#include "seque/static_queue.h"
 
-bool Q_OK(const QueueRetcode &r)
-{
-  return r==OK;
-}
+using seque::Retcode;
 
 namespace seque{
-  const char* strerr(const QueueRetcode &r)
+  bool Q_OK(const Retcode &r)
+  {
+    return r==OK;
+  }
+
+  const char* strerr(const Retcode &r)
   {
     switch (r)
     {

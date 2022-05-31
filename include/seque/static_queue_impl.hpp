@@ -1,3 +1,9 @@
+/**
+ * @file static_queue_impl.hpp
+ * @brief Static Queue Implementation
+ */
+
+
 
 template <typename T, std::size_t N>
 StaticQueue<T,N>::StaticQueue():
@@ -26,7 +32,7 @@ size_t StaticQueue<T,N>::size() const{
 }
 
 template <typename T, std::size_t N>
-QueueRetcode StaticQueue<T,N>::push(const T item){
+Retcode StaticQueue<T,N>::push(const T item){
   if (is_full())
   {
     return ERR_QUEUE_FULL;
@@ -48,12 +54,12 @@ QueueRetcode StaticQueue<T,N>::push(const T item){
 }
 
 template <typename T, std::size_t N>
-QueueRetcode StaticQueue<T,N>::front(T &out_item) const {
+Retcode StaticQueue<T,N>::front(T &out_item) const {
   return at(0,out_item);
 }
 
 template <typename T, std::size_t N>
-QueueRetcode StaticQueue<T,N>::pop(){
+Retcode StaticQueue<T,N>::pop(){
   if (is_empty())
   {
     return ERR_QUEUE_EMPTY;
@@ -72,7 +78,7 @@ QueueRetcode StaticQueue<T,N>::pop(){
 }
 
 template <typename T, std::size_t N>
-QueueRetcode StaticQueue<T,N>::pop(T &out_item){
+Retcode StaticQueue<T,N>::pop(T &out_item){
   auto r = front(out_item);
   if (!Q_OK(r)){
     return r;
@@ -83,7 +89,7 @@ QueueRetcode StaticQueue<T,N>::pop(T &out_item){
 
 
 template <typename T, std::size_t N>
-QueueRetcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
+Retcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
 {
 
   if (size()==0){
@@ -110,7 +116,7 @@ QueueRetcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
 
 
 template <typename T, std::size_t N>
-QueueRetcode StaticQueue<T,N>::clear()
+Retcode StaticQueue<T,N>::clear()
 {
   idx_front=0;
   idx_back =0;

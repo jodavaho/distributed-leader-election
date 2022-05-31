@@ -1,21 +1,23 @@
-#include "ghs/msg_printer.hpp"
+#include "ghs/msg_printer.h"
 
 #include <sstream>
 
-std::string to_string(const MsgType &type){
+using le::ghs::Msg;
+
+std::string to_string(const Msg::Type &type){
 	switch (type){
-		case MsgType::NOOP:{return "NOOP";}
-		case MsgType::SRCH:{return "SRCH";}
-		case MsgType::SRCH_RET:{return "SRCH_RET";}
-		case MsgType::IN_PART:{return "IN_PART";}
-		case MsgType::ACK_PART:{return "ACK_PART";}
-		case MsgType::NACK_PART:{return "NACK_PART";}
-		case MsgType::JOIN_US:{return "JOIN_US";}
+		case Msg::Type::NOOP:{return "NOOP";}
+		case Msg::Type::SRCH:{return "SRCH";}
+		case Msg::Type::SRCH_RET:{return "SRCH_RET";}
+		case Msg::Type::IN_PART:{return "IN_PART";}
+		case Msg::Type::ACK_PART:{return "ACK_PART";}
+		case Msg::Type::NACK_PART:{return "NACK_PART";}
+		case Msg::Type::JOIN_US:{return "JOIN_US";}
 		default: {return "??";};
 	}
 }
 
-std::ostream& operator << ( std::ostream& outs, const MsgType & type )
+std::ostream& operator << ( std::ostream& outs, const Msg::Type & type )
 {
   return outs << to_string(type);
 }
@@ -23,34 +25,35 @@ std::ostream& operator << ( std::ostream& outs, const MsgType & type )
 
 std::ostream& operator << ( std::ostream& outs, const Msg & m)
 {
+  using namespace le::ghs;
   outs << "("<<m.from<<"-->"<< m.to<<") "<< m.type<<" {";
   switch (m.type){
-    case NOOP:
+    case Msg::Type::NOOP:
       { break; }
-    case SRCH:
+    case Msg::Type::SRCH:
       {
         outs<<"ldr:"<<m.data.srch.your_leader<<" ";
         outs<<"lvl:"<<m.data.srch.your_level;
         break;
       }
-    case SRCH_RET:
+    case Msg::Type::SRCH_RET:
       {
         outs<<"peer"<<m.data.srch_ret.to<<" ";
         outs<<"root:"<<m.data.srch_ret.from<<" ";
         outs<<"val:"<<m.data.srch_ret.metric;
         break;
       }
-    case IN_PART:
+    case Msg::Type::IN_PART:
       {
         outs<<"ldr:"<<m.data.in_part.leader<<" ";
         outs<<"lvl:"<<m.data.in_part.level;
         break;
       }
-    case ACK_PART:
+    case Msg::Type::ACK_PART:
       { break; }
-    case NACK_PART:
+    case Msg::Type::NACK_PART:
       { break; }
-    case JOIN_US:
+    case Msg::Type::JOIN_US:
       {
         outs<<"peer:"<<m.data.join_us.join_peer<<" ";
         outs<<"root:"<<m.data.join_us.join_root<<" ";

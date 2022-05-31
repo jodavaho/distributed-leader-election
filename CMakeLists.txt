@@ -68,11 +68,19 @@ if (BUILD_DOCS)
   message("-- [BUILD_DOCS] Doxygen version: ${DOXYGEN_VERSION}")
   set(DOXYGEN_GENERATE_HTML YES)
   set(DOXYGEN_GENERATE_MAN YES)
-  set(DOXYGEN_PROJECT_NAME "Leader Election")
-  set(DOXYGEN_PROJECT_BRIEF "GHS, distributed MST, and distributed metric-based leader election")
+  set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "README.md")
+  set(DOXYGEN_PROJECT_NAME "GHS")
+  set(DOXYGEN_PROJECT_BRIEF "Leader Election Based on GHS Minimum Spanning Tree")
+  set(DOXYGEN_EXAMPLE_PATH ${PROJECT_SOURCE_DIR}/src/demo)
   doxygen_add_docs(
     doxygen
     ${PROJECT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/include/ghs
+    ${PROJECT_SOURCE_DIR}/include/seque
+    ${PROJECT_SOURCE_DIR}/src/tests/
+    ${PROJECT_SOURCE_DIR}/src/demo/
+    ${PROJECT_SOURCE_DIR}/src/lib/
+    ${PROJECT_SOURCE_DIR}/src/libtest/
     COMMENT "Generate man pages"
     )
   
