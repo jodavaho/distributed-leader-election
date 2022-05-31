@@ -4,13 +4,16 @@ add_library(
   ghs 
   SHARED 
   ghs.cpp 
-  graph.cpp 
-  msg.cpp)
+  agent.cpp
+  edge.cpp
+  msg.cpp
+  )
 
 add_library(
   ghs_seque 
   SHARED 
-  seque.cpp)
+  seque.cpp
+  )
 
 target_link_libraries(ghs ghs_seque)
 
