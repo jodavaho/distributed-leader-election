@@ -8,4 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2022-06-01
 ### Added
 
-- Everything
+- A C++ GHS implementation library `libghs.so`
+- A C++ statically-sized messager queue that is based on a circular buffer `libghs_seque.so`
+- An optional set of extensions that help to build algorithms around it `libghs_ext.so` (configure with `-DBUILD_EXT=On`)
+- An optional set of tools to help with studies of performance on various graphs, and to output meaningful visuals using the `dot` linux utility `to-dot`, `random-graph`, `ghs-score` (configure with `-DBUILD_TOOLS=On`)
+- An optional doctest executable, that will unit-test the currently built library `ghs-doctest` (configure with `-DBUILD_DOCTEST=On`)
+- An optional demo executable, that is suitable for integration-type testing on multi-machine, multi-process environments `ghs-demo` (configure with `-DBUILD_DEMO=On`)
+- An experimental integration of `miniz` to do message compressing in `ghs-demo` (configure with `-DENABLE_COMPRESSION=On`)
+- License (see [LICENSE.md](LICENSE.md) )
+- Copyright (see [COPYRIGHT.md](COPYRIGHT.md) )
