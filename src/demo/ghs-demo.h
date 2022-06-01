@@ -191,9 +191,8 @@ namespace demo{
     //here's the queue to/from ghs TODO: unify message types.
     seque::StaticQueue<Msg,COMMS_Q_SZ> ghs_buf;
 
-    //Now the stateful comms handler, to send/ receive those messages.
-    //static allocated...
-    auto& comms = demo::Comms::inst().with_config(config);
+    demo::Comms comms;
+    comms.with_config(config);
 
     if (!comms.ok()){
       printf("[error] Cannot create comms from config\n");

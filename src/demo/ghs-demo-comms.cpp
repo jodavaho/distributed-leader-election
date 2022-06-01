@@ -67,11 +67,6 @@ namespace demo{
     nng_close(outgoing);
   }
 
-  Comms& Comms::inst()
-  {
-    return static_inst;
-  }
-
   /** 
    * Q: WHY REQ/REP SOCKETS?
    *
@@ -110,20 +105,25 @@ namespace demo{
     //TODO set up the default options for send / recv on both incoming and
     //outgoing sockets to allow this single-threaded operation
     if (nng_socket_id(incoming) == -1){ 
-      assert(0== nng_rep0_open(&incoming));
-      //assert(0==nng_socket_set_int(incoming, NNG_OPT_RECVBUF, 256));
-      //assert(0==nng_socket_set_size(incoming, NNG_OPT_RECVMAXSZ, sizeof(WireMessage)));
-      assert(0==nng_socket_set_ms(incoming, NNG_OPT_RECVTIMEO, nng_duration(5000)));
-      //assert(0==nng_socket_set_ms(incoming, NNG_OPT_SENDTIMEO, nng_duration(500)));
-      //assert(0==nng_socket_set_ms(incoming, NNG_OPT_RECONNMINT,nng_duration(100)));
-      //assert(0==nng_socket_set_ms(incoming, NNG_OPT_RECONNMAXT,nng_duration(10000)));
+      int ret = nng_rep0_open(&incoming);
+      assert(0==ret);
+      //ret=(nng_socket_set_int(incoming, NNG_OPT_RECVBUF, 256));
+      //ret=(nng_socket_set_size(incoming, NNG_OPT_RECVMAXSZ, sizeof(WireMessage)));
+      ret=(nng_socket_set_ms(incoming, NNG_OPT_RECVTIMEO, nng_duration(5000)));
+      assert(0==ret);
+      //ret=(nng_socket_set_ms(incoming, NNG_OPT_SENDTIMEO, nng_duration(500)));
+      //ret=(nng_socket_set_ms(incoming, NNG_OPT_RECONNMINT,nng_duration(100)));
+      //ret=(nng_socket_set_ms(incoming, NNG_OPT_RECONNMAXT,nng_duration(10000)));
     }
     if (nng_socket_id(outgoing) == -1){ 
-      assert(0==nng_req0_open(&outgoing));
-      //assert(0==nng_socket_set_ms(outgoing, NNG_OPT_RECVTIMEO, nng_duration(1000)));
-      assert(0==nng_socket_set_ms(outgoing, NNG_OPT_SENDTIMEO, nng_duration(1000)));
-      //assert(0==nng_socket_set_ms(outgoing, NNG_OPT_RECONNMINT,nng_duration(100)));
-      //assert(0==nng_socket_set_ms(outgoing, NNG_OPT_RECONNMAXT,nng_duration(10000)));
+      int ret;
+      ret=(nng_req0_open(&outgoing));
+      assert(0==ret);
+      //ret=(nng_socket_set_ms(outgoing, NNG_OPT_RECVTIMEO, nng_duration(1000)));
+      ret=(nng_socket_set_ms(outgoing, NNG_OPT_SENDTIMEO, nng_duration(1000)));
+      assert(0==ret);
+      //ret=(nng_socket_set_ms(outgoing, NNG_OPT_RECONNMINT,nng_duration(100)));
+      //ret=(nng_socket_set_ms(outgoing, NNG_OPT_RECONNMAXT,nng_duration(10000)));
       //there's a couple of settings we need that are TCP specific, too...
       //NNG_OPT_TCP_KEEPALIVE  (true) to support "pings" periodically.
     }
@@ -135,12 +135,17 @@ namespace demo{
     assert(cfg_is_ok(c));
 
     if (nng_listener_id(ghs_listener) != -1){
-      assert(0==nng_listener_close(ghs_listener));
+      int ret;
+      ret=(nng_listener_close(ghs_listener));
+      assert(0==ret);
     }
 
     printf("[info] Starting listener for ghs on : %s\n", c.endpoints[c.my_id]);
-    assert(0==nng_listener_create(&ghs_listener,incoming,c.endpoints[c.my_id]));
-    assert(0==nng_listener_start(ghs_listener,0));
+    int ret;
+    ret=(nng_listener_create(&ghs_listener,incoming,c.endpoints[c.my_id]));
+    assert(0==ret);
+    ret=(nng_listener_start(ghs_listener,0));
+    assert(0==ret);
 
     //std::copy you can go to hell
     memmove((void*)&ghs_cfg, &c, sizeof(Config));
@@ -455,8 +460,11 @@ send_cleanup:
       printf("[info] Round-trip time: %ld \xC2\xB5s\n", us_rt);
     }
 
-    assert(0==nng_dialer_close(dialer));
-    return ret==0?OK:ERR_NNG; 
+    int retclose=(nng_dialer_close(dialer));
+    if (retclose!=0){
+      printf("[error] closing dialer: %s",nng_strerror(retclose));
+    }
+    return ret==0?OK:ERR_NNG;
   }
 
   void Comms::start_receiver(){

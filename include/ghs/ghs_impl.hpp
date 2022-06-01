@@ -37,16 +37,15 @@
  * @file ghs_impl.hpp
  * @brief the implementation for le::ghs::GhsState
  */
+
 #include "ghs.h"
 #include "msg.h"
 
 #ifndef NDEBUG
 #include <stdexcept>
-#define ghs_fatal(s) throw std::runtime_error(std::to_string(__LINE__)+":"+strerror(s))
-#define ghs_fatal_msg(s,m) throw std::runtime_error(std::to_string(__LINE__)+":"+strerror(s)+"--"+std::to_string(m))
+#define ghs_fatal(s) throw std::runtime_error(std::string(__FILE__)+":"+std::to_string(__LINE__)+" "+strerror(s))
 #else
-#define ghs_fatal(__VA_ARGS__) if(false){}
-#define ghs_fatal_msg(__VA_ARGS__) if (false) {}
+#define ghs_fatal(s) printf("[fatal] %s",strerror(s))
 #endif
 
 using std::max;
@@ -519,7 +518,6 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::process_join_us(  agent_t from, const Join
     auto ger = get_edge(join_root, edge_to_other_part);
     if (OK != ger)
     { 
-      //ghs_fatal_msg(ger,join_root);
       return ger; 
     }
   }
