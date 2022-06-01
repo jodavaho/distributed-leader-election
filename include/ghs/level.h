@@ -1,5 +1,6 @@
 /**
  *
+ *   @copyright 
  *   Copyright (c) 2021 California Institute of Technology (“Caltech”). 
  *   U.S.  Government sponsorship acknowledged.
  *
@@ -32,7 +33,6 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  * @file level.h
  * @brief defintion for le::ghs::level_t 
  *
