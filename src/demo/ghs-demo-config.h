@@ -64,7 +64,7 @@ namespace demo{
   struct Config
   {
     /// The time to wait before starting the main algorithm
-    int wait_s= 0 ;
+    float wait_s= 0 ;
 
     /// The number of agents currently loaded
     int n_agents=N_UNSET;
@@ -86,9 +86,10 @@ namespace demo{
     }command=LOAD;
     ///< The start mode
 
-    ///< If we fail to dial up an agent, should we retry later (true) or drop the message (false)
+    /// If we fail to dial up an agent, should we retry later (true) or drop the message (false)
     bool retry_connections=false;
 
+    ///How many seconds should we wait before starting to send messages? This is useful to let others startup
 
   };
 
