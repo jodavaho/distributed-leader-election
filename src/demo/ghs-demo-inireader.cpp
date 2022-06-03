@@ -44,6 +44,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <poll.h>
+#include <cerrno>
 // apt:
 #include <ini.h> // use get_deps.sh
 // ghs:
@@ -133,32 +134,46 @@ namespace demo{
         return 0;
       }
 
-      else {
-        printf("[warn] unrecognized: '%s.%s'=%s\n",section,name,config->endpoints[config->n_agents]);
-        return 0;
-      }
-
-      //fall through covered
-      return 0;
-
-      //Process "runtime"
     } else if (strcmp(section,"runtime")==0)
     {
       if (strcmp(name,"debug")==0){
         printf("[warn] ok, but unimplemented: %s.%s=%s\n",section,name,value);
         return 1;
-      } else {
-        printf("[warn] unrecognized: %s.%s=%s\n",section,name,value);
-        return 0;
+      } 
+
+      if (strcmp(name,"auto_start")==0){
+        if (strcmp(value,"true")==0){
+          config->command=Config::START;
+          printf("[info] auto-start = true\n");
+          return 1;
+        } else if (strcmp(value,"false")==0){
+          config->command=Config::START;
+          printf("[info] auto-start = false\n");
+          return 1;
+        } else {
+          printf("[warn] unrecognized value: %s.%s=%s\n",section,name,value);
+          return 0;
+        }
+      } 
+
+      if(strcmp(name,"wait_time_seconds")==0){
+        errno=0;
+        double val = strtof(value,0);
+        int err = errno;
+        if (val==0.0 && err!=0){
+          printf("[warn] Error converting %s to a float: %s\n",value,strerror(err));
+          return 0;
+        }
+        printf("[info] config says wait %f seconds\n",val);
+        config->wait_s=val;
+        return 1;
       }
 
 
-    } else 
-    {
-      printf("[warn] unrecognized: %s.%s=%s\n",section,name,value);
       return 0;
-    }
-    return 1;
+    } 
+    printf("[warn] unrecognized: %s.%s=%s\n",section,name,value);
+    return 0;
   }
 
   /**
