@@ -1,3 +1,5 @@
+[![Build/Test](https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml)
+
 # What is this
 
 **This documentation best read in doxygen**. 
