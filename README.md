@@ -1,8 +1,8 @@
 # What is this
 
-**This documentation best read in doxygen**.
+**This documentation best read in doxygen**. 
 
-If you build on your system, that will be in [build/html/index.html](build/html/index.html).
+If you build on your system, that will be in [docs/html/index.html](docs/html/index.html).
 
 NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021
 
