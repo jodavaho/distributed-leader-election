@@ -1,17 +1,17 @@
-name: Build/Test
+name: Release
 
 on:
   push:
-    branches: [ "main","release-candidate" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "main","release-candidate" ]
+    branches: [ "main" ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
-  build-test:
+  build-release:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
