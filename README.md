@@ -38,7 +38,7 @@ To configure,
 mkdir build
 pushd build
 cmake .. -D<option>=On -D<option 2>=On 
-popd
+popd  
 ```
 
 See `CMakeLists.txt` for details, but the set of `<options>` are:
