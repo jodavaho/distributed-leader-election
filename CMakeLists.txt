@@ -71,6 +71,7 @@ if (BUILD_DOCS)
   set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "README.md")
   set(DOXYGEN_PROJECT_NAME "GHS")
   set(DOXYGEN_PROJECT_BRIEF "Leader Election Based on GHS Minimum Spanning Tree")
+  set(DOXYGEN_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/docs)
   set(DOXYGEN_EXAMPLE_PATH ${PROJECT_SOURCE_DIR}/src/demo)
   doxygen_add_docs(
     doxygen
