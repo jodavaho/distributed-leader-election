@@ -29,7 +29,7 @@ jobs:
       run: |
         git fetch 
         git checkout "$DOCS"
-        git rm -f docs/
+        git rm -rf docs/
         git merge main
 
     - name: CMake Doxygen
@@ -42,7 +42,7 @@ jobs:
     - name: Force docs
       working-directory: ${{github.workspace}}
       run: |
-        git add docs/ -rf 
+        git add docs/ -f 
         git config --local user.email "23857237+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git commit -am "docs built by github-action from main"
