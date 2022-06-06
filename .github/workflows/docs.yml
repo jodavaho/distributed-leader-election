@@ -2,12 +2,12 @@ name: Docs
 
 on:
   push:
-    branches: [ "20-autodocs-and-gh-pages" ]
+    branches: [ "main" ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
-  DOCS: 20-autodocs-deploy
+  DOCS: gh-pages
 
 jobs:
   build-docs:
@@ -19,10 +19,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Get Dependencies
-      # Use script to download dependencies for build/test
-      working-directory: ${{github.workspace}}
-      run: sudo ./get_deps.sh
+    - name: Get Doxygen
+      run: sudo apt install doxygen
 
     - name: Get main
       working-directory: ${{github.workspace}}
