@@ -28,16 +28,16 @@ jobs:
       working-directory: ${{github.workspace}}
       run: |
         git fetch 
-        git checkout main
+        git checkout "$DOCS"
+        git rm -f docs/
+        git merge main
 
-    - name: Configure CMake
+    - name: CMake Doxygen
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_DOCTEST=Off -DBUILD_DOCS=On -DBUILD_DEMO=Off
-
-    - name: Doxygen
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target doxygen
+      run: |
+        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_DOCTEST=Off -DBUILD_DOCS=On -DBUILD_DEMO=Off
+        cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target doxygen
 
     - name: Force docs
       working-directory: ${{github.workspace}}
