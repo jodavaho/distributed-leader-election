@@ -2,7 +2,7 @@ name: Docs
 
 on:
   push:
-    branches: [ "main","20-autodocs-and-gh-pages" ]
+    branches: [ "20-autodocs-and-gh-pages" ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -42,7 +42,7 @@ jobs:
     - name: Force docs
       working-directory: ${{github.workspace}}
       run: |
-        git add docs/ -f 
+        git add docs/ -rf 
         git config --local user.email "23857237+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git commit -am "docs built by github-action from main"
