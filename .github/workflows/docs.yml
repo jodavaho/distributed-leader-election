@@ -24,14 +24,12 @@ jobs:
       working-directory: ${{github.workspace}}
       run: sudo ./get_deps.sh
 
-    - name: Get DOCS
+    - name: Get main
       working-directory: ${{github.workspace}}
-      run: git fetch && git checkout "$DOCS"
+      run: |
+        git fetch 
+        git checkout main
 
-    - name: Merge Main
-      working-directory: ${{github.workspace}}
-      run: git merge origin/main
-      
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
@@ -47,9 +45,9 @@ jobs:
         git add docs/ -f 
         git config --local user.email "23857237+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git commit -am "docs built by github-action"
+        git commit -am "docs built by github-action from main"
 
     - name: Push DOCS
       working-directory: ${{github.workspace}}
-      run: git push 
+      run: git push "origin/$DOCS" -f
 
