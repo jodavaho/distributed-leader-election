@@ -41,7 +41,7 @@
 namespace le{
   namespace ghs{
 
-    const char* strerror( const Retcode & e){
+    const char* strerror( const Retcode e){
       switch (e){
         case OK:{return "No Error";}
         case PROCESS_SELFMSG:{return "Cannot process msg from self";}

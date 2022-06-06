@@ -675,7 +675,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::mst_convergecast(const Msg::Type m, const 
 
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_parent_id(const agent_t& id) {
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_parent_id(const agent_t id) {
 
   //case 1: self-loop ok
   if (id==get_id()){
@@ -711,7 +711,7 @@ agent_t GhsState<MAX_AGENTS, BUF_SZ>::get_leader_id() const {
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_leader_id(const agent_t& leader) {
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_leader_id(const agent_t leader) {
   my_leader = leader;
   return OK;
 }
@@ -722,7 +722,7 @@ level_t GhsState<MAX_AGENTS, BUF_SZ>::get_level() const {
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_level(const level_t & l){
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_level(const level_t l){
   my_level = l;
   return OK;
 }
@@ -733,7 +733,7 @@ bool GhsState<MAX_AGENTS, BUF_SZ>::is_converged() const {
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::checked_index_of(const agent_t& who, size_t &idx) const{
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::checked_index_of(const agent_t who, size_t &idx) const{
   if (who == my_id){
     return IMPL_REQ_PEER_MY_ID;
   }
@@ -747,7 +747,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::checked_index_of(const agent_t& who, size_
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_waiting_for(const agent_t &who, bool waiting){
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_waiting_for(const agent_t who, bool waiting){
 
   size_t idx;
   Retcode retcode=checked_index_of(who,idx);
@@ -758,7 +758,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_waiting_for(const agent_t &who, bool w
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::is_waiting_for(const agent_t& who, bool& waiting_for){
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::is_waiting_for(const agent_t who, bool & waiting_for) const{
   size_t idx;
   Retcode retcode=checked_index_of(who,idx);
   if (retcode!=OK){return retcode;}
@@ -768,7 +768,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::is_waiting_for(const agent_t& who, bool& w
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_response_required(const agent_t &who, bool resp)
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_response_required(const agent_t who, const bool resp)
 {
   size_t idx;
   Retcode retcode=checked_index_of(who,idx);
@@ -779,7 +779,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_response_required(const agent_t &who, 
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::is_response_required(const agent_t &who, bool &res_req ){
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::is_response_required(const agent_t who, bool &res_req ) const{
   size_t idx;
   Retcode retcode=checked_index_of(who,idx);
   if (retcode!=OK){return retcode;}
@@ -789,7 +789,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::is_response_required(const agent_t &who, b
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_response_prompt(const agent_t &who, const InPartPayload& m){
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_response_prompt(const agent_t who, const InPartPayload& m){
   size_t idx;
   Retcode retcode=checked_index_of(who,idx);
   if (retcode!=OK){return retcode;}
@@ -799,7 +799,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_response_prompt(const agent_t &who, co
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>:: get_response_prompt(const agent_t &who, InPartPayload &out){
+Retcode GhsState<MAX_AGENTS, BUF_SZ>:: get_response_prompt(const agent_t who, InPartPayload &out) const{
   size_t idx;
   Retcode retcode=checked_index_of(who,idx);
   if (retcode!=OK){return retcode;}
@@ -809,7 +809,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>:: get_response_prompt(const agent_t &who, I
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::respond_later(const agent_t&from, const InPartPayload m)
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::respond_later(const agent_t from, const InPartPayload& m)
 {
   size_t idx;
   Retcode retcode=checked_index_of(from,idx);
@@ -821,13 +821,13 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::respond_later(const agent_t&from, const In
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-bool GhsState<MAX_AGENTS, BUF_SZ>::has_edge(const agent_t& to) const{
+bool GhsState<MAX_AGENTS, BUF_SZ>::has_edge(const agent_t to) const{
   size_t idx;
   return OK==checked_index_of(to,idx);
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge(const agent_t& to, Edge &out)  const
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge(const agent_t to, Edge &out)  const
 {
   size_t idx;
   Retcode retcode=checked_index_of(to,idx);
@@ -838,7 +838,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge(const agent_t& to, Edge &out)  co
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge_status(const agent_t& to, status_t & out)  const
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge_status(const agent_t to, status_t & out)  const
 {
   size_t idx;
   Retcode retcode=checked_index_of(to,idx);
@@ -850,7 +850,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge_status(const agent_t& to, status_
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_edge_status(const agent_t &to, const status_t &status)
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_edge_status(const agent_t to, const status_t status)
 {
   size_t idx;
   Retcode retcode=checked_index_of(to,idx);
@@ -861,7 +861,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_edge_status(const agent_t &to, const s
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge_metric(const agent_t& to, metric_t & out)  const
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge_metric(const agent_t to, metric_t & out)  const
 {
   size_t idx;
   Retcode retcode=checked_index_of(to,idx);
@@ -872,7 +872,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::get_edge_metric(const agent_t& to, metric_
 }
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_edge_metric(const agent_t &to, const metric_t m)
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_edge_metric(const agent_t to, const metric_t m)
 {
   size_t idx;
   Retcode retcode=checked_index_of(to,idx);
@@ -884,7 +884,7 @@ Retcode GhsState<MAX_AGENTS, BUF_SZ>::set_edge_metric(const agent_t &to, const m
 
 
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-Retcode GhsState<MAX_AGENTS, BUF_SZ>::add_edge_to(const agent_t& who ) {
+Retcode GhsState<MAX_AGENTS, BUF_SZ>::add_edge_to(const agent_t who ) {
   Edge e;
   e.peer=who;
   e.root=my_id;

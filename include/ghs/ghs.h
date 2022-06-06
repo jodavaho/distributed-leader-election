@@ -101,7 +101,7 @@ namespace le{
      * @return a human-readable string for any value of the passed in Retcode
      * @param r a ghs::Retcode
      */
-    const char* strerror( const Retcode & r);
+    const char* strerror( const Retcode r );
 
     /** 
      * @brief **The main state machine for the GHS algorithm**
@@ -181,7 +181,7 @@ namespace le{
            * @see has_edge()
            * @see set_edge()
            */
-          Retcode add_edge_to(const agent_t &to);
+          Retcode add_edge_to(const agent_t to);
 
           /**
            * Populates the given edge with any stored edge that connects this
@@ -195,7 +195,7 @@ namespace le{
            * @return Retcode OK if successful
            * @see has_edge()
            */
-          Retcode get_edge(const agent_t& to, Edge& out) const;
+          Retcode get_edge(const agent_t to, Edge& out) const;
 
           /**
            * Returns true if any of the following will work:
@@ -216,7 +216,7 @@ namespace le{
            * other than Retcode OK. 
            *
            */
-          bool has_edge( const agent_t &to) const;
+          bool has_edge( const agent_t to) const;
 
 
           /**
@@ -247,7 +247,7 @@ namespace le{
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            * @see has_edge()
            */
-          Retcode set_edge_status(const agent_t &to, const status_t &status);
+          Retcode set_edge_status(const agent_t to, const status_t status);
 
           /**
            *
@@ -259,7 +259,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode get_edge_status(const agent_t&to, status_t& out) const;
+          Retcode get_edge_status(const agent_t to, status_t & out) const;
 
           /**
            * Changes the internally stored Edge to have a metric_t matching `m`.
@@ -281,7 +281,7 @@ namespace le{
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            * @see has_edge()
            */
-          Retcode set_edge_metric(const agent_t &to, const metric_t m);
+          Retcode set_edge_metric(const agent_t to, const metric_t m);
 
           /**
            *
@@ -293,19 +293,19 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode get_edge_metric(const agent_t &to, metric_t& m) const;
+          Retcode get_edge_metric(const agent_t to, metric_t & m) const;
 
           /**
            * Sets the leader of this node to the given agent_t
            * @return Retcode OK. Never fails
            */
-          Retcode set_leader_id(const agent_t &leader);
+          Retcode set_leader_id(const agent_t leader);
   
           /**
            * Sets the level of this node to the given level_t
            * @return Retcode OK. Never fails
            */
-          Retcode set_level(const level_t &level);
+          Retcode set_level(const level_t level);
 
           /** 
            *
@@ -319,7 +319,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode set_waiting_for(const agent_t &who, const bool waiting_for);
+          Retcode set_waiting_for(const agent_t who, const bool waiting_for);
 
           /** 
            *
@@ -331,7 +331,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id and `waiting_for` may have any value
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id and `waiting_for` may have any value
            */
-          Retcode is_waiting_for(const agent_t& who, bool & out_waiting_for);
+          Retcode is_waiting_for(const agent_t who, bool & out_waiting_for) const;
 
           /** 
            *
@@ -353,7 +353,7 @@ namespace le{
            * @see respond_later()
            * @see process_in_part()
            */
-          Retcode set_response_required(const agent_t &who, const bool response_required);
+          Retcode set_response_required(const agent_t who, const bool response_required);
 
           /** 
            *
@@ -365,7 +365,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id and `waiting_for` may have any value
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id and `waiting_for` may have any value
            */
-          Retcode is_response_required(const agent_t &who, bool & response_required);
+          Retcode is_response_required(const agent_t who, bool & response_required) const;
 
           /**
            * Caches the message that triggered a delay in response, so that we
@@ -378,7 +378,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode set_response_prompt(const agent_t &who, const InPartPayload& m);
+          Retcode set_response_prompt(const agent_t who, const InPartPayload & m);
           /**
            * Returns the message that triggered a delay in response.
            *
@@ -388,7 +388,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
            * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode get_response_prompt(const agent_t &who, InPartPayload &m);
+          Retcode get_response_prompt(const agent_t who, InPartPayload & m) const;
 
           /**
            * Returns whatever was set (or initialized) as the agent_t for this state machine
@@ -419,7 +419,7 @@ namespace le{
            * @see set_edge_status()
            * @see Edge
            */
-          Retcode set_parent_id(const agent_t& id);
+          Retcode set_parent_id(const agent_t id);
 
 
           /**
@@ -502,7 +502,7 @@ namespace le{
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          Retcode mst_broadcast(const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
+          Retcode mst_broadcast(const Msg::Type, const Msg::Data & to_send, StaticQueue<Msg, MSG_Q_SIZE> & out_queue, size_t& out_sent) const;
 
 
           /**
@@ -528,7 +528,7 @@ namespace le{
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          Retcode mst_convergecast(const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE>&buf, size_t&)const;
+          Retcode mst_convergecast(const Msg::Type, const Msg::Data & to_send, StaticQueue<Msg, MSG_Q_SIZE> & out_queue, size_t& out_sent) const;
 
           /**
            * Filters edges by `msgtype`, and sends outgoing message along those
@@ -545,7 +545,7 @@ namespace le{
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          Retcode typecast(const status_t status, const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
+          Retcode typecast(const status_t status, const Msg::Type, const Msg::Data & to_send, StaticQueue<Msg, MSG_Q_SIZE> & out_buf, size_t& out_sent) const;
 
           /**
            * **ONLY IF** this node is the root of an MST (even an MST with only itself
@@ -572,7 +572,7 @@ namespace le{
            * @return Retcode OK if successful
            * @return Retcode SRCH_STILL_WAITING if waiting_count() is not zero
            */
-          Retcode start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs, size_t&);
+          Retcode start_round(StaticQueue<Msg, MSG_Q_SIZE> & outgoing_msgs, size_t& out_sent);
 
           /**
            * The main class entry point. It will puplate the outgoing_buffer
@@ -619,7 +619,7 @@ namespace le{
            * @return Retcode NO_SUCH_PEER if not
            * @return Retcode IMPL_REQ_PEER_MY_ID if you requsted index to this agent
            */
-          Retcode                 checked_index_of(const agent_t&, size_t& ) const;
+          Retcode                 checked_index_of(const agent_t, size_t& out_idx) const;
 
 
         private:
@@ -668,7 +668,7 @@ namespace le{
            * This will store the message and set a flag that we should respond to this later.
            * @see check_new_level
            */
-          Retcode                  respond_later(const agent_t&, const InPartPayload);
+          Retcode                  respond_later(const agent_t, const InPartPayload &);
           /**
            * This will respond that a search for an outgoing MWOE was inconclusive. This usually means the round is about to end and the MST construction is completed
            */
