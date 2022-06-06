@@ -26,8 +26,7 @@ jobs:
 
     - name: Get DOCS
       working-directory: ${{github.workspace}}
-      run: git fetch
-      run: git checkout "$DOCS"
+      run: git fetch && git checkout "$DOCS"
 
     - name: Merge Main
       working-directory: ${{github.workspace}}
