@@ -30,7 +30,7 @@ jobs:
 
     - name: Clean docs
       working-directory: ${{github.workspace}}
-      run: git rm -rf docs/
+      run: rm -rf docs/
 
     - name: Get last changes
       working-directory: ${{github.workspace}}
@@ -50,7 +50,7 @@ jobs:
 
     - name: Force docs
       working-directory: ${{github.workspace}}
-      run: ls docs/ && git add docs/ -f && git commit -am "docs built by github-action from main"
+      run: git add docs/ -f && git commit -am "docs built by github-action from main"
 
     - name: Push DOCS
       working-directory: ${{github.workspace}}
