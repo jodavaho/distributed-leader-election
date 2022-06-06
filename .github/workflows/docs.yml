@@ -1,4 +1,4 @@
-name: Build/Test
+name: Docs
 
 on:
   push:
@@ -30,7 +30,7 @@ jobs:
 
     - name: Merge Main
       working-directory: ${{github.workspace}}
-      run: git merge main
+      run: git merge origin/main
       
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
