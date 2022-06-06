@@ -68,12 +68,12 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p><a href="https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml"><object type="image/svg+xml" data="https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml/badge.svg?branch=main" style="pointer-events: none;">Build/Test</object></a></p>
 <p><b>This documentation best read in doxygen</b>. You can view the doxygen docs online <a href="https://jodavaho.github.io/distributed-leader-election/html/index.html">here</a>.</p>
-<h1><a class="anchor" id="autotoc_md27"></a>
+<h1><a class="anchor" id="autotoc_md0"></a>
 What is this</h1>
 <p>This repository provides an implementation of the GHS (<a href="https://en.wikipedia.org/wiki/Distributed_minimum_spanning_tree#GHS_algorithm">for Gallager, Humblet and Spira</a>) algorithm, which allows creation of a <a href="https://en.wikipedia.org/wiki/Distributed_minimum_spanning_tree">distributed minimum spanning tree</a> on a <a href="https://en.wikipedia.org/wiki/Message_passing">message passing system</a></p>
 <p>It was designed and implemented originally at the <a href="https://www.jpl.nasa.gov/">NASA Jet Propulsion Laboratory</a>, under NASA and US Government Sponsorship and is now maintained here as open-source software. (NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021)</p>
 <p>It also provides an exectuable that can be run on a set of linux machines so that those machines can demonstrate the execution of GHS.</p>
-<h1><a class="anchor" id="autotoc_md28"></a>
+<h1><a class="anchor" id="autotoc_md1"></a>
 What does the repo provide</h1>
 <p>This rep provides a few things, in C/C++:</p>
 <ul>
@@ -85,7 +85,7 @@ What does the repo provide</h1>
 <li>An optional demo executable, that is suitable for integration-type testing on multi-machine, multi-process environments <code>ghs-demo</code> (configure with <code>-DBUILD_DEMO=On</code>)</li>
 <li>An experimental integration of <code>miniz</code> to do message compressing in <code>ghs-demo</code> (configure with <code>-DENABLE_COMPRESSION=On</code>)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md29"></a>
+<h1><a class="anchor" id="autotoc_md2"></a>
 Dependencies</h1>
 <p>The union of all dependencies can be obtained by running <code>get_deps.sh</code> on an ubuntu-like system.</p>
 <ul>
@@ -96,7 +96,7 @@ Dependencies</h1>
 <li><code>ghs-demo</code>: all of previous, and <code>libnng-dev</code>, <code>libinih-dev</code> and <code>miniz</code> checked out in <code>ext/miniz</code> if compression is enabled</li>
 </ul>
 <p>There's also ROS support, which brings with it a lot of dependencies not handled by this repo or <code>get_deps.sh</code></p>
-<h1><a class="anchor" id="autotoc_md30"></a>
+<h1><a class="anchor" id="autotoc_md3"></a>
 Configuring</h1>
 <p>I use cmake. <code>apt install cmake</code></p>
 <p>To configure,</p>
@@ -115,7 +115,7 @@ Configuring</h1>
 <li><code>BUILD_TOOLS</code> (default=Off): build the utilities <code>ghs-score</code>, <code>to-dot</code>, and <code>random-graph</code> for testing and visualization.</li>
 </ul>
 <p>Code coverage checks and performance testing are not implemented.</p>
-<h1><a class="anchor" id="autotoc_md31"></a>
+<h1><a class="anchor" id="autotoc_md4"></a>
 Trying it out using ghs-demo</h1>
 <p>You can try it out on various machines. You'll have to set up a config that describes the network, then run <code>ghs-demo</code> on each machine. you can run them all locally, just set the agent endpoints to something like <code>tcp://localhost:&lt;a port per agent&gt;</code> or <code>ipc:///tmp/agent0</code>, <code>ip:///tmp/agent1</code> etc</p>
 <p>This should work fine for a the <code>le_config.ini</code> file:</p>
@@ -153,30 +153,30 @@ Trying it out using ghs-demo</h1>
 <li><code>&lt;S&gt;</code> is an optional wait-time in seconds. The node will wait before starting the algorithm this many seconds, to give you a chance to start all nodes. All nodes should be started before any wait timer expires!!</li>
 </ul>
 <p>If it works, you'll see <code>Converged!!</code> in all windows, and after a few seconds it should shut down. You can also look at the step-by-step edges used by each node in the output stream, if you have the stomach to look through it.</p>
-<h1><a class="anchor" id="autotoc_md32"></a>
+<h1><a class="anchor" id="autotoc_md5"></a>
 Installing</h1>
 <p>There is no <code>install</code> target configured at this time.</p>
-<h1><a class="anchor" id="autotoc_md33"></a>
+<h1><a class="anchor" id="autotoc_md6"></a>
 Implementation</h1>
 <p>You don't need to read any of the following, but you may be interested.</p>
-<h2><a class="anchor" id="autotoc_md34"></a>
+<h2><a class="anchor" id="autotoc_md7"></a>
 Algorithm</h2>
 <p>The algorithm implemented is best understood by reading chapter 15.5 of <em>Distributed Algorithms</em> by Lynch. In short, each agent begins isolated as leaders of their own partition. Each partition finds an outgoing edge to another partition which is of minimum weight, and the two partitions join up. This continues <code>log(n)</code> rounds until all are in the same partition.</p>
 <p>Each round, the leader initiates a search for a new MWOE by all nodes in its partition, and compares returned edges for the minimum weight. The leader broadcasts <code>JOIN</code> messages, which are carefully handled by all nodes to ensure that the resulting MST is consistent and correct. The subtleties of this process are elegantly handled, and it's worth reading the chapter to understand what's gong on. (though I read it many times and may not fully grok all the corner cases yet)</p>
-<h2><a class="anchor" id="autotoc_md35"></a>
+<h2><a class="anchor" id="autotoc_md8"></a>
 Implementation</h2>
 <p>A working implementation is provided by <code>ghs-demo</code>, which can be built by configuring with <code>-DBUILD_DEMO=On</code>.</p>
 <p>See the documentation of <code><a class="el" href="ghs-demo_8h.html" title="provides an &quot;executable class&quot; for running leader election on multiple machines">ghs-demo.h</a></code>, in particular <code><a class="el" href="classdemo_1_1GhsDemoExec.html" title="The main demo logic for executing le::ghs::GhsState across a network">demo::GhsDemoExec</a></code> for full implementation details.</p>
-<h1><a class="anchor" id="autotoc_md36"></a>
+<h1><a class="anchor" id="autotoc_md9"></a>
 Style</h1>
-<h2><a class="anchor" id="autotoc_md37"></a>
+<h2><a class="anchor" id="autotoc_md10"></a>
 File organization</h2>
 <ul>
 <li><code>h</code> (header) and <code>cpp</code> (src files) are in the same folder: <code>src/</code></li>
 <li>Implementation headers <code>hpp</code> are, too</li>
 <li>This is not always well observed under <code>src/ghs-demo</code></li>
 </ul>
-<h2><a class="anchor" id="autotoc_md38"></a>
+<h2><a class="anchor" id="autotoc_md11"></a>
 Naming conventions</h2>
 <ul>
 <li>Types (Structs and Classes) are Capitalized.</li>
@@ -185,7 +185,7 @@ Naming conventions</h2>
 <li>class members are <code>snake_case</code></li>
 <li>files are <code>flying-snake-case</code></li>
 </ul>
-<h1><a class="anchor" id="autotoc_md39"></a>
+<h1><a class="anchor" id="autotoc_md12"></a>
 Copyright</h1>
 <p>Copyright (c) 2021 California Institute of Technology (“Caltech”). U.S. Government sponsorship acknowledged.</p>
 <p>All rights reserved.</p>
@@ -196,12 +196,12 @@ Copyright</h1>
 <li>Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.</li>
 </ul>
 <p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
-<h1><a class="anchor" id="autotoc_md40"></a>
+<h1><a class="anchor" id="autotoc_md13"></a>
 License</h1>
 <ul>
 <li>Apache-2.0</li>
 </ul>
-<p>See LICENSE.md </p>
+<p>See <a class="el" href="md_LICENSE.html">LICENSE.md</a> </p>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->

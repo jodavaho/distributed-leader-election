@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['endpoints_401',['endpoints',['../structdemo_1_1Config.html#aab344c27d9068888c949472ee6083ba6',1,'demo::Config']]]
+  ['endpoints_369',['endpoints',['../structdemo_1_1Config.html#aab344c27d9068888c949472ee6083ba6',1,'demo::Config']]]
 ];
