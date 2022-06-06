@@ -106,7 +106,7 @@ namespace demo{
     //outgoing sockets to allow this single-threaded operation
     if (nng_socket_id(incoming) == -1){ 
       int ret = nng_rep0_open(&incoming);
-      assert(0==ret);
+      if (ret!=0){ assert(false); }
       //ret=(nng_socket_set_int(incoming, NNG_OPT_RECVBUF, 256));
       //ret=(nng_socket_set_size(incoming, NNG_OPT_RECVMAXSZ, sizeof(WireMessage)));
       ret=(nng_socket_set_ms(incoming, NNG_OPT_RECVTIMEO, nng_duration(5000)));
@@ -118,6 +118,7 @@ namespace demo{
     if (nng_socket_id(outgoing) == -1){ 
       int ret;
       ret=(nng_req0_open(&outgoing));
+      if (ret!=0){ assert(false); }
       assert(0==ret);
       //ret=(nng_socket_set_ms(outgoing, NNG_OPT_RECVTIMEO, nng_duration(1000)));
       ret=(nng_socket_set_ms(outgoing, NNG_OPT_SENDTIMEO, nng_duration(1000)));
@@ -137,12 +138,13 @@ namespace demo{
     if (nng_listener_id(ghs_listener) != -1){
       int ret;
       ret=(nng_listener_close(ghs_listener));
-      assert(0==ret);
+      if (ret!=0){assert(false);}
     }
 
     printf("[info] Starting listener for ghs on : %s\n", c.endpoints[c.my_id]);
     int ret;
     ret=(nng_listener_create(&ghs_listener,incoming,c.endpoints[c.my_id]));
+    if (ret!=0){assert(false);}
     assert(0==ret);
     ret=(nng_listener_start(ghs_listener,0));
     assert(0==ret);

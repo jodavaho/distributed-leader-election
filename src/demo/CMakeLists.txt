@@ -62,3 +62,5 @@ target_link_libraries(ghs-demo ${GHS_DEMO_LIBS})
 add_executable(ghs-demo-doctest 
   ghs-demo-doctest.cpp ${GHS_DEMO_DOCTEST_SRC} ${GHS_DEMO_EXE_SRC})
 target_link_libraries(ghs-demo-doctest ${GHS_DEMO_LIBS})
+
+add_test(ghs-demo-doctest ghs-demo-doctest)

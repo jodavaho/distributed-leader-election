@@ -1,14 +1,18 @@
+[![Build/Test](https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml)
+
 # What is this
 
-**This documentation best read in doxygen**.
+This repository provides an implementation of the GHS ([for  Gallager, Humblet and Spira](https://en.wikipedia.org/wiki/Distributed_minimum_spanning_tree#GHS_algorithm)) algorithm, which allows creation of a [distributed minimum spanning tree](https://en.wikipedia.org/wiki/Distributed_minimum_spanning_tree) on a [message passing system](https://en.wikipedia.org/wiki/Message_passing)
 
-If you build on your system, that will be in [build/html/index.html](build/html/index.html).
+It was designed and implemented originally at the [NASA Jet Propulsion Laboratory](https://www.jpl.nasa.gov/), under NASA and US Government Sponsorship and is now maintained here as open-source software.  (NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021)
 
-NTR 52251, titled "Library for Leader Election and Spanning Tree Distributed Construction", submitted by Joshua Vander Hook 12/14/2021
+It also provides an exectuable that can be run on a set of linux machines so that those machines can demonstrate the execution of GHS.
 
-Should eventually be compliant with [this c++ style guide](https://cadregitlab.jpl.nasa.gov/cadre/cadre-gnc-docs/-/blob/main/cpp_guidelines/cpp_guidelines.pdf)
+# What does the repo provide
 
-This rep provides a few things:
+**This documentation best read in doxygen**.  On your system, that will be in [docs/html/index.html](docs/html/index.html) after you execute `make doxygen`.
+
+This rep provides a few things, in C/C++:
 
 - A C++ GHS implementation library `libghs.so`
 - A C++ statically-sized messager queue that is based on a circular buffer `libghs_seque.so`
@@ -40,7 +44,7 @@ To configure,
 mkdir build
 pushd build
 cmake .. -D<option>=On -D<option 2>=On 
-popd
+popd  
 ```
 
 See `CMakeLists.txt` for details, but the set of `<options>` are:

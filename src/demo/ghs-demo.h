@@ -142,7 +142,7 @@ namespace demo{
 
   /// Run a quick little_iperf() round to check connectivity
   int do_test_and_die(Comms& comms, Config &config){
-    printf("[info] running connectivity test after %ds!\n",config.wait_s);
+    printf("[info] running connectivity test after %fs!\n",config.wait_s);
     sleep(config.wait_s);
     comms.start_receiver();
     sleep(1);
@@ -212,7 +212,7 @@ namespace demo{
         });
 
     if (config.wait_s>0){
-      printf("[info] sleeping for %d seconds\n",config.wait_s);
+      printf("[info] sleeping for %f seconds\n",config.wait_s);
       sleep(config.wait_s);
     }
 

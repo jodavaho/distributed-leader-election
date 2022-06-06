@@ -70,8 +70,13 @@ namespace demo{
                        break;
                      }
       case KEY_WAIT:{
-                      p->wait_s = atoi(arg);
-                      printf("[debug] set 'wait'='%s' (%d)\n",arg,p->wait_s);
+                      p->wait_s = atof(arg);
+                      if (p->wait_s != 0.0 || errno==0){
+                        printf("[debug] set 'wait'='%s' (%f)\n",arg,p->wait_s);
+                      } else {
+                        printf("[debug] unable to set 'wait' to '%s'\n",arg);
+                        perror(0);
+                      }
                       break;
                     }
       case KEY_TEST:{
