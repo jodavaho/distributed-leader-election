@@ -10,7 +10,7 @@ It also provides an exectuable that can be run on a set of linux machines so tha
 
 # What does the repo provide
 
-**This documentation best read in doxygen**.  On your system, that will be in [docs/html/index.html](docs/html/index.html) after you execute `make doxygen`.
+**This documentation best read in doxygen**.  You can view it online [here](https://jodavaho.github.io/distributed-leader-election/docs/html/index.html), or locally in [docs/html/index.html](docs/html/index.html) after you execute `make doxygen`.
 
 This rep provides a few things, in C/C++:
 
