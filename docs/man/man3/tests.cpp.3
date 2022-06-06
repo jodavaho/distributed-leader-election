@@ -1,0 +1,254 @@
+.TH "src/tests/tests.cpp" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/tests/tests.cpp
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'doctest/doctest\&.h'\fP
+.br
+\fC#include 'ghs/ghs\&.h'\fP
+.br
+\fC#include 'ghs/ghs_printer\&.h'\fP
+.br
+\fC#include 'ghs/msg_printer\&.h'\fP
+.br
+\fC#include <fstream>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "template<std::size_t N, std::size_t BUF_SZ> \fBGhsState\fP< N, BUF_SZ > \fBget_state\fP (\fBagent_t\fP my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root=true, bool waiting=false)"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test get_state')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test checked_index_of')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test set_edge_status')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test typecast')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test mst_broadcast')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test mst_convergecast')"
+.br
+.ti -1c
+.RI "\fBREQUIRE_EQ\fP (buf\&.size(), 0)"
+.br
+.ti -1c
+.RI "s \fBset_edge\fP ({1, 0, UNKNOWN, 1})"
+.br
+.ti -1c
+.RI "s \fBset_edge\fP ({2, 0, UNKNOWN, 1})"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.start_round(buf, sz))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (buf\&.size(), 2)"
+.br
+.ti -1c
+.RI "\fBwhile\fP (buf\&.size()>0)"
+.br
+.ti -1c
+.RI "\fBGhsState\fP< 4, 32 > \fBs\fP (0)"
+.br
+.ti -1c
+.RI "s \fBset_edge\fP ({1, 0, MST, 1})"
+.br
+.ti -1c
+.RI "s \fBset_edge\fP ({2, 0, MST, 1})"
+.br
+.ti -1c
+.RI "s \fBstart_round\fP (buf, sz)"
+.br
+.ti -1c
+.RI "\fBCHECK\fP (Q_OK(buf\&.front(m)))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (m\&.type, Msg::Type::SRCH)"
+.br
+.ti -1c
+.RI "buf \fBpop\fP ()"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (buf\&.size(), 0)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({1, 0, DELETED, 1}))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({2, 0, DELETED, 1}))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({2, 0, MST, 1}))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({3, 0, UNKNOWN, 1}))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (2, m\&.to)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (0, m\&.from)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (3, m\&.to)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (m\&.type, Msg::Type::IN_PART)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.set_leader_id(1))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.set_level(0))"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch() checks recipient')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch, unknown peers')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch,  mst peers')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch, discarded peers')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch, mixed peers')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch, mixed peers, with parent link')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('Guard against \fBEdge\fP refactoring')"
+.br
+.ti -1c
+.RI "\fBCHECK\fP (edge\&.peer==NO_AGENT)"
+.br
+.ti -1c
+.RI "\fBCHECK\fP (y\&.peer==4)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (y\&.metric_val, WORST_METRIC)"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process throws with no edge')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch_ret')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch_ret, one peer, edge found ')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch_ret, one peer, not leader')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, happy\-path')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, not waiting for anyone')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, no edge')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, waiting, but not for sender')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test process_nack_part, not\-leader')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us nodes pass')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us root relays to peer')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us response to higher level')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us response to MST edge')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us merge')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us merge leader\-side')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('integration\-test two nodes')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('integration\-test opposite two nodes')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('sim\-test 3 node frenzy')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('ghs_metric')"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "\fBGhsState\fP< 4, 32 > \fBs\fP (0)"
+.br
+.ti -1c
+.RI "size_t \fBsz\fP"
+.br
+.ti -1c
+.RI "\fBMsg\fP \fBm\fP"
+.br
+.ti -1c
+.RI "\fBEdge\fP \fBy\fP = \fBEdge\fP{4,1,UNKNOWN, 1000}"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+
+.PP
+\fBCopyright\fP
+.RS 4
+Copyright (c) 2022 California Institute of Technology (“Caltech”)\&. U\&.S\&. Government sponsorship acknowledged\&.
+.RE
+.PP
+All rights reserved\&.
+.PP
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+.PP
+.IP "\(bu" 2
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer\&.
+.IP "\(bu" 2
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution\&.
+.IP "\(bu" 2
+Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission\&.
+.PP
+.PP
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
+  IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
+.SH "Variable Documentation"
+.PP 
+.SS "\fBGhsState\fP< 4, 32 > s (0)"
+\fBInitial value:\fP
+.PP
+.nf
+{
+  StaticQueue<Msg,32> buf
+.fi
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

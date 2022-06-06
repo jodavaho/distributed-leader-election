@@ -1,0 +1,79 @@
+.TH "seque" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+seque
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBStaticQueue\fP"
+.br
+.RI "a static-sized single-ended queue for use in GhsState "
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBRetcode\fP { \fBOK\fP =0, \fBERR_QUEUE_FULL\fP, \fBERR_QUEUE_EMPTY\fP, \fBERR_BAD_IDX\fP, \fBERR_NO_SUCH_ELEMENT\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBQ_OK\fP (const \fBseque::Retcode\fP &r)"
+.br
+.ti -1c
+.RI "const char * \fBstrerr\fP (const \fBseque::Retcode\fP &r)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+This namespace presents a Single Ended QUEue implementation that is part of the I/O with \fBle::ghs::GhsState\fP objects 
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBseque::Retcode\fP"
+An enum class for \fBStaticQueue\fP error codes 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIOK \fP\fP
+OK\&. 
+.TP
+\fB\fIERR_QUEUE_FULL \fP\fP
+Operation failed, the queue is full\&. 
+.TP
+\fB\fIERR_QUEUE_EMPTY \fP\fP
+Operation failed, the queue is empty\&. 
+.TP
+\fB\fIERR_BAD_IDX \fP\fP
+Operation failed and is not possible to succeed: that idx is beyond the static size of the queue\&. 
+.TP
+\fB\fIERR_NO_SUCH_ELEMENT \fP\fP
+Operation failed, there are less elements than the given index in the queue\&. 
+.SH "Function Documentation"
+.PP 
+.SS "bool seque::Q_OK (const \fBseque::Retcode\fP & r)"
+Convenience (laziness) function 
+.SS "const char * seque::strerr (const \fBseque::Retcode\fP & r)"
+Return a human-readable string corresponding to the error code 
+.PP
+\fBParameters\fP
+.RS 4
+\fIr\fP a \fBseque::Retcode\fP 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+a human-readable string, useful for logging 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

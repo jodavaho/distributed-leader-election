@@ -1,0 +1,49 @@
+.TH "demo::Header" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+demo::Header \- a structure that defines source and destination for \fBWireMessage\fP objects  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ghs\-demo\-comms\&.h>\fP
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBDestination\fP \fBagent_to\fP =MESSAGE_DEST_UNSET"
+.br
+.RI "Which agent id is this sent to? "
+.ti -1c
+.RI "uint16_t \fBagent_from\fP"
+.br
+.RI "Which agent id is this from? "
+.ti -1c
+.RI "\fBPayloadType\fP \fBtype\fP =\fBPAYLOAD_TYPE_NOT_SET\fP"
+.br
+.RI "What payload type do we carry? "
+.ti -1c
+.RI "uint16_t \fBpayload_size\fP =0"
+.br
+.RI "how big is the payload we carry? "
+.in -1c
+.SH "Detailed Description"
+.PP 
+a structure that defines source and destination for \fBWireMessage\fP objects 
+
+Used by \fBComms\fP objects to send to the appropriate endpoint
+.PP
+\fBSee also\fP
+.RS 4
+\fBConfig\fP 
+.PP
+\fBComms\fP 
+.RE
+.PP
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

@@ -1,0 +1,843 @@
+.TH "le::ghs::GhsState< NUM_AGENTS, MSG_Q_SIZE >" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+le::ghs::GhsState< NUM_AGENTS, MSG_Q_SIZE > \- \fBThe main state machine for the GHS algorithm\fP  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ghs\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBGhsState\fP (\fBagent_t\fP my_id)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_edge\fP (const \fBEdge\fP &e)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBadd_edge\fP (const \fBEdge\fP &e)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBadd_edge_to\fP (const \fBagent_t\fP &to)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBget_edge\fP (const \fBagent_t\fP &to, \fBEdge\fP &out) const"
+.br
+.ti -1c
+.RI "bool \fBhas_edge\fP (const \fBagent_t\fP &to) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_edge_status\fP (const \fBagent_t\fP &to, const \fBstatus_t\fP &status)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBget_edge_status\fP (const \fBagent_t\fP &to, \fBstatus_t\fP &out) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_edge_metric\fP (const \fBagent_t\fP &to, const \fBmetric_t\fP m)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBget_edge_metric\fP (const \fBagent_t\fP &to, \fBmetric_t\fP &m) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_leader_id\fP (const \fBagent_t\fP &leader)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_level\fP (const \fBlevel_t\fP &level)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_waiting_for\fP (const \fBagent_t\fP &who, const bool waiting_for)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBis_waiting_for\fP (const \fBagent_t\fP &who, bool &out_waiting_for)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_response_required\fP (const \fBagent_t\fP &who, const bool response_required)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBis_response_required\fP (const \fBagent_t\fP &who, bool &response_required)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_response_prompt\fP (const \fBagent_t\fP &who, const \fBInPartPayload\fP &m)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBget_response_prompt\fP (const \fBagent_t\fP &who, \fBInPartPayload\fP &m)"
+.br
+.ti -1c
+.RI "\fBagent_t\fP \fBget_id\fP () const"
+.br
+.ti -1c
+.RI "\fBagent_t\fP \fBget_parent_id\fP () const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBset_parent_id\fP (const \fBagent_t\fP &id)"
+.br
+.ti -1c
+.RI "\fBagent_t\fP \fBget_leader_id\fP () const"
+.br
+.ti -1c
+.RI "\fBlevel_t\fP \fBget_level\fP () const"
+.br
+.ti -1c
+.RI "size_t \fBwaiting_count\fP () const"
+.br
+.ti -1c
+.RI "size_t \fBdelayed_count\fP () const"
+.br
+.ti -1c
+.RI "\fBEdge\fP \fBmwoe\fP () const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBmst_broadcast\fP (const \fBMsg::Type\fP, const \fBMsg::Data\fP &, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > &buf, size_t &) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBmst_convergecast\fP (const \fBMsg::Type\fP, const \fBMsg::Data\fP &, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > &buf, size_t &) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBtypecast\fP (const \fBstatus_t\fP status, const \fBMsg::Type\fP, const \fBMsg::Data\fP &, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > &buf, size_t &) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBstart_round\fP (\fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > &outgoing_msgs, size_t &)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBprocess\fP (const \fBMsg\fP &msg, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > &outgoing_buffer, size_t &sz)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBreset\fP ()"
+.br
+.ti -1c
+.RI "bool \fBis_converged\fP () const"
+.br
+.ti -1c
+.RI "size_t \fBget_n_peers\fP () const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBchecked_index_of\fP (const \fBagent_t\fP &, size_t &) const"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE>
+.br
+class le::ghs::GhsState< NUM_AGENTS, MSG_Q_SIZE >"
+\fBThe main state machine for the GHS algorithm\fP 
+
+\fBGhsState\fP is the message-driven state machine that executes the GHS algorithm\&. It receives incoming messages from a communication layer, and returns the next batch of messages to send\&. When completed, \fBis_converged()\fP will return true\&.
+.PP
+You are responsible for describing the communication graph by calling, probably, \fBset_edge()\fP and then starting the algorithm by calling \fBstart_round()\fP on at least one node (the root), but most likely just call it on all nodes, which will generate the first set of messages to send\&.
+.PP
+Then, as response messages come in from other nodes, just feed them into \fBprocess()\fP until \fBis_converged()\fP is true\&. 
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> GhsState::GhsState (\fBagent_t\fP my_id)"
+Initializes the state of the GHS algorithm for this particular node\&.
+.PP
+Requires a agent_t to represent the node id, which will be used in all incoming and outgoing mesasages (unique among all agents)\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fImy_id\fP of type agent_t 
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP \fBle::ghs::GhsState\fP< NUM_AGENTS, MSG_Q_SIZE >::add_edge (const \fBEdge\fP & e)\fC [inline]\fP"
+Does nothing more than call set_edge(e) 
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_edge()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::add_edge_to (const \fBagent_t\fP & to)"
+Initializes a default \fBEdge\fP to the given agent\&.
+.PP
+This is identical to doing the following:
+.PP
+.PP
+.nf
+agent_t to;
+Edge e; // Note defaults are sane per Edge()
+e\&.peer = to;
+set_edge(e);
+.fi
+.PP
+.PP
+\fBParameters\fP
+.RS 4
+\fIto\fP of type agent_t 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode similar to \fBset_edge()\fP 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBhas_edge()\fP 
+.PP
+\fBset_edge()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::checked_index_of (const \fBagent_t\fP & who, size_t & idx) const"
+A much-called function that returns the index of the given agent\&. The index corresponds to a number 0 to N-1 for N agents, such that all data about that agent can be stored in consecutive memory\&. This is not a hash function! It simply searches as an O(n) operation, the memory for the matching ID\&.
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if the index was found 
+.PP
+Retcode NO_SUCH_PEER if not 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if you requsted index to this agent 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> size_t GhsState::delayed_count () const"
+Returns the number of agents from which we have received an IN_PART message that we have not responded to\&.
+.PP
+\fBReturns\fP
+.RS 4
+size_t 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_response_required()\fP 
+.PP
+\fBInPartPayload\fP 
+.PP
+\fBMsg\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::get_edge (const \fBagent_t\fP & to, \fBEdge\fP & out) const"
+Populates the given edge with any stored edge that connects this agent to another agent\&. If we are unaware of that agent or do not have an edge, return error code\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIto\fP an agent_t to look up 
+.br
+\fIout\fP and \fBEdge\fP to populate as an out parameter 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.PP
+Retcode NO_SUCH_PEER if edge cannot be found 
+.PP
+Retcode OK if successful 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBhas_edge()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::get_edge_metric (const \fBagent_t\fP & to, \fBmetric_t\fP & m) const"
+Returns the edge metric to the given agent\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIto\fP agent_t identifier 
+.br
+\fIm\fP the metric_t that is populated if the function is successful 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::get_edge_status (const \fBagent_t\fP & to, \fBstatus_t\fP & out) const"
+Returns the edge status to the given agent\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIto\fP agent_t identifier 
+.br
+\fIout\fP the status_t that is populated if the function is successful 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBagent_t\fP GhsState::get_id () const"
+Returns whatever was set (or initialized) as the agent_t for this state machine
+.PP
+Never fails to return
+.PP
+\fBReturns\fP
+.RS 4
+agent_t for this class's id\&. 
+.br
+ 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBagent_t\fP GhsState::get_leader_id () const"
+Returns whatever I believe my leader is 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBlevel_t\fP GhsState::get_level () const"
+Returns whatever I believe this partition's level is 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> size_t \fBle::ghs::GhsState\fP< NUM_AGENTS, MSG_Q_SIZE >::get_n_peers () const\fC [inline]\fP"
+Returns the number of peers, which is a counter that is incremented every time you add_edge_to(id) (or variant), with a new id\&. 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBagent_t\fP GhsState::get_parent_id () const"
+Returns whatever I believe my parent is 
+.PP
+\fBReturns\fP
+.RS 4
+agent_t corresponding to the parent id\&. Could be self! 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::get_response_prompt (const \fBagent_t\fP & who, \fBInPartPayload\fP & m)"
+Returns the message that triggered a delay in response\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIagent_t\fP who sent the message 
+.br
+\fI\fBInPartPayload\fP\fP the outgoing payload of the message that we cannot respond to yet 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> bool GhsState::has_edge (const \fBagent_t\fP & to) const"
+Returns true if any of the following will work:
+.PP
+.PP
+.nf
+get_edge()
+set_edge_status()
+get_edge_status()
+set_edge_metric()
+get_edge_metric()
+set_response_required()
+is_response_required()
+set_response_prompt() 
+get_response_prompt()
+.fi
+.PP
+.PP
+If it returns false, all of them will fail by returning something other than Retcode OK\&. 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> bool GhsState::is_converged () const"
+
+.PP
+\fBReturns\fP
+.RS 4
+true if the state machine believes that a global MST has converged 
+.PP
+false otherwise 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::is_response_required (const \fBagent_t\fP & who, bool & response_required)"
+returns the response-delayed status for the given agent\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIagent_t\fP who 
+.br
+\fIbool\fP waiting to send (true) or not waiting (false) 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful and \fCwaiting_for\fP is a valid return 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id and \fCwaiting_for\fP may have any value 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id and \fCwaiting_for\fP may have any value 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::is_waiting_for (const \fBagent_t\fP & who, bool & out_waiting_for)"
+returns the waiting status for the given agent\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIagent_t\fP who 
+.br
+\fIbool\fP waiting for response (true) or not waiting for response (false) 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful and \fCwaiting_for\fP is a valid return 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id and \fCwaiting_for\fP may have any value 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id and \fCwaiting_for\fP may have any value 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::mst_broadcast (const \fBMsg::Type\fP, const \fBMsg::Data\fP &, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > & buf, size_t &) const"
+Sends messages to MST child links only\&. There are very good reasons for using MST links even for non-ghs messages, so this is public\&.
+.PP
+For example, this ensures each node only receives one copy, even if it is a 'bottleneck' leading towards many agents\&.
+.PP
+Functionally equivalent to:
+.PP
+.PP
+.nf
+Mst m;
+StaticQueue buf;
+size_t qsz;
+return mst_typecast(MST, m\&.type, m\&.data, buf, qsz);
+.fi
+.PP
+.PP
+\fBParameters\fP
+.RS 4
+\fI\fBMsg::Type\fP\fP denoting what type of message to send 
+.br
+\fI\fBMsg::Data\fP\fP denoting what message data to broadcast 
+.br
+\fIStaticQueue\fP in which to queue the outgoing messages 
+.br
+\fIsize_t\fP denoting how many messages were enqueued \fIonly\fP if OK is returned\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if everything went well 
+.PP
+CAST_INVALID_EDGE if we found an edge without us as root 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_edge_status()\fP 
+.PP
+mst_typecast() 
+.PP
+\fBmst_convergecast()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::mst_convergecast (const \fBMsg::Type\fP, const \fBMsg::Data\fP &, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > & buf, size_t &) const"
+The opposite of mst_broadcast, will send messages 'UP' the MST to the root\&.
+.PP
+useful for conducting 'reduce' operations on an MST, assuming it is combined with a useful data reduction strategy\&.
+.PP
+In GHS, the reduction strategy is to compare \fBSrchRetPayload\fP from all incoming MST links, and pass the minimum weight edge up to the parent\&.
+.PP
+Is actually implemented with a search across all edges for one of type MST and with peer matching our parent id\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fI\fBMsg::Type\fP\fP denoting what type of message to send 
+.br
+\fI\fBMsg::Data\fP\fP denoting what message data to broadcast 
+.br
+\fIStaticQueue\fP in which to queue the outgoing messages 
+.br
+\fIsize_t\fP denoting how many messages were enqueued \fIonly\fP if OK is returned\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if everything went well 
+.PP
+CAST_INVALID_EDGE if we found an edge without us as root 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_edge_status()\fP 
+.PP
+mst_typecast() 
+.PP
+\fBmst_convergecast()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBEdge\fP GhsState::mwoe () const"
+Returns the current minimum weight outgoing edge (MWOE)\&.
+.PP
+This is the edge we would add to our partition if you forced us to chose from our minimum spanning tree rooted at ourself\&. To find the global MWOE, these are passed UP the MST using \fBmst_convergecast()\fP, with a \fBSrchRetPayload\fP\&. At each node, the \fBSrchRetPayload\fP is compared to our \fBmwoe()\fP to determine the actual best edge all the way up to the root of the MST for this partition\&. After that, a \fBJoinUsPayload\fP is sent back from the root using \fBmst_broadcast()\fP to trigger the process of adding that edge to the MST
+.PP
+\fBReturns\fP
+.RS 4
+size_t 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_response_required()\fP 
+.PP
+\fBInPartPayload\fP 
+.PP
+\fBMsg\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::process (const \fBMsg\fP & msg, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > & outgoing_buffer, size_t & sz)"
+The main class entry point\&. It will puplate the outgoing_buffer with message that should be sent as a response to the passed-in message\&. You can execute the entire algorithm simply by calling \fBprocess()\fP with a \fBSrchPayload\fP message properly constructed (but use \fBstart_round()\fP for this), then feeding in all the response messages\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fI\fBMsg\fP\fP to process 
+.br
+\fIStaticQueue\fP into which to push the response messages 
+.br
+\fIsz\fP the size_t that will be set to the number of messages added to outgoing_buffer on success, or left unset otherwise 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBMsg\fP 
+.PP
+\fBRetcode\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::reset ()"
+Reset the algorithm state, as though this object were just constructed (but preserving my_id)
+.PP
+Reset the algorithm status completely 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_edge (const \fBEdge\fP & e)"
+Changes (or adds) an edge to the outgoing edge list\&. If the edge you pass in does not exist, then it will be added\&. Edges are considered identical if and only if they are to-and-from the same nodes\&.
+.PP
+The edge must satisfy:
+.IP "\(bu" 2
+To someone else (peer)
+.IP "\(bu" 2
+From us (root)
+.IP "\(bu" 2
+Not weight 0 or otherwise same weight as \fBworst_edge()\fP
+.PP
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if successful 
+.PP
+Retcode SET_INVALID_EDGE if edge has root!=my_id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIe\fP an \fBEdge\fP to add 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBEdge\fP 
+.PP
+\fBRetcode\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_edge_metric (const \fBagent_t\fP & to, const \fBmetric_t\fP m)"
+Changes the internally stored \fBEdge\fP to have a metric_t matching \fCm\fP\&.
+.PP
+Functionally equivalent to:
+.PP
+.PP
+.nf
+metric_t desired;
+Edge e;
+agent_t to;
+get_edge(to,e);
+e\&.metric_val = desired;
+set_edge(to,e);
+.fi
+.PP
+.PP
+\fBParameters\fP
+.RS 4
+\fIto\fP agent_t identifier 
+.br
+\fIm\fP the metric_t to set 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBhas_edge()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_edge_status (const \fBagent_t\fP & to, const \fBstatus_t\fP & status)"
+Changes the internally stored \fBEdge\fP to have a status_t matching \fCstatus\fP\&.
+.PP
+Functionally equivalent to:
+.PP
+.PP
+.nf
+status_t desired;
+Edge e;
+agent_t to;
+get_edge(to,e);
+e\&.status = desired;
+set_edge(to,e);
+.fi
+.PP
+.PP
+\fBWarning\fP if you really need to remove an edge from the MST construction, perhaps because it is temporarily unavailable, you might be tempted to set the status to DELETED\&. I would recommend you not do this unless \fBwaiting_count()\fP and delayd_count() is zero, and you are confident that you will not soon receive \fBSrchPayload\fP messages from other nodes over that link\&. 
+.br
+.PP
+\fBParameters\fP
+.RS 4
+\fIto\fP agent_t identifier 
+.br
+\fIstatus\fP the status_t to set 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBhas_edge()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_leader_id (const \fBagent_t\fP & leader)"
+Sets the leader of this node to the given agent_t 
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK\&. Never fails 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_level (const \fBlevel_t\fP & level)"
+Sets the level of this node to the given level_t 
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK\&. Never fails 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_parent_id (const \fBagent_t\fP & id)"
+Sets the MST parent link (of which we have only one!)\&. The edge to the parent must satisfy one of:
+.IP "\(bu" 2
+get_edge_status(id,s) returns an MST edge
+.IP "\(bu" 2
+agent_t == \fBget_id()\fP
+.PP
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.PP
+Retcode PARENT_UNRECOGNIZED if \fC!has_edge(id)\fP 
+.PP
+Retcode PARENT_REQ_MST if we do not have an MST link to that \fCid\fP 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_edge_status()\fP 
+.PP
+\fBEdge\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_response_prompt (const \fBagent_t\fP & who, const \fBInPartPayload\fP & m)"
+Caches the message that triggered a delay in response, so that we can look it up later to check if our level matches the requester's level\&. We do that check whenever our level changes\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIagent_t\fP who sent the message 
+.br
+\fI\fBInPartPayload\fP\fP the payload of the message that we cannot respond to yet 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_response_required (const \fBagent_t\fP & who, const bool response_required)"
+Sets the flag that denotes we have received an IN_PART message, but are not yet ready to respond\&. This occurs when the senders level is higher than ours, because we may just not yet know that we are actually part of their partition\&. We will know for sure when our level is == theirs, and we know the other agent will not respond if their level < ours\&.
+.PP
+If you wish to 'manually steer' the ghs algorithm using this function, then you should also use \fBset_response_prompt()\fP
+.PP
+\fBParameters\fP
+.RS 4
+\fIagent_t\fP who 
+.br
+\fIbool\fP waiting to send (true) or not waiting (false) 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+respond_later() 
+.PP
+process_in_part() 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::set_waiting_for (const \fBagent_t\fP & who, const bool waiting_for)"
+Sets the flag that denotes we have sent an IN_PART message to this agent, but have not yet received a response (true) or have received their response (false)\&. 
+.br
+.PP
+\fBParameters\fP
+.RS 4
+\fIagent_t\fP who 
+.br
+\fIbool\fP waiting for (true) or not waiting for (false) 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+OK if successful 
+.PP
+Retcode NO_SUCH_PEER if we cannot find the given agent id 
+.PP
+Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::start_round (\fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > & outgoing_msgs, size_t &)"
+\fBONLY IF\fP this node is the root of an MST (even an MST with only itself as a member) \fBTHEN\fP this function will enqueue the first set of messages to send to all peers, and set up the internal state of the algorithm to be ready to process the responses\&.
+.PP
+In short it:
+.IP "\(bu" 2
+checks to make sure we're not already in a search phase, exiting with error if we are\&.
+.IP "\(bu" 2
+resets the MWOE to a default value
+.IP "\(bu" 2
+creates a \fBSrchPayload\fP and calls \fBmst_broadcast()\fP
+.PP
+.PP
+Calling \fBstart_round()\fP while in the middle of a round will essentially lose all state, such that incomign messages that are not a response to \fIthese outgoing messages\fP will likely cause errors\&.
+.PP
+However, no edge statuses are changed, so executing start_round is safe if you already know of some MST links and have edited them in, or have somehow terminated a round and want to resume it\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIStaticQeueue\fP in which to enque outgoing messages 
+.br
+\fIsize_t\fP the number of messages enque'd 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if successful 
+.PP
+Retcode SRCH_STILL_WAITING if \fBwaiting_count()\fP is not zero
+.RE
+.PP
+Queue up the start of the round 
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> \fBRetcode\fP GhsState::typecast (const \fBstatus_t\fP status, const \fBMsg::Type\fP, const \fBMsg::Data\fP &, \fBStaticQueue\fP< \fBMsg\fP, MSG_Q_SIZE > & buf, size_t &) const"
+Filters edges by \fCmsgtype\fP, and sends outgoing message along those that match\&.
+.PP
+\fBParameters\fP
+.RS 4
+\fIstatus_t\fP the edge status along which to send messages\&. 
+.br
+\fI\fBMsg::Type\fP\fP denoting what type of message to send 
+.br
+\fI\fBMsg::Data\fP\fP denoting what message data to broadcast 
+.br
+\fIStaticQueue\fP in which to queue the outgoing messages 
+.br
+\fIsize_t\fP denoting how many messages were enqueued \fIonly\fP if OK is returned\&. 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+Retcode OK if everything went well 
+.PP
+CAST_INVALID_EDGE if we found an edge without us as root 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_edge_status()\fP 
+.PP
+mst_typecast() 
+.PP
+\fBmst_convergecast()\fP 
+.RE
+.PP
+
+.SS "template<std::size_t NUM_AGENTS, std::size_t MSG_Q_SIZE> size_t GhsState::waiting_count () const"
+Returns the number of agents to which we have already sent IN_PART messages, but from which we have not yet received ACK_PART or NACK_PART messages\&.
+.PP
+\fBReturns\fP
+.RS 4
+size_t 
+.RE
+.PP
+\fBSee also\fP
+.RS 4
+\fBset_waiting_for()\fP 
+.PP
+\fBInPartPayload\fP 
+.PP
+\fBMsg\fP 
+.RE
+.PP
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

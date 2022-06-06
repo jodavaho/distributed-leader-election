@@ -1,0 +1,108 @@
+.TH "seque::StaticQueue< T, N >" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+seque::StaticQueue< T, N > \- a static-sized single-ended queue for use in GhsState  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <static_queue\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBStaticQueue\fP ()"
+.br
+.ti -1c
+.RI "bool \fBis_full\fP () const"
+.br
+.ti -1c
+.RI "bool \fBis_empty\fP () const"
+.br
+.ti -1c
+.RI "size_t \fBsize\fP () const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBfront\fP (T &out_item) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBpop\fP ()"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBpop\fP (T &out_item)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBpush\fP (const T item)"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBat\fP (const size_t idx, T &out_item) const"
+.br
+.ti -1c
+.RI "\fBRetcode\fP \fBclear\fP ()"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+
+.SS "template<typename T, std::size_t N>
+.br
+class seque::StaticQueue< T, N >"
+a static-sized single-ended queue for use in GhsState 
+
+The \fBStaticQueue\fP class is a statically-sized, single-ended queue based on a cirlce buffer that is used to present and queue messags for the GhsState class
+.PP
+\fBParameters\fP
+.RS 4
+\fIT\fP a typename of the object to store 
+.br
+\fIN\fP the number of elements to allocat storage for 
+.RE
+.PP
+
+.SH "Constructor & Destructor Documentation"
+.PP 
+.SS "template<typename T , std::size_t N> StaticQueue::StaticQueue ()"
+Constructs with static-sizing a circle-buf-backed queue 
+.SH "Member Function Documentation"
+.PP 
+.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::at (const size_t idx, T & out_item) const"
+returns (symantically) the element at \fBfront()\fP+idx, such that if idx==0, \fBfront()\fP is returned\&. If idx==N, the back is returned\&.
+.PP
+Returns ERR_BAD_IDX if idx>N Returns ERR_NO_SUCH_ELEMENT if idx>\fBsize()\fP
+.PP
+In any error condition, out_item is not changed\&. 
+.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::front (T & out_item) const"
+Sets the given reference to be identical to the front of the queue, but does not alter the elements of the queue in any way
+.PP
+In any error condition, out_item is not changed\&. 
+.SS "template<typename T , std::size_t N> bool StaticQueue::is_empty () const"
+Returns true if \fBsize()\fP==0, and no more elements can be \fBpop()\fP'd or checked via \fBfront()\fP 
+.SS "template<typename T , std::size_t N> bool StaticQueue::is_full () const"
+Returns true if \fBsize()\fP==N, and no more elements can be \fBpush()\fP'd 
+.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::pop ()"
+Removes the front of the queue, reducing size by 1\&. No memory is recovered, but the element is irretreivable after this operation\&. 
+.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::pop (T & out_item)"
+This convenience function is identical to: 
+.PP
+.nf
+T item;
+front(T);
+pop();
+return T;
+
+.fi
+.PP
+.PP
+It will return an error if either \fBfront()\fP or \fBpop()\fP would\&. In any error condition, out_item is not changed\&. 
+.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::push (const T item)"
+emplaces an element at the back of the queue\&. no memory is allocated\&.
+.PP
+Fails if \fBsize()\fP==N (the static templated size) 
+.SS "template<typename T , std::size_t N> size_t StaticQueue::size () const"
+Returns the current number of elements in the queue 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

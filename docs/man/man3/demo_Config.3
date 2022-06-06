@@ -1,0 +1,84 @@
+.TH "demo::Config" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+demo::Config \- A struct that holds the union of all configuration variables\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ghs\-demo\-config\&.h>\fP
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum { \fBLOAD\fP =0, \fBTEST\fP, \fBSTART\fP }"
+.br
+.RI "A special command enumeration\&. "
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "float \fBwait_s\fP = 0"
+.br
+.RI "The time to wait before starting the main algorithm\&. "
+.ti -1c
+.RI "int \fBn_agents\fP =\fBN_UNSET\fP"
+.br
+.RI "The number of agents currently loaded\&. "
+.ti -1c
+.RI "char \fBendpoints\fP [\fBMAX_N\fP][\fBMAX_ENDPOINT_SZ\fP] ={0}"
+.br
+.RI "The endpoint for each agent, as read from the config\&. "
+.ti -1c
+.RI "int \fBtest\fP =0"
+.br
+.RI "A bool to determine if we should do a test-and-die routine or not\&. "
+.ti -1c
+.RI "int \fBmy_id\fP =\fBID_UNSET\fP"
+.br
+.RI "This agent's id\&. "
+.ti -1c
+.RI "enum demo::Config:: { \&.\&.\&. }  \fBcommand\fP =\fBLOAD\fP"
+.br
+.RI "A special command enumeration\&. "
+.ti -1c
+.RI "bool \fBretry_connections\fP =false"
+.br
+.RI "If we fail to dial up an agent, should we retry later (true) or drop the message (false) "
+.in -1c
+.SH "Detailed Description"
+.PP 
+A struct that holds the union of all configuration variables\&. 
+
+
+.SH "Member Enumeration Documentation"
+.PP 
+.SS "anonymous enum"
+
+.PP
+A special command enumeration\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fILOAD \fP\fP
+Load config and do nothing else\&. 
+.TP
+\fB\fITEST \fP\fP
+run test-and-die routine 
+.TP
+\fB\fISTART \fP\fP
+Start MST construction after specified delay\&. 
+.SH "Member Data Documentation"
+.PP 
+.SS "enum { \&.\&.\&. }  demo::Config::command"
+
+.PP
+A special command enumeration\&. The start mode 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

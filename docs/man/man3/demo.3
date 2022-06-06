@@ -1,0 +1,189 @@
+.TH "demo" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+demo
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBComms\fP"
+.br
+.RI "a message passing class that uses nng, suitable for testing GhsState "
+.ti -1c
+.RI "struct \fBConfig\fP"
+.br
+.RI "A struct that holds the union of all configuration variables\&. "
+.ti -1c
+.RI "struct \fBControl\fP"
+.br
+.RI "a structure that contains control information for \fBWireMessage\fP objects "
+.ti -1c
+.RI "class \fBGhsDemoExec\fP"
+.br
+.RI "\fBThe main demo logic\fP for executing \fBle::ghs::GhsState\fP across a network "
+.ti -1c
+.RI "struct \fBHeader\fP"
+.br
+.RI "a structure that defines source and destination for \fBWireMessage\fP objects "
+.ti -1c
+.RI "struct \fBWireMessage\fP"
+.br
+.RI "A wire-ready message structure that can encapsulate a variety of payloads for sending across the wire to an endpoint\&. "
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef uint64_t \fBOptMask\fP"
+.br
+.ti -1c
+.RI "typedef uint16_t \fBDestination\fP"
+.br
+.ti -1c
+.RI "typedef size_t \fBSequenceCounter\fP"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBErrno\fP { \fBOK\fP = 0, \fBERR_BAD_PAYLOAD_SZ\fP, \fBERR_NO_PAYLOAD_TYPE\fP, \fBERR_UNRECOGNIZED_PAYLOAD_TYPE\fP, \fBERR_NULL_SRC\fP, \fBERR_DEST_UNSET\fP, \fBERR_HANGUP\fP, \fBERR_NNG\fP }"
+.br
+.RI "return codes for the Comms object "
+.ti -1c
+.RI "enum \fBPayloadType\fP { \fBPAYLOAD_TYPE_NOT_SET\fP =0, \fBPAYLOAD_TYPE_CONTROL\fP, \fBPAYLOAD_TYPE_METRICS\fP, \fBPAYLOAD_TYPE_PING\fP, \fBPAYLOAD_TYPE_GHS\fP }"
+.br
+.RI "the payload type "
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBread_cfg_cli\fP (int argc, char **argv, \fBConfig\fP *config)"
+.br
+.ti -1c
+.RI "bool \fBcfg_is_ok\fP (\fBConfig\fP config)"
+.br
+.ti -1c
+.RI "void \fBread_cfg_file\fP (const char *fname, \fBConfig\fP *c)"
+.br
+.ti -1c
+.RI "void \fBread_cfg_stdin\fP (\fBConfig\fP *c)"
+.br
+.ti -1c
+.RI "template<size_t AN, size_t QN> void \fBinitialize_ghs\fP (\fBGhsState\fP< AN, QN > &ghs, \fBConfig\fP &cfg, \fBComms\fP &c)"
+.br
+.RI "Helper function to build edges from configuration information\&. "
+.ti -1c
+.RI "template<size_t AN, size_t QN> void \fBkill_edge\fP (\fBGhsState\fP< AN, QN > &ghs, \fBConfig\fP &cfg, uint8_t agent_to)"
+.br
+.RI "Helper function to remove an edge from the GhsState, but trying to do sanely and without interrupting the execution flow\&. "
+.ti -1c
+.RI "int \fBdo_test_and_die\fP (\fBComms\fP &comms, \fBConfig\fP &config)"
+.br
+.RI "Run a quick little_iperf() round to check connectivity\&. "
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "const char * \fBargp_program_bug_address\fP = 'Joshua Vander Hook <hook@jpl\&.nasa\&.gov>'"
+.br
+.RI "for argp "
+.in -1c
+.SH "Detailed Description"
+.PP 
+The demo:: namespace contains all the classes and structures for the ghs-demo executable 
+.SH "Typedef Documentation"
+.PP 
+.SS "typedef uint16_t \fBdemo::Destination\fP"
+A two-byte header field that determines where the message is destined This is different than agent_t (or maybe it is not -- your call!)\&. 
+.SS "typedef uint64_t \fBdemo::OptMask\fP"
+Reserved and not implemented yet\&. Any value is OK\&. 
+.SS "typedef size_t \fBdemo::SequenceCounter\fP"
+All outgoing messages have a sequence, since the network layer abstractions guarantee eventual delivery, but not unique delivery, and GhsState is sensitive to duplicated messages\&. 
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBdemo::Errno\fP"
+
+.PP
+return codes for the \fBComms\fP object 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIOK \fP\fP
+No error\&. 
+.TP
+\fB\fIERR_BAD_PAYLOAD_SZ \fP\fP
+Incorrect or no payload size\&. 
+.TP
+\fB\fIERR_NO_PAYLOAD_TYPE \fP\fP
+Payload type not specified\&. 
+.TP
+\fB\fIERR_UNRECOGNIZED_PAYLOAD_TYPE \fP\fP
+Payload type unrecognized\&. 
+.TP
+\fB\fIERR_NULL_SRC \fP\fP
+Bad from field or not set\&. 
+.TP
+\fB\fIERR_DEST_UNSET \fP\fP
+Bad or unspecified Destination\&. 
+.TP
+\fB\fIERR_HANGUP \fP\fP
+Connection was lost\&. 
+.TP
+\fB\fIERR_NNG \fP\fP
+NNG returned an error code, please see logging output\&. 
+.SS "enum \fBdemo::PayloadType\fP"
+
+.PP
+the payload type 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIPAYLOAD_TYPE_NOT_SET \fP\fP
+Not set (produces error) 
+.TP
+\fB\fIPAYLOAD_TYPE_CONTROL \fP\fP
+\fBControl\fP message are for resetting internal state or commanding\&. 
+.TP
+\fB\fIPAYLOAD_TYPE_METRICS \fP\fP
+Metrics messages are for exchanging data about links\&. 
+.TP
+\fB\fIPAYLOAD_TYPE_PING \fP\fP
+Ping messages are used to benchmark links to gather metrics\&. 
+.TP
+\fB\fIPAYLOAD_TYPE_GHS \fP\fP
+message was intended for GHS, don't process, just send it 
+.SH "Function Documentation"
+.PP 
+.SS "bool demo::cfg_is_ok (\fBConfig\fP config)"
+Checks to make sure the values populated in the config are sane
+.PP
+\fBReturns\fP
+.RS 4
+true if it is ok 
+.PP
+false if not
+.RE
+.PP
+Validate the config file, and return 'false' if the config is misread (some variable unset) or has semantic errors\&. For example if my_id is >= num_agents, or is <0\&. 
+.SS "void demo::read_cfg_cli (int argc, char ** argv, \fBConfig\fP * c)"
+Populates config variables based on command line switches\&. Uses arpg\&.h\&. See \fBghs-demo-clireader\&.cpp\fP 
+.SS "void demo::read_cfg_file (const char * fname, \fBConfig\fP * c)"
+Reads the config from an ini-formatted file (if you compiled in \fBghs-demo-inireader\&.cpp\fP, but you are free to implement this function however you see fit if not 
+.SS "void demo::read_cfg_stdin (\fBConfig\fP * c)"
+Reads the config from an ini-formatted file that is piped over stdin (if you compiled in \fBghs-demo-inireader\&.cpp\fP, but you are free to implement this function however you see fit if not)
+.PP
+Like this:
+.PP
+\fC< some_cfg\&.ini ghs-demo [other switches / args]\fP 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

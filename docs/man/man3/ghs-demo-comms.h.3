@@ -1,0 +1,120 @@
+.TH "src/demo/ghs-demo-comms.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/demo/ghs-demo-comms.h \- contains all the wire-level data structures and the Comms object to manage them\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'ghs\-demo\-config\&.h'\fP
+.br
+\fC#include 'ghs\-demo\-msgutils\&.h'\fP
+.br
+\fC#include 'ghs\-demo\-edgemetrics\&.h'\fP
+.br
+\fC#include 'seque/static_queue\&.h'\fP
+.br
+\fC#include <nng/nng\&.h>\fP
+.br
+\fC#include <cstring>\fP
+.br
+\fC#include <unordered_map>\fP
+.br
+\fC#include <vector>\fP
+.br
+\fC#include <thread>\fP
+.br
+\fC#include <mutex>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBdemo::Header\fP"
+.br
+.RI "a structure that defines source and destination for \fBWireMessage\fP objects "
+.ti -1c
+.RI "struct \fBdemo::Control\fP"
+.br
+.RI "a structure that contains control information for \fBWireMessage\fP objects "
+.ti -1c
+.RI "struct \fBdemo::WireMessage\fP"
+.br
+.RI "A wire-ready message structure that can encapsulate a variety of payloads for sending across the wire to an endpoint\&. "
+.ti -1c
+.RI "class \fBdemo::Comms\fP"
+.br
+.RI "a message passing class that uses nng, suitable for testing GhsState "
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBdemo\fP"
+.br
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBCOMMS_DEMO_MAX_N\fP   8"
+.br
+.RI "The max number of agents to demonstrate\&. "
+.ti -1c
+.RI "#define \fBPAYLOAD_MAX_SZ\fP   1024"
+.br
+.RI "The max size of the payload to send over the wire\&. "
+.ti -1c
+.RI "#define \fBMESSAGE_DEST_UNSET\fP   \-1"
+.br
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef uint64_t \fBdemo::OptMask\fP"
+.br
+.ti -1c
+.RI "typedef uint16_t \fBdemo::Destination\fP"
+.br
+.ti -1c
+.RI "typedef size_t \fBdemo::SequenceCounter\fP"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBdemo::Errno\fP { \fBdemo::OK\fP = 0, \fBdemo::ERR_BAD_PAYLOAD_SZ\fP, \fBdemo::ERR_NO_PAYLOAD_TYPE\fP, \fBdemo::ERR_UNRECOGNIZED_PAYLOAD_TYPE\fP, \fBdemo::ERR_NULL_SRC\fP, \fBdemo::ERR_DEST_UNSET\fP, \fBdemo::ERR_HANGUP\fP, \fBdemo::ERR_NNG\fP }"
+.br
+.RI "return codes for the Comms object "
+.ti -1c
+.RI "enum \fBdemo::PayloadType\fP { \fBdemo::PAYLOAD_TYPE_NOT_SET\fP =0, \fBdemo::PAYLOAD_TYPE_CONTROL\fP, \fBdemo::PAYLOAD_TYPE_METRICS\fP, \fBdemo::PAYLOAD_TYPE_PING\fP, \fBdemo::PAYLOAD_TYPE_GHS\fP }"
+.br
+.RI "the payload type "
+.in -1c
+.SH "Detailed Description"
+.PP 
+contains all the wire-level data structures and the Comms object to manage them\&. 
+
+Copyright (c) 2022 California Institute of Technology (“Caltech”)\&. U\&.S\&. Government sponsorship acknowledged\&.
+.PP
+All rights reserved\&.
+.PP
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+.PP
+.IP "\(bu" 2
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer\&.
+.IP "\(bu" 2
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution\&.
+.IP "\(bu" 2
+Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission\&.
+.PP
+.PP
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
+  IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

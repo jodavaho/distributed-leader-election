@@ -1,0 +1,86 @@
+.TH "src/demo/ghs-demo-config.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/demo/ghs-demo-config.h \- contains all the Config objects and methods for configuring \fBdemo::Comms\fP  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <cstdint>\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBdemo::Config\fP"
+.br
+.RI "A struct that holds the union of all configuration variables\&. "
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBdemo\fP"
+.br
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBMAX_N\fP   8"
+.br
+.RI "The maximum number of agents the demo can accomodate\&. "
+.ti -1c
+.RI "#define \fBMAX_ENDPOINT_SZ\fP   256"
+.br
+.RI "The max strlen() of the endpoint\&. "
+.ti -1c
+.RI "#define \fBN_UNSET\fP   0"
+.br
+.RI "A special value for N that means 'not set yet'\&. "
+.ti -1c
+.RI "#define \fBID_UNSET\fP   \-1"
+.br
+.RI "A special value for an ID that means 'not set yet'\&. "
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBdemo::cfg_is_ok\fP (Config config)"
+.br
+.ti -1c
+.RI "void \fBdemo::read_cfg_file\fP (const char *fname, Config *c)"
+.br
+.ti -1c
+.RI "void \fBdemo::read_cfg_stdin\fP (Config *c)"
+.br
+.ti -1c
+.RI "void \fBdemo::read_cfg_cli\fP (int argc, char **argv, Config *config)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+contains all the Config objects and methods for configuring \fBdemo::Comms\fP 
+
+Copyright (c) 2022 California Institute of Technology (“Caltech”)\&. U\&.S\&. Government sponsorship acknowledged\&.
+.PP
+All rights reserved\&.
+.PP
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+.PP
+.IP "\(bu" 2
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer\&.
+.IP "\(bu" 2
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution\&.
+.IP "\(bu" 2
+Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission\&.
+.PP
+.PP
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
+  IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

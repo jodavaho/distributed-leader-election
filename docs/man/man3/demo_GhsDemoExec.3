@@ -1,0 +1,69 @@
+.TH "demo::GhsDemoExec" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+demo::GhsDemoExec \- \fBThe main demo logic\fP for executing \fBle::ghs::GhsState\fP across a network  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ghs\-demo\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "int \fBdo_main\fP (int argc, char **argv)"
+.br
+.RI "A single entry point function that should be called from main() "
+.in -1c
+.SH "Detailed Description"
+.PP 
+\fBThe main demo logic\fP for executing \fBle::ghs::GhsState\fP across a network 
+
+A configurable multi-agent/multi-process executable built on nng that uses \fBle::ghs::GhsState\fP 
+.SH "Member Function Documentation"
+.PP 
+.SS "int demo::GhsDemoExec::do_main (int argc, char ** argv)"
+
+.PP
+A single entry point function that should be called from main() The main loop consists of:
+.PP
+.IP "1." 4
+Reading \fBdemo::Config\fP information about the peers and their tcp endpoints from an ini file and from stdin
+.IP "2." 4
+Initializing all the nng sockets inside a \fBdemo::Comms\fP object from that config
+.IP "3." 4
+Using \fBComms::little_iperf()\fP and \fBComms::exchange_iperf()\fP to create link metrics
+.IP "4." 4
+Populating a \fBle::ghs::GhsState\fP object from the \fBConfig\fP object and link information gathered by \fBdemo::Comms\fP
+.IP "5." 4
+Calling \fBle::ghs::GhsState::start_round()\fP to get the first set of messages, and feeding those into \fBComms\fP
+.IP "6." 4
+Spinning on \fBComms::has_msg()\fP and calling \fBComms::get_next()\fP to retrieve a message, then pushing that message payload into \fBle::ghs::GhsState::process()\fP to get the next set of message to send
+.IP "7." 4
+Continuing that process until \fBle::ghs::GhsState::is_converged()\fP returns true
+.IP "8." 4
+Printing stuff
+.PP
+.PP
+If you want to replicate this, study this loop, and pay close attention to how little_iperf() does its work \fBand especially \fBsym_metric()\fP\fP\&.
+.PP
+\fBSee also\fP
+.RS 4
+\fBdemo::Config\fP 
+.PP
+\fBle::ghs::GhsState\fP 
+.PP
+\fBle::ghs::Msg\fP 
+.PP
+\fBdemo::WireMessage\fP 
+.PP
+\fBsym_metric()\fP 
+.RE
+.PP
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

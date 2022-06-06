@@ -1,0 +1,91 @@
+.TH "include/ghs/ghs.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+include/ghs/ghs.h \- \fBThe main GhsState object\fP  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include 'ghs/msg\&.h'\fP
+.br
+\fC#include 'ghs/agent\&.h'\fP
+.br
+\fC#include 'ghs/level\&.h'\fP
+.br
+\fC#include 'ghs/edge\&.h'\fP
+.br
+\fC#include 'seque/static_queue\&.h'\fP
+.br
+\fC#include <array>\fP
+.br
+\fC#include 'ghs_impl\&.hpp'\fP
+.br
+
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBle::ghs::GhsState< NUM_AGENTS, MSG_Q_SIZE >\fP"
+.br
+.RI "\fBThe main state machine for the GHS algorithm\fP "
+.in -1c
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBle\fP"
+.br
+.ti -1c
+.RI " \fBle::ghs\fP"
+.br
+.in -1c
+.SS "Macros"
+
+.in +1c
+.ti -1c
+.RI "#define \fBperror\fP(x)   fprintf(stderr,'[error] %d:%s', x, strerror(x))"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBle::ghs::Retcode\fP { \fBle::ghs::OK\fP = 0, \fBle::ghs::PROCESS_SELFMSG\fP, \fBle::ghs::PROCESS_NOTME\fP, \fBle::ghs::PROCESS_INVALID_TYPE\fP, \fBle::ghs::PROCESS_REQ_MST\fP, \fBle::ghs::SRCH_INAVLID_SENDER\fP, \fBle::ghs::SRCH_STILL_WAITING\fP, \fBle::ghs::ERR_QUEUE_MSGS\fP, \fBle::ghs::PROCESS_NO_EDGE_FOUND\fP, \fBle::ghs::UNEXPECTED_SRCH_RET\fP, \fBle::ghs::ACK_NOT_WAITING\fP, \fBle::ghs::BAD_MSG\fP, \fBle::ghs::JOIN_BAD_LEADER\fP, \fBle::ghs::JOIN_BAD_LEVEL\fP, \fBle::ghs::JOIN_INIT_BAD_LEADER\fP, \fBle::ghs::JOIN_INIT_BAD_LEVEL\fP, \fBle::ghs::JOIN_MY_LEADER\fP, \fBle::ghs::JOIN_UNEXPECTED_REPLY\fP, \fBle::ghs::ERR_IMPL\fP, \fBle::ghs::CAST_INVALID_EDGE\fP, \fBle::ghs::SET_INVALID_EDGE\fP, \fBle::ghs::PARENT_UNRECOGNIZED\fP, \fBle::ghs::PARENT_REQ_MST\fP, \fBle::ghs::NO_SUCH_PEER\fP, \fBle::ghs::IMPL_REQ_PEER_MY_ID\fP, \fBle::ghs::TOO_MANY_AGENTS\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "const char * \fBle::ghs::strerror\fP (const Retcode &r)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+\fBThe main GhsState object\fP 
+
+
+.PP
+\fBCopyright\fP
+.RS 4
+Copyright (c) 2022 California Institute of Technology (“Caltech”)\&. U\&.S\&. Government sponsorship acknowledged\&.
+.RE
+.PP
+All rights reserved\&.
+.PP
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+.PP
+.IP "\(bu" 2
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer\&.
+.IP "\(bu" 2
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution\&.
+.IP "\(bu" 2
+Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission\&.
+.PP
+.PP
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
+  IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

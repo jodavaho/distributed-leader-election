@@ -1,0 +1,54 @@
+.TH "demo::WireMessage" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+demo::WireMessage \- A wire-ready message structure that can encapsulate a variety of payloads for sending across the wire to an endpoint\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ghs\-demo\-comms\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "size_t \fBsize\fP () const"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBControl\fP \fBcontrol\fP"
+.br
+.RI "Msg control information\&. "
+.ti -1c
+.RI "\fBHeader\fP \fBheader\fP"
+.br
+.RI "Msg meta information\&. "
+.ti -1c
+.RI "uint8_t \fBbytes\fP [\fBPAYLOAD_MAX_SZ\fP]"
+.br
+.RI "The actual payload to send\&. Note only the first \fCN=demo::WireMessageHeader::payload_size\fP will be sent from the bytes\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+A wire-ready message structure that can encapsulate a variety of payloads for sending across the wire to an endpoint\&. 
+
+Used to pass \fBle::ghs::Msg\fP payloads across the internet between agents, among other things
+.PP
+\fBSee also\fP
+.RS 4
+\fBle::ghs::Msg\fP 
+.RE
+.PP
+
+.SH "Member Function Documentation"
+.PP 
+.SS "size_t demo::WireMessage::size () const\fC [inline]\fP"
+The number of bytes to send over the wire\&. It is identical to sizeof(demo::Header) + sizeof(demo::Control) + header\&.payload_size 
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

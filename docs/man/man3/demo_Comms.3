@@ -1,0 +1,143 @@
+.TH "demo::Comms" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+demo::Comms \- a message passing class that uses nng, suitable for testing GhsState  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <ghs\-demo\-comms\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBok\fP ()"
+.br
+.ti -1c
+.RI "\fBComms\fP & \fBwith_config\fP (\fBConfig\fP &)"
+.br
+.ti -1c
+.RI "\fBErrno\fP \fBsend\fP (\fBdemo::WireMessage\fP &, \fBdemo::OptMask\fP=0)"
+.br
+.ti -1c
+.RI "void \fBstart_receiver\fP ()"
+.br
+.ti -1c
+.RI "void \fBstop_receiver\fP ()"
+.br
+.ti -1c
+.RI "bool \fBhas_msg\fP ()"
+.br
+.ti -1c
+.RI "bool \fBget_next\fP (\fBdemo::WireMessage\fP &)"
+.br
+.ti -1c
+.RI "void \fBlittle_iperf\fP ()"
+.br
+.ti -1c
+.RI "void \fBexchange_iperf\fP ()"
+.br
+.ti -1c
+.RI "void \fBprint_iperf\fP ()"
+.br
+.ti -1c
+.RI "\fBKbps\fP \fBkbps_to\fP (const uint16_t agent_id) const"
+.br
+.ti -1c
+.RI "\fBCommsEdgeMetric\fP \fBunique_link_metric_to\fP (const uint16_t agent_id) const"
+.br
+.RI "\fBThis function is really important for the working of your system\fP "
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static \fBComms\fP & \fBinst\fP ()"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+a message passing class that uses nng, suitable for testing GhsState 
+
+This class encapsulates the network layer for a demonstration of GHS over a real network\&. It is initialized by populating a DemoConfig struct and calling \fBwith_config()\fP
+.PP
+After that, you can use \fBsend()\fP and call \fBget_next()\fP at will to exchanges messages using nng_socket of type req-rep\&. 
+.SH "Member Function Documentation"
+.PP 
+.SS "void demo::Comms::exchange_iperf ()"
+This will block for a while, during which time it will synchronize with all known endpoints so that everyone uses the same link metric values\&.
+.PP
+However, the actual link metrics that are used are calculated by \fBunique_link_metric_to()\fP 
+.SS "bool demo::Comms::get_next (\fBdemo::WireMessage\fP & m)"
+If has_msg returns true, then this will copy the next message out of the buffer for you to process\&. 
+.SS "bool demo::Comms::has_msg ()"
+Returns true if there is a message waiting in the incoming buffer\&.
+.PP
+This will always return false until you call \fBstart_receiver()\fP 
+.SS "static \fBComms\fP& demo::Comms::inst ()\fC [static]\fP"
+Keep one static instance on hand\&. You're not required to use it, but we have it nonetheless An usual way to initialize is to call \fBComms::inst()\fP\&.\fBwith_config()\fP 
+.SS "\fBKbps\fP demo::Comms::kbps_to (const uint16_t agent_id) const"
+Returns the calculated and observed throughput to the given agent 
+.SS "void demo::Comms::little_iperf ()"
+This will block for a while, during which time it will repeatedly send and receive messages from all known endpoints to guage the throughput of the links\&. This information is used to populate the GhsState::mwoe() and Edge metric_t information\&. However, the actual link metrics that are used are calculated by \fBunique_link_metric_to()\fP 
+.SS "void demo::Comms::print_iperf ()"
+Will dump link metric information to stdout 
+.SS "\fBErrno\fP demo::Comms::send (\fBdemo::WireMessage\fP & msg, \fBdemo::OptMask\fP mask = \fC0\fP)"
+Sends a \fBdemo::WireMessage\fP\&. The \fBdemo::WireMessage\fP contains all the destination and routing information in it, so this is a singular call that blocks then returns a status message\&.
+.PP
+\fBReturns\fP
+.RS 4
+demo::WireMessageErrno denoting success or failure 
+.RE
+.PP
+
+.SS "void demo::Comms::start_receiver ()"
+Starts a background process to copy incoming message into a buffer for later processing\&.
+.PP
+This is implementation specific, I use plain old threads here\&. Note, ZMQ does this for you, but requires a lot of std:: and platform assumptions\&.
+.PP
+So, we avoid \fIsome of\fP that with nng, and one use of std::thread\&. 
+.SS "void demo::Comms::stop_receiver ()"
+Stops the background process by interrupting it after it's next timeout, then \fCjoin\fPing the thread until it exits cleanly\&. This will block for a few seconds, but shouldn't fail\&. 
+.SS "uint64_t demo::Comms::unique_link_metric_to (const uint16_t agent_id) const"
+
+.PP
+\fBThis function is really important for the working of your system\fP Calculates and returns a globally unique metric value that is suitable for use as a metric_t inside GhsState\&. The metric, once \fBlittle_iperf()\fP and \fBexchange_iperf()\fP complete and agent ids are globally unique, satisfies:
+.PP
+.IP "\(bu" 2
+symmetric: All pairs of agents use the same metric for the links between them
+.IP "\(bu" 2
+unique: No edge metric is duplicated between any two edges\&.
+.PP
+.PP
+The implementation I used is \fBsym_metric()\fP but that's not required, compile in your own if you want\&.
+.PP
+\fBSee also\fP
+.RS 4
+\fBsym_metric\fP 
+.PP
+\fBle::ghs::metric_t\fP 
+.RE
+.PP
+
+.SS "\fBComms\fP & demo::Comms::with_config (\fBConfig\fP & c)"
+Initialie all the internal data and communication structures with the given config information
+.PP
+The intent is that you would extend this class with other \fC\fBwith_config()\fP\fP options\&.
+.PP
+\fBSee also\fP
+.RS 4
+ghs_read_cfg_file() 
+.PP
+ghs_read_cfg_stdin() 
+.PP
+ghs_read_cfg_cli() 
+.RE
+.PP
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

@@ -1,0 +1,329 @@
+.TH "le::ghs" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+le::ghs
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBAckPartPayload\fP"
+.br
+.RI "States 'I am in your partition'\&. "
+.ti -1c
+.RI "struct \fBEdge\fP"
+.br
+.RI "A struct to hold all the communication edge information\&. "
+.ti -1c
+.RI "class \fBGhsState\fP"
+.br
+.RI "\fBThe main state machine for the GHS algorithm\fP "
+.ti -1c
+.RI "struct \fBInPartPayload\fP"
+.br
+.RI "Asks 'Are you in my partition'\&. "
+.ti -1c
+.RI "struct \fBJoinUsPayload\fP"
+.br
+.RI "Msgs to merge /absorb two partitions across a given edge\&. "
+.ti -1c
+.RI "struct \fBMsg\fP"
+.br
+.RI "An aggregate type containing all the data to exchange with to/from information\&. "
+.ti -1c
+.RI "struct \fBNackPartPayload\fP"
+.br
+.RI "States 'I am not in your partition'\&. "
+.ti -1c
+.RI "struct \fBNoopPayload\fP"
+.br
+.RI "No further action necessary (i\&.e\&., we have completed the MST construction) "
+.ti -1c
+.RI "struct \fBSrchPayload\fP"
+.br
+.RI "Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing edge (one that spans two partitions)\&. "
+.ti -1c
+.RI "struct \fBSrchRetPayload\fP"
+.br
+.RI "Returns an edge that represents the minimum weight outgoing edge\&. "
+.in -1c
+.SS "Typedefs"
+
+.in +1c
+.ti -1c
+.RI "typedef int \fBagent_t\fP"
+.br
+.RI "problems for \fBGhsState\fP "
+.ti -1c
+.RI "typedef unsigned long \fBmetric_t\fP"
+.br
+.ti -1c
+.RI "typedef int \fBlevel_t\fP"
+.br
+.RI "A 'level' which is an internal item for \fBGhsState\fP to track how many times the MST has merged with another\&. "
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBstatus_t\fP { \fBUNKNOWN\fP = 0, \fBMST\fP = 1, \fBDELETED\fP =-1 }"
+.br
+.RI "A status enumeration, for the ghs edges\&. "
+.ti -1c
+.RI "enum \fBRetcode\fP { \fBOK\fP = 0, \fBPROCESS_SELFMSG\fP, \fBPROCESS_NOTME\fP, \fBPROCESS_INVALID_TYPE\fP, \fBPROCESS_REQ_MST\fP, \fBSRCH_INAVLID_SENDER\fP, \fBSRCH_STILL_WAITING\fP, \fBERR_QUEUE_MSGS\fP, \fBPROCESS_NO_EDGE_FOUND\fP, \fBUNEXPECTED_SRCH_RET\fP, \fBACK_NOT_WAITING\fP, \fBBAD_MSG\fP, \fBJOIN_BAD_LEADER\fP, \fBJOIN_BAD_LEVEL\fP, \fBJOIN_INIT_BAD_LEADER\fP, \fBJOIN_INIT_BAD_LEVEL\fP, \fBJOIN_MY_LEADER\fP, \fBJOIN_UNEXPECTED_REPLY\fP, \fBERR_IMPL\fP, \fBCAST_INVALID_EDGE\fP, \fBSET_INVALID_EDGE\fP, \fBPARENT_UNRECOGNIZED\fP, \fBPARENT_REQ_MST\fP, \fBNO_SUCH_PEER\fP, \fBIMPL_REQ_PEER_MY_ID\fP, \fBTOO_MANY_AGENTS\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBis_valid\fP (const \fBagent_t\fP a)"
+.br
+.ti -1c
+.RI "\fBEdge\fP \fBworst_edge\fP ()"
+.br
+.ti -1c
+.RI "bool \fBis_valid\fP (const \fBEdge\fP e)"
+.br
+.ti -1c
+.RI "bool \fBis_valid\fP (const \fBmetric_t\fP m)"
+.br
+.ti -1c
+.RI "const char * \fBstrerror\fP (const \fBRetcode\fP &r)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "const \fBagent_t\fP \fBNO_AGENT\fP =\-1"
+.br
+.ti -1c
+.RI "const \fBmetric_t\fP \fBWORST_METRIC\fP =std::numeric_limits<\fBmetric_t\fP>::max()"
+.br
+.ti -1c
+.RI "const \fBmetric_t\fP \fBMETRIC_NOT_SET\fP =0"
+.br
+.ti -1c
+.RI "const \fBlevel_t\fP \fBLEVEL_START\fP =0"
+.br
+.RI "All levels start at 0\&. "
+.ti -1c
+.RI "const long long int \fBMAX_MSG_SZ\fP = sizeof(\fBMsg\fP)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+GHS
+.PP
+The GHS namespace 
+.SH "Typedef Documentation"
+.PP 
+.SS "\fBle::ghs::agent_t\fP"
+
+.PP
+problems for \fBGhsState\fP The ghs implementation supports arbitrary integers, as long as they are greater than or equal to zero\&. Use \fBis_valid()\fP to ensure an agent_t will 
+.SS "typedef unsigned long \fBle::ghs::metric_t\fP"
+A typedef to hold the metrics\&. There's some work to do to make sure the metrics are:
+.PP
+.IP "\(bu" 2
+Symmetric (both peer and root agree on the value)
+.IP "\(bu" 2
+unique (no two agents have the same metric)
+.PP
+.PP
+However, that is not captured here, and is handled at a 'higher level'\&. See unique_link_metric_to() 
+.PP
+\fBSee also\fP
+.RS 4
+DemoComms::unique_link_metric_to() 
+.RE
+.PP
+
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBle::ghs::Retcode\fP"
+The GHS return code enumeration used by \fBGhsState\fP for all function calls that may fail\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIOK \fP\fP
+The operation was successful\&. 
+.TP
+\fB\fIPROCESS_SELFMSG \fP\fP
+Could not process a message from self\&. 
+.TP
+\fB\fIPROCESS_NOTME \fP\fP
+Could not process a message not directed towards this agent\&. 
+.TP
+\fB\fIPROCESS_INVALID_TYPE \fP\fP
+Did not recognize or could not process this type of message\&. 
+.TP
+\fB\fIPROCESS_REQ_MST \fP\fP
+This type of message (possibly only at this time) should have come over and MST link, but did not\&. 
+.TP
+\fB\fISRCH_INAVLID_SENDER \fP\fP
+There is no reason to expect a SRCH message from this sender (usually parent and MST link required) 
+.TP
+\fB\fISRCH_STILL_WAITING \fP\fP
+THere is no way to process a SRCH message when we're still executing the last search ( \fCwaiting_count()\fP > 0 ) 
+.TP
+\fB\fIERR_QUEUE_MSGS \fP\fP
+Unable to enqueue messages, received \fBseque::Retcode\fP not OK\&. 
+.TP
+\fB\fIPROCESS_NO_EDGE_FOUND \fP\fP
+Unable to process the message when we don't have an edge to that agent\&. 
+.TP
+\fB\fIUNEXPECTED_SRCH_RET \fP\fP
+Unexpected srch_ret message at this time (not searching or not waiting for that agent) 
+.TP
+\fB\fIACK_NOT_WAITING \fP\fP
+We cannot process an ACK message if we aren't expecting one\&. 
+.TP
+\fB\fIBAD_MSG \fP\fP
+Likely malformed message\&. 
+.TP
+\fB\fIJOIN_BAD_LEADER \fP\fP
+Received join message with a leader not our own, yet we are not on a partition boundary\&. 
+.TP
+\fB\fIJOIN_BAD_LEVEL \fP\fP
+Received join message with a non-matching level, yet we received join msg with different level\&. 
+.TP
+\fB\fIJOIN_INIT_BAD_LEADER \fP\fP
+Told to init join to another parition, but leader unrecognized\&. 
+.TP
+\fB\fIJOIN_INIT_BAD_LEVEL \fP\fP
+Told to init join to another partition, but level unrecognized\&. 
+.TP
+\fB\fIJOIN_MY_LEADER \fP\fP
+Other partition suggested we join our own partition\&. 
+.TP
+\fB\fIJOIN_UNEXPECTED_REPLY \fP\fP
+received higher-level join message: Impossible since we should not have replied to their SRCH yet 
+.TP
+\fB\fIERR_IMPL \fP\fP
+Implementation error: Reached branch that should not have been reachable\&. 
+.TP
+\fB\fICAST_INVALID_EDGE \fP\fP
+*cast operation failed because of bad edge 
+.TP
+\fB\fISET_INVALID_EDGE \fP\fP
+add- or set edge failed because of malformed edge 
+.TP
+\fB\fIPARENT_UNRECOGNIZED \fP\fP
+Cannot set parent ID to unrecognized node (no edge to them!) 
+.TP
+\fB\fIPARENT_REQ_MST \fP\fP
+Cannot set parent ID to non-MST node (bad edge type) 
+.TP
+\fB\fINO_SUCH_PEER \fP\fP
+Cannot find peer idx -- no edge or unrecognized ID? 
+.TP
+\fB\fIIMPL_REQ_PEER_MY_ID \fP\fP
+Cannot treat my_id as peer -- bad message? 
+.TP
+\fB\fITOO_MANY_AGENTS \fP\fP
+Set- or add edge failed, too many agents in static storage already\&. 
+.SS "enum \fBle::ghs::status_t\fP"
+
+.PP
+A status enumeration, for the ghs edges\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIUNKNOWN \fP\fP
+We have not probed this edge for information yet, or have not recieved a reponse\&. 
+.TP
+\fB\fIMST \fP\fP
+We have added this edge as an MST link\&. 
+.TP
+\fB\fIDELETED \fP\fP
+We have decided not to further consider this edge, either it was 'bad', or it is already part of our partition\&. 
+.SH "Function Documentation"
+.PP 
+.SS "bool le::ghs::is_valid (const \fBagent_t\fP a)"
+Just in case you want an official alias for a>=0\&.
+.PP
+\fBReturns\fP
+.RS 4
+true if a>=0 
+.PP
+false if a==NO_AGENT or is otherwise <0 
+.RE
+.PP
+
+.SS "bool le::ghs::is_valid (const \fBEdge\fP e)"
+
+.PP
+\fBParameters\fP
+.RS 4
+\fIe\fP an \fBEdge\fP 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+true if edge is not \fBworst_edge()\fP and does not have any uninitialized components\&. 
+.RE
+.PP
+
+.SS "bool le::ghs::is_valid (const \fBmetric_t\fP m)"
+
+.PP
+\fBParameters\fP
+.RS 4
+\fIm\fP a metric_t 
+.RE
+.PP
+\fBReturns\fP
+.RS 4
+true if the metric_t is not \fCNOT_SET\fP or \fCWORST_METRIC\fP 
+.RE
+.PP
+
+.SS "const char * le::ghs::strerror (const \fBRetcode\fP & r)"
+
+.PP
+\fBReturns\fP
+.RS 4
+a human-readable string for any value of the passed in Retcode 
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIr\fP a \fBghs::Retcode\fP 
+.RE
+.PP
+
+.SS "\fBEdge\fP le::ghs::worst_edge ()"
+Returns the worst possible edge, useful for comparisons in the search for the minimum weight outgoing edge\&. 
+.SH "Variable Documentation"
+.PP 
+.SS "const long long int le::ghs::MAX_MSG_SZ = sizeof(\fBMsg\fP)"
+For an external class that is interested in allocating static storage to queue a set of \fBMsg\fP s, this is the maximum size of the \fBMsg\fP class\&. 
+.SS "const \fBmetric_t\fP le::ghs::METRIC_NOT_SET =0"
+This is set to zero because metrics are usually zero initialized by default, and we do not want to have a bunch of zeros floating around in our search 
+.SS "const \fBagent_t\fP le::ghs::NO_AGENT =\-1"
+This means not set 
+.SS "const \fBmetric_t\fP le::ghs::WORST_METRIC =std::numeric_limits<\fBmetric_t\fP>::max()"
+This is the 'worst' metric possible, defined simply as the maximum value reachable\&.
+.PP
+We all need to agree on the worst metric, since we're all comparing against this to determine if we found a minimum weight outgoing edge\&. See mwoe()
+.PP
+\fBSee also\fP
+.RS 4
+\fBGhsState::mwoe()\fP for how it is used 
+.PP
+DemoComms::unique_link_metric_to() for why it is a size_t 
+.PP
+DemoComms::little_iperf() 
+.RE
+.PP
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

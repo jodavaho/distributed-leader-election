@@ -1,0 +1,47 @@
+.TH "le::ghs::Edge" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+le::ghs::Edge \- A struct to hold all the communication edge information\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.PP
+\fC#include <edge\&.h>\fP
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "\fBEdge\fP (\fBagent_t\fP pe, \fBagent_t\fP ro, \fBstatus_t\fP st, \fBmetric_t\fP me)"
+.br
+.in -1c
+.SS "Public Attributes"
+
+.in +1c
+.ti -1c
+.RI "\fBagent_t\fP \fBpeer\fP =\fBNO_AGENT\fP"
+.br
+.RI "The peer is the 'to' side of the edge\&. "
+.ti -1c
+.RI "\fBagent_t\fP \fBroot\fP =\fBNO_AGENT\fP"
+.br
+.RI "The root is the 'from' side of the edge\&. "
+.ti -1c
+.RI "\fBstatus_t\fP \fBstatus\fP =\fBUNKNOWN\fP"
+.br
+.RI "The status of this edge, starting with UNKNOWN\&. "
+.ti -1c
+.RI "\fBmetric_t\fP \fBmetric_val\fP =\fBWORST_METRIC\fP"
+.br
+.RI "By default, this edge has metric_val = WORST_METRIC\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+A struct to hold all the communication edge information\&. 
+
+
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.
