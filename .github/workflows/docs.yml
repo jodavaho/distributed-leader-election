@@ -26,11 +26,15 @@ jobs:
 
     - name: Get main
       working-directory: ${{github.workspace}}
-      run: |
-        git fetch 
-        git checkout "$DOCS"
-        git rm -rf docs/
-        git merge main
+      run: git fetch  && git checkout "$DOCS"
+
+    - name: Clean docs
+      working-directory: ${{github.workspace}}
+      run: git rm -rf docs/
+
+    - name: Get last changes
+      working-directory: ${{github.workspace}}
+      run: git merge main
 
     - name: CMake Doxygen
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -39,13 +43,14 @@ jobs:
         cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_DOCTEST=Off -DBUILD_DOCS=On -DBUILD_DEMO=Off
         cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target doxygen
 
-    - name: Force docs
-      working-directory: ${{github.workspace}}
+    - name: Config user
       run: |
-        git add docs/ -f 
         git config --local user.email "23857237+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
-        git commit -am "docs built by github-action from main"
+
+    - name: Force docs
+      working-directory: ${{github.workspace}}
+      run: git add docs/ -f && git commit -am "docs built by github-action from main"
 
     - name: Push DOCS
       working-directory: ${{github.workspace}}
