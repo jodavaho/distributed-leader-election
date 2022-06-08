@@ -911,20 +911,20 @@ template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
 
   if (e.root == NO_AGENT || e.peer == NO_AGENT){
-    return SET_INVALID_EDGE;
+    return SET_INVALID_EDGE_NO_AGENT;
   }
 
   if (e.metric_val == WORST_METRIC){
-    return SET_INVALID_EDGE;
+    return SET_INVALID_EDGE_METRIC;
   }
 
   if (e.root != my_id){
-    return SET_INVALID_EDGE;
+    return SET_INVALID_EDGE_NOT_ROOT;
   }
 
   //no self loops
   if (e.peer == my_id){
-    return SET_INVALID_EDGE;
+    return SET_INVALID_EDGE_SELF_LOOP;
   }
 
   agent_t who = e.peer;

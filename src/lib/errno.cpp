@@ -64,6 +64,10 @@ namespace le{
       case ERR_IMPL: {return "Developer error: Reached 'unreachable' branch";}
       case CAST_INVALID_EDGE:{return "*cast operation failed with bad outgoing edge";}
       case SET_INVALID_EDGE:{return "set/add edge operation failed b/c of bad edge";}
+      case SET_INVALID_EDGE_METRIC:{   return "add- or set edge failed because metric_val==WORST_METRIC";}
+      case SET_INVALID_EDGE_NOT_ROOT:{ return "add- or set edge failed because edge was not rooted on my_id";}
+      case SET_INVALID_EDGE_NO_AGENT:{ return "add- or set edge failed because of NO_AGENT as peer/root";}
+      case SET_INVALID_EDGE_SELF_LOOP:{ return "add- or set edge failed because Edge.peer == my_id" ;}
       case PARENT_UNRECOGNIZED:{return "cannot set parent to unrecognized node (no edge)";}
       case PARENT_REQ_MST:{return "cannot set parent to non-MST node (bad edge type)";}
       case NO_SUCH_PEER:{return "Cannot find peer idx -- no edge or unrecognized id?";}
