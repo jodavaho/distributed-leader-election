@@ -58,13 +58,12 @@ GhsState<MAX_AGENTS, BUF_SZ>::GhsState(agent_t my_id, Edge* edges, size_t num_ed
   reset();
   for (size_t idx=0;idx<num_edges;idx++){
     Edge e=edges[idx];
+    if (! is_valid(e)){
+      continue;
+    }
     auto err = set_edge(e);
     if (OK==err){ continue; }
     if (TOO_MANY_AGENTS==err){ break; }
-    if (SET_INVALID_EDGE == err){
-      //bad bad
-      continue;
-    }
   }
 }
 
@@ -102,9 +101,9 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::reset() {
 template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 le::Errno GhsState<MAX_AGENTS, BUF_SZ>::start_round(StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t & qsz) {
   //If I'm leader, then I need to start the process. Otherwise wait.
-  if (my_leader == my_id){
+  if (get_leader_id() == get_id()){
     //nobody tells us what to do but ourselves
-    return process_srch(my_id, {my_leader, my_level}, outgoing_buffer, qsz);
+    return process_srch(get_id(), {get_leader_id(), get_level()}, outgoing_buffer, qsz);
   }
   qsz=0;
   return OK;
@@ -157,7 +156,7 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_srch(  agent_t from, const msg::
     { 
       return ret; 
     }
-    if (to_them.status!=MST ) 
+    if (to_them.status!=MST_PARENT ) 
     { 
       return PROCESS_REQ_MST; 
     }
@@ -678,29 +677,27 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_parent_id(const agent_t& id) {
 
   //clear old id
   for (size_t idx=0;idx<n_peers;idx++){
-    Edge e = outgoing_edges[idx];
-    if (e.status==MST_PARENT){
-      e.status = MST;
+    if (outgoing_edges[idx].status==MST_PARENT){
+      outgoing_edges[idx].status=MST;
     }
   }
 
-  //case 1: self loop ok
+  //self loop ok
   if (id==get_id()){
-    return set_edge({id,id,MST_PARENT,0});
+    return OK;
   }
 
-  //case 2: MST links ok
   if (!has_edge(id)){
     return PARENT_UNRECOGNIZED;
   }
-
+  
   Edge peer;
   auto ger = get_edge(id,peer);
   if (OK != ger){ return ger; }
 
   if (peer.status == MST ){
-    auto err = set_parent_id(id);
-    if (err==OK){return OK;}
+    auto err = set_edge_status(id,MST_PARENT);
+    return err;
   }
   return PARENT_REQ_MST;
 }
@@ -925,6 +922,7 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
     return SET_INVALID_EDGE;
   }
 
+
   agent_t who = e.peer;
   size_t idx;
   le::Errno er = checked_index_of(who,idx);
@@ -933,7 +931,6 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
     //found em
     outgoing_edges[idx].metric_val  =  e.metric_val;
     outgoing_edges[idx].status      =  e.status;
-    if (e.status==MST_PARENT){ return set_parent_id(e.peer); }
     return OK;
   } 
   else if (NO_SUCH_PEER == er)
@@ -945,7 +942,6 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
     peers[n_peers]=e.peer;
     outgoing_edges[n_peers] = e;
     n_peers++;
-    if (e.status==MST_PARENT){ return set_parent_id(e.peer); }
     return OK;
   } 
   else 

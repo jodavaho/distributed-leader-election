@@ -260,22 +260,17 @@ TEST_CASE("unit-test mst_convergecast")
 
 }
 
-/*
 TEST_CASE("unit-test start_round() on leader, unknown peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  GhsState<4,32> s=get_state<4,32>(0,2);
   REQUIRE_EQ(buf.size(),0);
-  s.set_edge({1, 0,UNKNOWN,1});
-  s.set_edge({2, 0,UNKNOWN,1});
   size_t sz;
   CHECK_EQ(OK, s.start_round(buf, sz));
   CHECK_EQ(buf.size(),2);
   while(buf.size()>0){ 
-    //auto m = buf.front();
     Msg buf_front;
     CHECK( OK==( buf.front(buf_front) ) );
-    //CHECK_EQ(m.type(), msg::Type::IN_PART);
     CHECK_EQ(buf_front.type(), msg::Type::IN_PART);
     buf.pop();
   }
@@ -284,10 +279,8 @@ TEST_CASE("unit-test start_round() on leader, unknown peers")
 TEST_CASE("unit-test start_round() on leader, mst peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  GhsState<4,32> s=get_state<4,32>(0,0,0,2,true);
   REQUIRE_EQ(buf.size(),0);
-  s.set_edge({1, 0,MST,1});
-  s.set_edge({2, 0,MST,1});
   size_t sz;
   s.start_round(buf, sz);
 
@@ -306,10 +299,8 @@ TEST_CASE("unit-test start_round() on leader, mst peers")
 TEST_CASE("unit-test start_round() on leader, discarded peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  GhsState<4,32> s=get_state<4,32>(0,0,2,0);
   REQUIRE_EQ(buf.size(),0);
-  CHECK_EQ(OK, s.set_edge({1, 0,DELETED,1}));
-  CHECK_EQ(OK, s.set_edge({2, 0,DELETED,1}));
   size_t sz;
   CHECK_EQ(OK, s.start_round(buf, sz));
   //do they report no MWOE to parent? No, no parent
@@ -319,49 +310,57 @@ TEST_CASE("unit-test start_round() on leader, discarded peers")
 TEST_CASE("unit-test start_round() on leader, mixed peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  GhsState<4,32> s = get_state<4,32>(0,1,1,1,true);
   REQUIRE_EQ(buf.size(),0);
-  CHECK_EQ(OK, s.set_edge({1, 0,DELETED,1}));
-  CHECK_EQ(OK, s.set_edge({2, 0,MST,1}));
-  CHECK_EQ(OK, s.set_edge({3, 0,UNKNOWN,1}));
   size_t sz;
   CHECK_EQ(OK, s.start_round(buf, sz));
 
   CHECK_EQ(buf.size(),2);
 
-  //auto m = buf.front();
   Msg m;
   CHECK( OK==( buf.front(m) ) );
   buf.pop();
-  CHECK_EQ(2, m.to());
+  CHECK_EQ(3, m.to());
   CHECK_EQ(0,m.from());
   CHECK_EQ(m.type(),msg::Type::SRCH);
 
-  //m = buf.front();
-  //Msg m;
   CHECK( OK==( buf.front(m) ) );
   buf.pop();
-  CHECK_EQ(3, m.to());
+  CHECK_EQ(1, m.to());
   CHECK_EQ(0, m.from());
   CHECK_EQ(m.type(),msg::Type::IN_PART);
 
   CHECK_EQ(buf.size(),0);
+
+  //if we have remaining msgs, then we sent srch to deleted node!
 }
 
 TEST_CASE("unit-test start_round() on non-leader")
 {
   StaticQueue<Msg,32> buf;
-  //set id to 0, and 4 total nodes
-  GhsState<4,32> s(0);
-  //set leader to 1, level to 0 (ignored)
-  CHECK_EQ(OK, s.set_leader_id(1));
-  CHECK_EQ(OK,  s.set_level(0));
+  auto s = get_state<4,32>(0,0,0,1,false);
+  //set leader to 1, level to 0 
+  REQUIRE(s.has_edge(1));
+  REQUIRE_EQ(s.get_n_peers(), 1);
+  Edge e;
+  REQUIRE_EQ(OK, s.get_edge(1,e));
+  REQUIRE_EQ(e.status, MST_PARENT);
+  Msg new_leader = Msg(0,1,SrchPayload{1,1});
+  size_t sz=0;
+  //trick a new leader by pinging with a srch message
+  REQUIRE_EQ(OK,s.process( new_leader, buf, sz));
+  REQUIRE_EQ(OK, s.get_edge(1,e));
+  REQUIRE_EQ(e.status, MST_PARENT);
+  REQUIRE_EQ(s.get_leader_id(), 1);
 
-  REQUIRE_EQ(buf.size(),0);
-  CHECK_EQ(OK, s.set_edge({1, 0,DELETED,1}));
-  CHECK_EQ(OK, s.set_edge({2, 0,MST,1}));
-  CHECK_EQ(OK, s.set_edge({3, 0,UNKNOWN,1}));
-  size_t sz;
+  //we should respond w/ no mwoe
+  REQUIRE_EQ(sz,1);
+  REQUIRE_EQ(buf.size(),1);
+  Msg m;
+  REQUIRE_EQ(buf.pop(m), OK);
+  REQUIRE_EQ(m.type(), SRCH_RET);
+  buf.clear();
+  sz=0;
   CHECK_EQ(OK, s.start_round(buf, sz));
 
   //better have done nothing!
@@ -369,6 +368,7 @@ TEST_CASE("unit-test start_round() on non-leader")
 
 }
 
+/*
 TEST_CASE("unit-test process_srch() checks recipient"){
 
   StaticQueue<Msg,32> buf;
