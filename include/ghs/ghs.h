@@ -51,10 +51,6 @@
 
 using seque::StaticQueue;
 
-#ifndef perror
-#define perror(x) fprintf(stderr,"[error] %d:%s", x, strerror(x))
-#endif
-
 /**
  * Leader Election
  */
@@ -178,7 +174,7 @@ namespace le{
            * other than le::Errno OK. 
            *
            */
-          bool has_edge( const agent_t &to) const;
+          bool has_edge( const agent_t to) const;
 
 
           /**
@@ -341,6 +337,7 @@ namespace le{
            * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
           le::Errno set_response_prompt(const agent_t &who, const InPartPayload& m);
+
           /**
            * Returns the message that triggered a delay in response.
            *
@@ -631,6 +628,7 @@ namespace le{
            * @see check_new_level
            */
           le::Errno                  respond_later(const agent_t&, const InPartPayload);
+          
           /**
            * This will respond that a search for an outgoing MWOE was inconclusive. This usually means the round is about to end and the MST construction is completed
            */
