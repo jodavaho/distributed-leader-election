@@ -166,7 +166,7 @@ TEST_CASE("unit-test typecast")
   CHECK_EQ(sent,1);
   Msg buf_front;
 
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from, 0);
   CHECK_EQ(buf_front.to, 1);
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
@@ -183,7 +183,7 @@ TEST_CASE("unit-test typecast")
   //only one still, right?
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from, 0);
   CHECK_EQ(buf_front.to, 1); //<-- not 2!
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
@@ -196,7 +196,7 @@ TEST_CASE("unit-test typecast")
   //Now got one here too
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from, 0);
   CHECK_EQ(buf_front.to, 3);
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
@@ -241,7 +241,7 @@ TEST_CASE("unit-test mst_broadcast")
   CHECK_EQ(sent,1);
 
   Msg buf_front;
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from, 0);
   CHECK_EQ(buf_front.to, 3);
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
@@ -289,7 +289,7 @@ TEST_CASE("unit-test mst_convergecast")
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(sent,1);
   Msg buf_front;
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from, 0);
   CHECK_EQ(buf_front.to, 3);
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
@@ -309,7 +309,7 @@ TEST_CASE("unit-test start_round() on leader, unknown peers")
   while(buf.size()>0){ 
     //auto m = buf.front();
     Msg buf_front;
-    CHECK( Q_OK( buf.front(buf_front) ) );
+    CHECK( OK==( buf.front(buf_front) ) );
     //CHECK_EQ(m.type, Msg::Type::IN_PART);
     CHECK_EQ(buf_front.type, Msg::Type::IN_PART);
     buf.pop();
@@ -328,11 +328,11 @@ TEST_CASE("unit-test start_round() on leader, mst peers")
 
   CHECK_EQ(buf.size(),2);
   Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type, Msg::Type::SRCH);
   buf.pop();
 
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type, Msg::Type::SRCH);
   buf.pop();
   CHECK_EQ(buf.size(),0);
@@ -366,7 +366,7 @@ TEST_CASE("unit-test start_round() on leader, mixed peers")
 
   //auto m = buf.front();
   Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(2, m.to);
   CHECK_EQ(0,m.from);
@@ -374,7 +374,7 @@ TEST_CASE("unit-test start_round() on leader, mixed peers")
 
   //m = buf.front();
   //Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(3, m.to);
   CHECK_EQ(0, m.from);
@@ -444,7 +444,7 @@ TEST_CASE("unit-test process_srch, unknown peers")
     //auto m = buf.front();
 
     Msg m;
-    CHECK( Q_OK( buf.front(m) ) );
+    CHECK( OK==( buf.front(m) ) );
     CHECK_EQ(m.type, Msg::Type::IN_PART);
     buf.pop();
   }
@@ -466,12 +466,12 @@ TEST_CASE("unit-test process_srch,  mst peers")
   CHECK_EQ(buf.size(),2);
   CHECK_EQ(buf.size(),sz);
   //auto m = buf.front();
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type, Msg::Type::SRCH);
   buf.pop();
   //m = buf.front();
   //Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type, Msg::Type::SRCH);
   buf.pop();
   CHECK_EQ(buf.size(),0);
@@ -512,7 +512,7 @@ TEST_CASE("unit-test process_srch, mixed peers")
   CHECK_EQ(buf.size(),sz);
 
   //auto m = buf.front();
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(2, m.to);
   CHECK_EQ(0,m.from);
@@ -520,7 +520,7 @@ TEST_CASE("unit-test process_srch, mixed peers")
 
   //m = buf.front();
   //Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(3, m.to);
   CHECK_EQ(0, m.from);
@@ -548,7 +548,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
 
   //auto m = buf.front();
   //
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(2, m.to);
   CHECK_EQ(0,m.from);
@@ -607,7 +607,7 @@ TEST_CASE("unit-test process_srch_ret")
   CHECK_EQ(buf.size(),1); // SRCH
   CHECK_EQ(buf.size(),sz); // SRCH
   Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   //CHECK_EQ(buf.front().type, Msg::Type::SRCH);
   CHECK_EQ(m.type,Msg::Type::SRCH);
   buf.pop();
@@ -631,7 +631,7 @@ TEST_CASE("unit-test process_srch_ret")
   //CHECK_EQ(buf.front().type, Msg::Type::NOOP);
 
   //Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type, Msg::Type::NOOP);
 
 
@@ -655,9 +655,9 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
   CHECK_EQ(buf.size(),sz); // SRCH
   //CHECK_EQ(buf.front().type, Msg::Type::SRCH);
   Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type,Msg::Type::SRCH);
-  CHECK( Q_OK(buf.pop()));
+  CHECK( OK==(buf.pop()));
   CHECK_EQ(s.waiting_count(),1);
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
@@ -681,7 +681,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
   CHECK_EQ(buf.size(),sz);
   //in this case, we have a candidate, that should join_us
   //Msg m;
-  CHECK( Q_OK( buf.front(m) ) );
+  CHECK( OK==( buf.front(m) ) );
   //CHECK_EQ(buf.front().type, Msg::Type::JOIN_US);
   CHECK_EQ(m.type, Msg::Type::JOIN_US);
 
@@ -710,7 +710,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   CHECK_EQ(buf.size(),sz); 
 
   Msg buf_front;
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
   CHECK_EQ(buf_front.to, 2);
   buf.pop();
@@ -729,7 +729,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(buf.size(),sz);
   //in this case, we have to tell parent
-  CHECK ( Q_OK( buf.front(buf_front) ) );
+  CHECK ( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type, Msg::Type::SRCH_RET);
   CHECK_EQ(buf_front.to, 1);
 
@@ -846,7 +846,7 @@ TEST_CASE("unit-test in_part, happy-path"){
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(s.waiting_count(),0);
   //no, I am not
-  CHECK (Q_OK(buf.front(m)));
+  CHECK (OK==(buf.front(m)));
   CHECK_EQ(m.type, Msg::Type::NACK_PART);
   buf.pop();
 
@@ -857,7 +857,7 @@ TEST_CASE("unit-test in_part, happy-path"){
   CHECK_EQ(buf.size(),sz);
   CHECK_EQ(s.waiting_count(),0);
   //yes, I am
-  CHECK (Q_OK(buf.front(m)));
+  CHECK (OK==(buf.front(m)));
   CHECK_EQ(m.type, Msg::Type::ACK_PART);
   buf.pop();
 
@@ -910,7 +910,7 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
 
   //response should be to tell the other guy we're joining up
   Msg buf_front;
-  CHECK( Q_OK( buf.front(buf_front) ) );
+  CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type,  Msg::Type::JOIN_US);
   CHECK_EQ(buf_front.to,    s.mwoe().peer);
   CHECK_EQ(buf_front.from,  s.mwoe().root);
@@ -976,7 +976,7 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   //since we got both respones, but have leader
   //response should be to tell the boss
   Msg buf_front;
-  CHECK( Q_OK ( buf.front( buf_front) ) );
+  CHECK( OK== ( buf.front( buf_front) ) );
   CHECK_EQ(buf_front.type,  Msg::Type::SRCH_RET);
   CHECK_EQ(buf_front.to,    s.get_leader_id());
   CHECK_EQ(buf_front.from,  0);
@@ -1011,7 +1011,7 @@ TEST_CASE("unit-test join_us nodes pass")
   CHECK_EQ(buf.size(),        1);
   CHECK_EQ(buf.size(),       sz);
   Msg buf_front;
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.to,    1);
   CHECK_EQ(buf_front.from,  0);
   CHECK_EQ(buf_front.type,  Msg::Type::JOIN_US);
@@ -1046,7 +1046,7 @@ TEST_CASE("unit-test join_us root relays to peer")
   CHECK_EQ(buf.size(),        1);
 
   Msg buf_front;
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.to,    1);
   CHECK_EQ(buf_front.from,  0);
   CHECK_EQ(buf_front.type,  Msg::Type::JOIN_US);
@@ -1054,7 +1054,7 @@ TEST_CASE("unit-test join_us root relays to peer")
   //he updated edge
   CHECK_EQ(e.status, MST);
   //check data payload
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.data.join_us.join_peer, 1);//edge to
   CHECK_EQ(buf_front.data.join_us.join_root, 0);//edge from
   CHECK_EQ(buf_front.data.join_us.proposed_leader, 2);//sender's leader
@@ -1137,7 +1137,7 @@ TEST_CASE("unit-test join_us merge")
   //0 sends a message to 1 saying "Join our partition"
   CHECK_EQ(buf.size(), 1);
   Msg buf_front;
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.to, 1);
   CHECK_EQ(buf_front.from, 0);
   CHECK_EQ(buf_front.type, Msg::Type::JOIN_US);
@@ -1176,7 +1176,7 @@ TEST_CASE("unit-test join_us merge leader-side")
   //1 sends a message to 0 saying "Join our partition"
   CHECK_EQ(buf.size(), 1);
   Msg buf_front;
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.to, 0);
   CHECK_EQ(buf_front.from, 1);
   CHECK_EQ(buf_front.type, Msg::Type::JOIN_US);
@@ -1206,12 +1206,12 @@ TEST_CASE("unit-test join_us merge leader-side")
   //AND, it sends a message to SRCH
   CHECK_EQ(buf.size(), 2); //lord only knows why it chooses this order though. 
   
-  CHECK(Q_OK(buf.pop(buf_front)));
+  CHECK(OK==(buf.pop(buf_front)));
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
   CHECK_EQ(buf_front.to, 3);
 
   Msg buf_back;
-  CHECK(Q_OK(buf.pop(buf_back)));
+  CHECK(OK==(buf.pop(buf_back)));
   CHECK_EQ(buf_back.type, Msg::Type::SRCH); //we have a child to ping
   CHECK_EQ(buf_back.to, 0);
 
@@ -1230,7 +1230,7 @@ TEST_CASE("integration-test two nodes")
   CHECK_EQ(buf.size(),2);
   for (int i=0;i<2;i++){
     Msg m; 
-    CHECK(Q_OK(buf.pop(m)));
+    CHECK(OK==(buf.pop(m)));
     CHECK_EQ(m.type,Msg::Type::IN_PART);
     switch(m.to){
       case (0):{ s0.process(m,buf, sz);break;}
@@ -1240,7 +1240,7 @@ TEST_CASE("integration-test two nodes")
   CHECK_EQ(buf.size(), 2);
   for (int i=0;i<2;i++){
     Msg m; 
-    CHECK(Q_OK(buf.pop(m)));
+    CHECK(OK==(buf.pop(m)));
     CHECK_EQ(m.type,Msg::Type::NACK_PART);
     switch(m.to){
       case (0):{ s0.process(m,buf, sz);break;}
@@ -1252,7 +1252,7 @@ TEST_CASE("integration-test two nodes")
   CHECK_EQ(s1.get_level(),0); //<--NOT ++ 
   for (int i=0;i<2;i++){
     Msg m; 
-    CHECK(Q_OK(buf.pop(m)));
+    CHECK(OK==(buf.pop(m)));
     CHECK_EQ(m.type,Msg::Type::JOIN_US);
     CHECK_EQ(m.from, m.data.join_us.proposed_leader); //<-- hey can you join *my* partition with me as leader?
     switch(m.to){
@@ -1262,7 +1262,7 @@ TEST_CASE("integration-test two nodes")
   }
   CHECK_EQ(buf.size(), 1); 
   Msg buf_front;
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.type, Msg::Type::SRCH); // leader triggered new round. 
   CHECK_EQ(s0.get_leader_id(),1);
   CHECK_EQ(s0.get_level(),1); //<--now ++ 
@@ -1340,7 +1340,7 @@ TEST_CASE("integration-test opposite two nodes")
   //Only one node responded, and it was the leader
   CHECK_EQ(buf.size(), 1); // SRCH from leader only
   Msg buf_front;
-  CHECK(Q_OK(buf.front(buf_front)));
+  CHECK(OK==(buf.front(buf_front)));
   CHECK_EQ(buf_front.type, Msg::Type::SRCH);
   CHECK_EQ(buf_front.from , 1);
 

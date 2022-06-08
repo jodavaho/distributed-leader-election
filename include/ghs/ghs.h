@@ -45,14 +45,11 @@
 #include "ghs/agent.h"
 #include "ghs/level.h"
 #include "ghs/edge.h"
+#include "le/errno.h"
 #include "seque/static_queue.h"
 #include <array>
 
 using seque::StaticQueue;
-
-#ifndef perror
-#define perror(x) fprintf(stderr,"[error] %d:%s", x, strerror(x))
-#endif
 
 /**
  * Leader Election
@@ -63,45 +60,6 @@ namespace le{
    * The GHS namespace
    */
   namespace ghs{
-
-    /**
-     * The GHS return code enumeration used by GhsState for all function calls
-     * that may fail. 
-     */
-    enum Retcode{
-      OK = 0,                    ///< The operation was successful
-      PROCESS_SELFMSG,           ///< Could not process a message from self
-      PROCESS_NOTME,             ///< Could not process a message not directed towards this agent
-      PROCESS_INVALID_TYPE,      ///< Did not recognize or could not process this type of message
-      PROCESS_REQ_MST,           ///< This type of message (possibly only at this time) should have come over and MST link, but did not
-      SRCH_INAVLID_SENDER,       ///< There is no reason to expect a SRCH message from this sender (usually parent and MST link required)
-      SRCH_STILL_WAITING,        ///< THere is no way to process a SRCH message when we're still executing the last search ( `waiting_count()` > 0 )
-      ERR_QUEUE_MSGS,            ///< Unable to enqueue messages, received seque::Retcode not OK
-      PROCESS_NO_EDGE_FOUND,     ///< Unable to process the message when we don't have an edge to that agent
-      UNEXPECTED_SRCH_RET,       ///< Unexpected srch_ret message at this time (not searching or not waiting for that agent)
-      ACK_NOT_WAITING,           ///< We cannot process an ACK message if we aren't expecting one
-      BAD_MSG,                   ///< Likely malformed message
-      JOIN_BAD_LEADER,           ///< Received join message with a leader not our own, yet we are not on a partition boundary
-      JOIN_BAD_LEVEL,            ///< Received join message with a non-matching level, yet we received join msg with different level
-      JOIN_INIT_BAD_LEADER,      ///< Told to init join to another parition, but leader unrecognized
-      JOIN_INIT_BAD_LEVEL,       ///< Told to init join to another partition, but level unrecognized
-      JOIN_MY_LEADER,            ///< Other partition suggested we join our own partition
-      JOIN_UNEXPECTED_REPLY,     ///< received higher-level join message: Impossible since we should not have replied to their SRCH yet
-      ERR_IMPL,                  ///< Implementation error: Reached branch that should not have been reachable
-      CAST_INVALID_EDGE,         ///< *cast operation failed because of bad edge
-      SET_INVALID_EDGE,          ///< add- or set edge failed because of malformed edge
-      PARENT_UNRECOGNIZED,       ///< Cannot set parent ID to unrecognized node (no edge to them!)
-      PARENT_REQ_MST,            ///< Cannot set parent ID to non-MST node (bad edge type)
-      NO_SUCH_PEER,              ///< Cannot find peer idx -- no edge or unrecognized ID?
-      IMPL_REQ_PEER_MY_ID,       ///< Cannot treat my_id as peer -- bad message?
-      TOO_MANY_AGENTS,           ///< Set- or add edge failed, too many agents in static storage already
-    }; 
-
-    /**
-     * @return a human-readable string for any value of the passed in Retcode
-     * @param r a ghs::Retcode
-     */
-    const char* strerror( const Retcode r );
 
     /** 
      * @brief **The main state machine for the GHS algorithm**
@@ -149,20 +107,20 @@ namespace le{
            *   * From us (root)
            *   * Not weight 0 or otherwise same weight as worst_edge()
            *
-           *  @return Retcode OK if successful
-           *  @return Retcode SET_INVALID_EDGE if edge has root!=my_id
-           *  @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           *  @return le::Errno OK if successful
+           *  @return le::Errno SET_INVALID_EDGE if edge has root!=my_id
+           *  @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            *  @param e an Edge to add
            *  @see Edge
-           *  @see Retcode 
+           *  @see le::Errno 
            */
-          Retcode set_edge(const Edge &e);
+          le::Errno set_edge(const Edge &e);
 
           /**
            * Does nothing more than call set_edge(e)
            * @see set_edge()
            */
-          Retcode add_edge(const Edge &e){ return set_edge(e);}
+          le::Errno add_edge(const Edge &e){ return set_edge(e);}
 
           /**
            * Initializes a default Edge to the given agent.
@@ -177,11 +135,11 @@ namespace le{
            * ```
            * 
            * @param to of type agent_t
-           * @return Retcode similar to set_edge()
+           * @return le::Errno similar to set_edge()
            * @see has_edge()
            * @see set_edge()
            */
-          Retcode add_edge_to(const agent_t to);
+          le::Errno add_edge_to(const agent_t &to);
 
           /**
            * Populates the given edge with any stored edge that connects this
@@ -190,12 +148,12 @@ namespace le{
            *
            * @param to an agent_t to look up
            * @param out and Edge to populate as an out parameter
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
-           * @return Retcode NO_SUCH_PEER if edge cannot be found
-           * @return Retcode OK if successful
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if edge cannot be found
+           * @return le::Errno OK if successful
            * @see has_edge()
            */
-          Retcode get_edge(const agent_t to, Edge& out) const;
+          le::Errno get_edge(const agent_t& to, Edge& out) const;
 
           /**
            * Returns true if any of the following will work:
@@ -213,7 +171,7 @@ namespace le{
            * ```
            *
            * If it returns false, all of them will fail by returning something
-           * other than Retcode OK. 
+           * other than le::Errno OK. 
            *
            */
           bool has_edge( const agent_t to) const;
@@ -243,11 +201,11 @@ namespace le{
            * @param to agent_t identifier
            * @param status the status_t to set
            * @return OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            * @see has_edge()
            */
-          Retcode set_edge_status(const agent_t to, const status_t status);
+          le::Errno set_edge_status(const agent_t &to, const status_t &status);
 
           /**
            *
@@ -256,10 +214,10 @@ namespace le{
            * @param to agent_t identifier
            * @param out the status_t that is populated if the function is successful
            * @return OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode get_edge_status(const agent_t to, status_t & out) const;
+          le::Errno get_edge_status(const agent_t&to, status_t& out) const;
 
           /**
            * Changes the internally stored Edge to have a metric_t matching `m`.
@@ -277,11 +235,11 @@ namespace le{
            * @param to agent_t identifier
            * @param m the metric_t to set
            * @return OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            * @see has_edge()
            */
-          Retcode set_edge_metric(const agent_t to, const metric_t m);
+          le::Errno set_edge_metric(const agent_t &to, const metric_t m);
 
           /**
            *
@@ -290,22 +248,22 @@ namespace le{
            * @param to agent_t identifier
            * @param m the metric_t that is populated if the function is successful
            * @return OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode get_edge_metric(const agent_t to, metric_t & m) const;
+          le::Errno get_edge_metric(const agent_t &to, metric_t& m) const;
 
           /**
            * Sets the leader of this node to the given agent_t
-           * @return Retcode OK. Never fails
+           * @return le::Errno OK. Never fails
            */
-          Retcode set_leader_id(const agent_t leader);
+          le::Errno set_leader_id(const agent_t &leader);
   
           /**
            * Sets the level of this node to the given level_t
-           * @return Retcode OK. Never fails
+           * @return le::Errno OK. Never fails
            */
-          Retcode set_level(const level_t level);
+          le::Errno set_level(const level_t &level);
 
           /** 
            *
@@ -316,10 +274,10 @@ namespace le{
            * @param agent_t who 
            * @param bool waiting for (true) or not waiting for (false)
            * @return OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode set_waiting_for(const agent_t who, const bool waiting_for);
+          le::Errno set_waiting_for(const agent_t &who, const bool waiting_for);
 
           /** 
            *
@@ -328,10 +286,10 @@ namespace le{
            * @param agent_t who 
            * @param bool waiting for response (true) or not waiting for response (false)
            * @return OK if successful and `waiting_for` is a valid return
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id and `waiting_for` may have any value
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id and `waiting_for` may have any value
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id and `waiting_for` may have any value
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id and `waiting_for` may have any value
            */
-          Retcode is_waiting_for(const agent_t who, bool & out_waiting_for) const;
+          le::Errno is_waiting_for(const agent_t& who, bool & out_waiting_for);
 
           /** 
            *
@@ -348,12 +306,12 @@ namespace le{
            * @param agent_t who 
            * @param bool waiting to send (true) or not waiting (false)
            * @return OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            * @see respond_later()
            * @see process_in_part()
            */
-          Retcode set_response_required(const agent_t who, const bool response_required);
+          le::Errno set_response_required(const agent_t &who, const bool response_required);
 
           /** 
            *
@@ -362,10 +320,10 @@ namespace le{
            * @param agent_t who 
            * @param bool waiting to send (true) or not waiting (false)
            * @return OK if successful and `waiting_for` is a valid return
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id and `waiting_for` may have any value
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id and `waiting_for` may have any value
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id and `waiting_for` may have any value
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id and `waiting_for` may have any value
            */
-          Retcode is_response_required(const agent_t who, bool & response_required) const;
+          le::Errno is_response_required(const agent_t &who, bool & response_required);
 
           /**
            * Caches the message that triggered a delay in response, so that we
@@ -374,21 +332,22 @@ namespace le{
            *
            * @param agent_t who sent the message
            * @param InPartPayload the payload of the message that we cannot respond to yet
-           * @return Retcode OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno OK if successful
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode set_response_prompt(const agent_t who, const InPartPayload & m);
+          le::Errno set_response_prompt(const agent_t &who, const InPartPayload& m);
+
           /**
            * Returns the message that triggered a delay in response.
            *
            * @param agent_t who sent the message
            * @param InPartPayload the outgoing payload of the message that we cannot respond to yet
-           * @return Retcode OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno OK if successful
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          Retcode get_response_prompt(const agent_t who, InPartPayload & m) const;
+          le::Errno get_response_prompt(const agent_t &who, InPartPayload &m);
 
           /**
            * Returns whatever was set (or initialized) as the agent_t for this state machine
@@ -411,15 +370,15 @@ namespace le{
            *   * get_edge_status(id,s) returns an MST edge
            *   * agent_t == get_id()
            *
-           * @return Retcode OK if successful
-           * @return Retcode NO_SUCH_PEER if we cannot find the given agent id
-           * @return Retcode IMPL_REQ_PEER_MY_ID if edge has peer==my_id
-           * @return Retcode PARENT_UNRECOGNIZED if `!has_edge(id)`
-           * @return Retcode PARENT_REQ_MST if we do not have an MST link to that `id`
+           * @return le::Errno OK if successful
+           * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
+           * @return le::Errno PARENT_UNRECOGNIZED if `!has_edge(id)`
+           * @return le::Errno PARENT_REQ_MST if we do not have an MST link to that `id`
            * @see set_edge_status()
            * @see Edge
            */
-          Retcode set_parent_id(const agent_t id);
+          le::Errno set_parent_id(const agent_t& id);
 
 
           /**
@@ -496,13 +455,13 @@ namespace le{
            * @param Msg::Data denoting what message data to broadcast
            * @param StaticQueue in which to queue the outgoing messages
            * @param size_t denoting how many messages were enqueued *only* if OK is returned.
-           * @return Retcode OK if everything went well
+           * @return le::Errno OK if everything went well
            * @return CAST_INVALID_EDGE if we found an edge without us as root 
            * @see set_edge_status()
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          Retcode mst_broadcast(const Msg::Type, const Msg::Data & to_send, StaticQueue<Msg, MSG_Q_SIZE> & out_queue, size_t& out_sent) const;
+          le::Errno mst_broadcast(const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
 
 
           /**
@@ -522,13 +481,13 @@ namespace le{
            * @param Msg::Data denoting what message data to broadcast
            * @param StaticQueue in which to queue the outgoing messages
            * @param size_t denoting how many messages were enqueued *only* if OK is returned.
-           * @return Retcode OK if everything went well
+           * @return le::Errno OK if everything went well
            * @return CAST_INVALID_EDGE if we found an edge without us as root 
            * @see set_edge_status()
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          Retcode mst_convergecast(const Msg::Type, const Msg::Data & to_send, StaticQueue<Msg, MSG_Q_SIZE> & out_queue, size_t& out_sent) const;
+          le::Errno mst_convergecast(const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE>&buf, size_t&)const;
 
           /**
            * Filters edges by `msgtype`, and sends outgoing message along those
@@ -539,13 +498,13 @@ namespace le{
            * @param Msg::Data denoting what message data to broadcast
            * @param StaticQueue in which to queue the outgoing messages
            * @param size_t denoting how many messages were enqueued *only* if OK is returned.
-           * @return Retcode OK if everything went well
+           * @return le::Errno OK if everything went well
            * @return CAST_INVALID_EDGE if we found an edge without us as root 
            * @see set_edge_status()
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          Retcode typecast(const status_t status, const Msg::Type, const Msg::Data & to_send, StaticQueue<Msg, MSG_Q_SIZE> & out_buf, size_t& out_sent) const;
+          le::Errno typecast(const status_t status, const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
 
           /**
            * **ONLY IF** this node is the root of an MST (even an MST with only itself
@@ -569,10 +528,10 @@ namespace le{
            *
            * @param StaticQeueue in which to enque outgoing messages
            * @param size_t the number of messages enque'd
-           * @return Retcode OK if successful
-           * @return Retcode SRCH_STILL_WAITING if waiting_count() is not zero
+           * @return le::Errno OK if successful
+           * @return le::Errno SRCH_STILL_WAITING if waiting_count() is not zero
            */
-          Retcode start_round(StaticQueue<Msg, MSG_Q_SIZE> & outgoing_msgs, size_t& out_sent);
+          le::Errno start_round(StaticQueue<Msg, MSG_Q_SIZE> &outgoing_msgs, size_t&);
 
           /**
            * The main class entry point. It will puplate the outgoing_buffer
@@ -586,14 +545,14 @@ namespace le{
            * @param StaticQueue into which to push the response messages
            * @param sz the size_t that will be set to the number of messages added to outgoing_buffer on success, or left unset otherwise
            * @see Msg
-           * @see Retcode
+           * @see le::Errno
            */
-          Retcode process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer, size_t& sz);
+          le::Errno process(const Msg &msg, StaticQueue<Msg, MSG_Q_SIZE> &outgoing_buffer, size_t& sz);
 
           /**
            * Reset the algorithm state, as though this object were just constructed (but preserving my_id)
            */
-          Retcode reset();
+          le::Errno reset();
 
           /**
            * @return true if the state machine believes that a global MST has converged
@@ -615,11 +574,11 @@ namespace le{
            * This is not a hash function! It simply searches as an O(n)
            * operation, the memory for the matching ID.
            *
-           * @return Retcode OK if the index was found
-           * @return Retcode NO_SUCH_PEER if not
-           * @return Retcode IMPL_REQ_PEER_MY_ID if you requsted index to this agent
+           * @return le::Errno OK if the index was found
+           * @return le::Errno NO_SUCH_PEER if not
+           * @return le::Errno IMPL_REQ_PEER_MY_ID if you requsted index to this agent
            */
-          Retcode                 checked_index_of(const agent_t, size_t& out_idx) const;
+          le::Errno                 checked_index_of(const agent_t&, size_t& ) const;
 
 
         private:
@@ -627,52 +586,53 @@ namespace le{
           /**
            * Called by process() with specifically SrchPayload messages
            */
-          Retcode process_srch(        agent_t from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_srch(        agent_t from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
            * Called by process() with specifically SrchRetPayload messages
            */
-          Retcode process_srch_ret(    agent_t from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_srch_ret(    agent_t from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
            * Called by process() with specifically InPartPayload messages
            */
-          Retcode process_in_part(     agent_t from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_in_part(     agent_t from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
            * Called by process() with specifically AckPartPayload messages
            */
-          Retcode process_ack_part(    agent_t from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_ack_part(    agent_t from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
            * Called by process() with specifically NackPartPayload messages
            */
-          Retcode process_nack_part(   agent_t from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_nack_part(   agent_t from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
            * Called by process() with specifically NoopPayload messages
            */
-          Retcode process_noop( StaticQueue<Msg, MSG_Q_SIZE>&,  size_t&);
+          le::Errno process_noop( StaticQueue<Msg, MSG_Q_SIZE>&,  size_t&);
           
           /**
            * This does moderate lifting to determine if the search is complete for the
            * current node, and if so, returns the results to our leader
            */
-          Retcode check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno check_search_status( StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
 
           /* Join / Merge / Absorb stage message */
           //join_us does some heavy lifting to determine how partitions should be restructured and joined
-          Retcode process_join_us(     agent_t from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_join_us(     agent_t from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
 
           /**
            * After our level changes, we may have to do some cleanup, including responding to old messages, so this function completes that check and buffers the new messages if required
            */
-          Retcode check_new_level( StaticQueue<Msg, MSG_Q_SIZE>&, size_t& );
+          le::Errno check_new_level( StaticQueue<Msg, MSG_Q_SIZE>&, size_t& );
 
           /**
            * This will store the message and set a flag that we should respond to this later.
            * @see check_new_level
            */
-          Retcode                  respond_later(const agent_t, const InPartPayload &);
+          le::Errno                  respond_later(const agent_t&, const InPartPayload);
+          
           /**
            * This will respond that a search for an outgoing MWOE was inconclusive. This usually means the round is about to end and the MST construction is completed
            */
-          Retcode                  respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>&, size_t & );
+          le::Errno                  respond_no_mwoe( StaticQueue<Msg, MSG_Q_SIZE>&, size_t & );
 
 
           agent_t                  my_id;

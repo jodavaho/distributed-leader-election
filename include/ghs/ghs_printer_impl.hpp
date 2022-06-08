@@ -43,7 +43,7 @@ using le::ghs::agent_t;
 using le::ghs::UNKNOWN;
 using le::ghs::MST;
 using le::ghs::DELETED;
-using le::ghs::OK;
+using namespace le;
 
 /** 
  * Prints the edges in a neatly formatted way
