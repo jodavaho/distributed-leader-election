@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Various CI files for github
 - Funding links
 
+### Changed
+
+- API BREAKING changes!
+  - Msg objects now constructed normally, rather than with weird to_msg() call.
+  - GhsState now requires a list of edges, and does not support editing edges after construction
+  - Errno now unified under le::Errno and le::strerror()
+
+### Fixed
+
+### Deprecated
+
+- Deprecated all the compression (-DENABLE_COMPRESSION) will be removed in future release
+- Deprecated all the tools/ (-DBUILD_TOOLS) will be removed in future release
+
 ## [1.0.0] - 2022-06-01
 ### Added
 
