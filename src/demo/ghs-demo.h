@@ -301,8 +301,8 @@ namespace demo{
           wegood=false;
           break;
         }
-        out.header.agent_to=out_pld.to;
-        out.header.agent_from=out_pld.from;
+        out.header.agent_to=out_pld.to();
+        out.header.agent_from=out_pld.from();
         out.header.type=demo::PAYLOAD_TYPE_GHS;
         out.header.payload_size=sizeof(out_pld);
         size_t bsz = sizeof(out_pld);
