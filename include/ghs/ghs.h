@@ -97,6 +97,7 @@ namespace le{
            * The edge list may contain any number of edges (up to NUM_AGENTS). This class will ignore (not copy in) any edge that:
            *
            * - Is not rooted on this node (Edge.root != my_id)
+           * - Is directed to this node (Edge.peer == my_id)
            * - Has either peer or root set to NO_AGENT
            * - Has metric_val set to that of worst_edge()
            * - otherwise does not pass is_valid()
