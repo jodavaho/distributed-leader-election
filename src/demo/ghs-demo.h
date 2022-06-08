@@ -229,7 +229,7 @@ namespace demo{
       demo::initialize_ghs(ghs,config,comms);
       size_t sent;
       auto ret = ghs.start_round(ghs_buf, sent);
-      if (ret != le::ghs::OK){
+      if (ret != le::OK){
         printf("[error] could not start ghs! (%d)\n", ret);
         return 1;
       }
@@ -266,9 +266,9 @@ namespace demo{
               ss<<payload_msg;
               printf("[info] received GHS msg: %s\n",ss.str().c_str());
               size_t new_msg_ct=0;
-              le::ghs::Retcode retval = ghs.process(payload_msg,ghs_buf, new_msg_ct);
-              if (retval != le::ghs::OK){
-                printf("[error] could not call ghs.process():%s",le::ghs::strerror(retval));
+              le::Errno retval = ghs.process(payload_msg,ghs_buf, new_msg_ct);
+              if (retval != le::OK){
+                printf("[error] could not call ghs.process():%s",le::strerror(retval));
                 return 1;
               }
               printf("[info] # response msgs: %zu\n", new_msg_ct);
@@ -296,7 +296,7 @@ namespace demo{
         demo::WireMessage out;
         le::ghs::Msg out_pld;
 
-        printf("[info] Have %zu msgs to send\n", ghs_buf.size());
+        printf("[info] Have %u msgs to send\n", ghs_buf.size());
         if (seque::OK!=ghs_buf.pop(out_pld)){
           wegood=false;
           break;
