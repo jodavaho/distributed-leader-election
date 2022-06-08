@@ -41,65 +41,48 @@
 namespace le{
   namespace ghs{
 
-    Msg SrchPayload::to_msg(agent_t to, agent_t from){
-      Msg m;
-      m.to=to;
-      m.from=from;
-      m.type=Msg::Type::SRCH;
-      m.data.srch = *this;
-      return m;
-    }
+    using namespace msg;
 
-    Msg SrchRetPayload::to_msg(agent_t to, agent_t from){
-      Msg m;
-      m.to=to;
-      m.from=from;
-      m.type=Msg::Type::SRCH_RET;
-      m.data.srch_ret = *this;
-      return m;
+    Msg::Msg(): to_(NO_AGENT), from_(NO_AGENT), type_(UNASSIGNED)
+    {}
+    Msg::Msg(agent_t to, agent_t from, NoopPayload p):to_(to),from_(from){
+      type_=NOOP;
+      data_.noop = p;
     }
-
-
-    Msg InPartPayload::to_msg(agent_t to, agent_t from){
-      Msg m;
-      m.to=to;
-      m.from=from;
-      m.type=Msg::Type::IN_PART;
-      m.data.in_part= *this;
-      return m;
+    Msg::Msg(agent_t to, agent_t from, SrchPayload p):to_(to),from_(from){
+      type_=SRCH;
+      data_.srch=p;
     }
-
-    Msg AckPartPayload::to_msg(agent_t to, agent_t from){
-      Msg m;
-      m.to=to;
-      m.from=from;
-      m.type=Msg::Type::ACK_PART;
-      m.data.ack_part= *this;
-      return m;
+    Msg::Msg(agent_t to, agent_t from, SrchRetPayload p):to_(to),from_(from){
+      type_=SRCH_RET;
+      data_.srch_ret=p;
     }
-
-    Msg NackPartPayload::to_msg(agent_t to, agent_t from){
-      Msg m;
-      m.to=to;
-      m.from=from;
-      m.type=Msg::Type::NACK_PART;
-      m.data.nack_part = *this;
-      return m;
+    Msg::Msg(agent_t to, agent_t from, InPartPayload p):to_(to),from_(from){
+      type_=IN_PART;
+      data_.in_part=p;
     }
-
-    Msg JoinUsPayload::to_msg(agent_t to, agent_t from) {
-      Msg m;
-      m.to=to;
-      m.from=from;
-      m.type=Msg::Type::JOIN_US;
-      m.data.join_us = *this;
-      return m;
+    Msg::Msg(agent_t to, agent_t from, AckPartPayload p):to_(to),from_(from){
+      type_=ACK_PART;
+      data_.ack_part=p;
     }
-
-    Msg::Msg(){
+    Msg::Msg(agent_t to, agent_t from, NackPartPayload p):to_(to),from_(from){
+      type_=NACK_PART;
+      data_.nack_part=p;
     }
-    Msg::~Msg(){
+    Msg::Msg(agent_t to, agent_t from, JoinUsPayload p):to_(to),from_(from){
+      type_=JOIN_US;
+      data_.join_us=p;
     }
+    Msg::Msg(agent_t to, agent_t from, const Msg &other):to_(to),from_(from){
+      type_=other.type();
+      data_=other.data();
+    }
+    Msg::Msg(agent_t to, agent_t from, Type t, Data d):to_(to),from_(from){
+      type_=t;
+      data_=d;
+    }
+    Msg::~Msg()
+    { }
 
   }
 }

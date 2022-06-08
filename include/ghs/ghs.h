@@ -195,7 +195,7 @@ namespace le{
            * construction, perhaps because it is temporarily unavailable, you
            * might be tempted to set the status to DELETED. I would recommend
            * you not do this unless waiting_count() and delayd_count() is zero,
-           * and you are confident that you will not soon receive SrchPayload
+           * and you are confident that you will not soon receive msg::SrchPayload
            * messages from other nodes over that link.  
            *
            * @param to agent_t identifier
@@ -331,12 +331,12 @@ namespace le{
            * level. We do that check whenever our level changes. 
            *
            * @param agent_t who sent the message
-           * @param InPartPayload the payload of the message that we cannot respond to yet
+           * @param msg::InPartPayload the payload of the message that we cannot respond to yet
            * @return le::Errno OK if successful
            * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
            * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          le::Errno set_response_prompt(const agent_t &who, const InPartPayload& m);
+          le::Errno set_response_prompt(const agent_t &who, const msg::InPartPayload& m);
 
           /**
            * Returns the message that triggered a delay in response.
@@ -347,7 +347,7 @@ namespace le{
            * @return le::Errno NO_SUCH_PEER if we cannot find the given agent id
            * @return le::Errno IMPL_REQ_PEER_MY_ID if edge has peer==my_id
            */
-          le::Errno get_response_prompt(const agent_t &who, InPartPayload &m);
+          le::Errno get_response_prompt(const agent_t &who, msg::InPartPayload &m);
 
           /**
            * Returns whatever was set (or initialized) as the agent_t for this state machine
@@ -398,7 +398,7 @@ namespace le{
            *
            * @return size_t 
            * @see set_waiting_for()
-           * @see InPartPayload
+           * @see msg::InPartPayload
            * @see Msg
            */
           size_t waiting_count() const;
@@ -409,7 +409,7 @@ namespace le{
            *
            * @return size_t 
            * @see set_response_required()
-           * @see InPartPayload
+           * @see msg::InPartPayload
            * @see Msg
            */
           size_t delayed_count() const;
@@ -420,16 +420,16 @@ namespace le{
            * This is the edge we would add to our partition if you forced us to
            * chose from our minimum spanning tree rooted at ourself. To find
            * the global MWOE, these are passed UP the MST using
-           * mst_convergecast(), with a SrchRetPayload. At each
-           * node, the SrchRetPayload is compared to our mwoe() to determine
+           * mst_convergecast(), with a msg::SrchRetPayload. At each
+           * node, the msg::SrchRetPayload is compared to our mwoe() to determine
            * the actual best edge all the way up to the root of the MST for
-           * this partition. After that, a JoinUsPayload is sent back from the
+           * this partition. After that, a msg::JoinUsPayload is sent back from the
            * root using mst_broadcast() to trigger the process of adding that
            * edge to the MST
            *
            * @return size_t 
            * @see set_response_required()
-           * @see InPartPayload
+           * @see msg::InPartPayload
            * @see Msg
            */
           Edge mwoe() const;
@@ -451,8 +451,8 @@ namespace le{
            * return mst_typecast(MST, m.type, m.data, buf, qsz);
            * ```
            *
-           * @param Msg::Type denoting what type of message to send
-           * @param Msg::Data denoting what message data to broadcast
+           * @param msg::Type denoting what type of message to send
+           * @param msg::Data denoting what message data to broadcast
            * @param StaticQueue in which to queue the outgoing messages
            * @param size_t denoting how many messages were enqueued *only* if OK is returned.
            * @return le::Errno OK if everything went well
@@ -461,7 +461,7 @@ namespace le{
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          le::Errno mst_broadcast(const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
+          le::Errno mst_broadcast(const msg::Type, const msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
 
 
           /**
@@ -470,15 +470,15 @@ namespace le{
            * useful for conducting "reduce" operations on an MST, assuming it
            * is combined with a useful data reduction strategy. 
            *
-           * In GHS, the reduction strategy is to compare SrchRetPayload from
+           * In GHS, the reduction strategy is to compare msg::SrchRetPayload from
            * all incoming MST links, and pass the minimum weight edge up to the
            * parent. 
            *
            * Is actually implemented with a search across all edges for one
            * of type MST and with peer matching our parent id. 
            *
-           * @param Msg::Type denoting what type of message to send
-           * @param Msg::Data denoting what message data to broadcast
+           * @param msg::Type denoting what type of message to send
+           * @param msg::Data denoting what message data to broadcast
            * @param StaticQueue in which to queue the outgoing messages
            * @param size_t denoting how many messages were enqueued *only* if OK is returned.
            * @return le::Errno OK if everything went well
@@ -487,15 +487,15 @@ namespace le{
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          le::Errno mst_convergecast(const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE>&buf, size_t&)const;
+          le::Errno mst_convergecast(const msg::Type, const msg::Data&, StaticQueue<Msg, MSG_Q_SIZE>&buf, size_t&)const;
 
           /**
            * Filters edges by `msgtype`, and sends outgoing message along those
            * that match. 
            *
            * @param status_t the edge status along which to send messages. 
-           * @param Msg::Type denoting what type of message to send
-           * @param Msg::Data denoting what message data to broadcast
+           * @param msg::Type denoting what type of message to send
+           * @param msg::Data denoting what message data to broadcast
            * @param StaticQueue in which to queue the outgoing messages
            * @param size_t denoting how many messages were enqueued *only* if OK is returned.
            * @return le::Errno OK if everything went well
@@ -504,7 +504,7 @@ namespace le{
            * @see mst_typecast()
            * @see mst_convergecast()
            */
-          le::Errno typecast(const status_t status, const Msg::Type, const Msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
+          le::Errno typecast(const status_t status, const msg::Type, const msg::Data&, StaticQueue<Msg, MSG_Q_SIZE> &buf, size_t&) const;
 
           /**
            * **ONLY IF** this node is the root of an MST (even an MST with only itself
@@ -515,7 +515,7 @@ namespace le{
            * In short it:
            *   * checks to make sure we're not already in a search phase, exiting with error if we are.
            *   * resets the MWOE to a default value
-           *   * creates a SrchPayload and calls mst_broadcast()
+           *   * creates a msg::SrchPayload and calls mst_broadcast()
            *
            * Calling start_round() while in the middle of a round will
            * essentially lose all state, such that incomign messages that are
@@ -537,7 +537,7 @@ namespace le{
            * The main class entry point. It will puplate the outgoing_buffer
            * with message that should be sent as a response to the passed-in message.
            * You can execute the entire algorithm simply by calling process()
-           * with a SrchPayload message properly constructed (but use
+           * with a msg::SrchPayload message properly constructed (but use
            * start_round() for this), then feeding in all the response
            * messages. 
            *
@@ -584,27 +584,27 @@ namespace le{
         private:
 
           /**
-           * Called by process() with specifically SrchPayload messages
+           * Called by process() with specifically msg::SrchPayload messages
            */
-          le::Errno process_srch(        agent_t from, const SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_srch(        agent_t from, const msg::SrchPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
-           * Called by process() with specifically SrchRetPayload messages
+           * Called by process() with specifically msg::SrchRetPayload messages
            */
-          le::Errno process_srch_ret(    agent_t from, const SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_srch_ret(    agent_t from, const msg::SrchRetPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
-           * Called by process() with specifically InPartPayload messages
+           * Called by process() with specifically msg::InPartPayload messages
            */
-          le::Errno process_in_part(     agent_t from, const InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_in_part(     agent_t from, const msg::InPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
-           * Called by process() with specifically AckPartPayload messages
+           * Called by process() with specifically msg::AckPartPayload messages
            */
-          le::Errno process_ack_part(    agent_t from, const AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_ack_part(    agent_t from, const msg::AckPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
-           * Called by process() with specifically NackPartPayload messages
+           * Called by process() with specifically msg::NackPartPayload messages
            */
-          le::Errno process_nack_part(   agent_t from, const NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_nack_part(   agent_t from, const msg::NackPartPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
           /**
-           * Called by process() with specifically NoopPayload messages
+           * Called by process() with specifically msg::NoopPayload messages
            */
           le::Errno process_noop( StaticQueue<Msg, MSG_Q_SIZE>&,  size_t&);
           
@@ -616,7 +616,7 @@ namespace le{
 
           /* Join / Merge / Absorb stage message */
           //join_us does some heavy lifting to determine how partitions should be restructured and joined
-          le::Errno process_join_us(     agent_t from, const JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
+          le::Errno process_join_us(     agent_t from, const msg::JoinUsPayload&, StaticQueue<Msg, MSG_Q_SIZE>&, size_t&);
 
           /**
            * After our level changes, we may have to do some cleanup, including responding to old messages, so this function completes that check and buffers the new messages if required
@@ -627,7 +627,7 @@ namespace le{
            * This will store the message and set a flag that we should respond to this later.
            * @see check_new_level
            */
-          le::Errno                  respond_later(const agent_t&, const InPartPayload);
+          le::Errno                  respond_later(const agent_t&, const msg::InPartPayload);
           
           /**
            * This will respond that a search for an outgoing MWOE was inconclusive. This usually means the round is about to end and the MST construction is completed
@@ -646,7 +646,7 @@ namespace le{
           std::array<agent_t,NUM_AGENTS>        peers;
           std::array<bool,NUM_AGENTS>           waiting_for_response;
           std::array<Edge,NUM_AGENTS>           outgoing_edges;
-          std::array<InPartPayload,NUM_AGENTS>  response_prompt;
+          std::array<msg::InPartPayload,NUM_AGENTS>  response_prompt;
           std::array<bool,NUM_AGENTS>           response_required;
 
       };
