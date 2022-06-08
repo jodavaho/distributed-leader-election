@@ -98,7 +98,7 @@ namespace le{
            *
            * - Is not rooted on this node (Edge.root != my_id)
            * - Is directed to this node (Edge.peer == my_id)
-           * - Has either peer or root set to NO_AGENT
+           * - Has either peer or root set to le::ghs::NO_AGENT
            * - Has metric_val set to that of worst_edge()
            * - otherwise does not pass is_valid()
            *
