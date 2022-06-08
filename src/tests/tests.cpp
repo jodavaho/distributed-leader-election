@@ -43,66 +43,57 @@
 #include "ghs/ghs_printer.h"
 #include "ghs/msg_printer.h"
 #include <fstream>
+#include <vector>
 
 using namespace le::ghs;
+
 
 template<std::size_t N, std::size_t BUF_SZ>
 GhsState<N,BUF_SZ> get_state(agent_t my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root = true, bool waiting=false)
 {
-  GhsState<N,BUF_SZ> s(my_id);
   agent_t id=1;
+  std::vector<Edge> edges;
   for (size_t i=0;i<n_unknown;i++, id++){
     metric_t useless_metric = id+i;
-    REQUIRE_EQ(OK, s.set_edge( {id,my_id,UNKNOWN, useless_metric}));
-    //twice --> none added
-    REQUIRE(s.has_edge(1));
-    REQUIRE_EQ(OK, s.set_edge( {id,my_id,UNKNOWN, useless_metric}));
-    Edge e;
-    CHECK_EQ(OK,s.get_edge(1,e));
-    REQUIRE_EQ(e.peer,id);
-    REQUIRE_EQ(e.root,my_id);
-    REQUIRE_EQ(e.status, UNKNOWN);
-    REQUIRE_EQ(e.metric_val, id);
-    REQUIRE_EQ(s.get_n_peers(), i+1);
+    edges.push_back({id,my_id,UNKNOWN, useless_metric});
   }
   for (size_t i=0;i<n_deleted;i++, id++){
     metric_t useless_metric = id+i;
-    REQUIRE_EQ(OK, s.set_edge( {id,my_id,DELETED, useless_metric}));
-    Edge e;
-    REQUIRE_EQ(OK,s.get_edge(id,e));
-    CHECK_EQ(OK,s.get_edge(id,e));
-    REQUIRE_EQ(e.peer,id);
-    REQUIRE_EQ(e.root,my_id);
-    REQUIRE_EQ(e.status, DELETED);
-    REQUIRE_EQ(e.metric_val, id);
+    edges.push_back({id,my_id,DELETED, useless_metric});
   }
   for (size_t i=0;i<n_MST;i++, id++){
     metric_t useless_metric = id+i;
-    REQUIRE_EQ(OK, s.set_edge( {id,my_id,MST, useless_metric}));
-    Edge e;
-    REQUIRE_EQ(OK,s.get_edge(id,e));
-    CHECK_EQ(OK,s.get_edge(id,e));
-    REQUIRE_EQ(e.peer,id);
-    REQUIRE_EQ(e.root,my_id);
-    REQUIRE_EQ(e.status, MST);
-    REQUIRE_EQ(e.metric_val, useless_metric);
+    edges.push_back({id,my_id,MST, useless_metric});
   }
+
+  GhsState<N,BUF_SZ> ghs(0,{},0);
+
   if (!is_root){
     metric_t useless_metric =(metric_t) id;
     //just set the last MST link as the one to the root
-    REQUIRE_EQ(OK,s.set_edge( {id-1,0,MST,useless_metric} ));
-    REQUIRE_EQ(OK,s.set_parent_id(id-1));
-    REQUIRE_EQ(OK,s.set_leader_id( id-1));
-    REQUIRE_EQ(OK,s.set_level( 0 ) );
-
+    edges.push_back( {id-1,0,MST_PARENT,useless_metric} );
   }
-  return s;
+  
+  ghs = GhsState<N,BUF_SZ>(my_id,edges.data(),edges.size());
+
+  REQUIRE_EQ(ghs.get_n_peers(),id-1);
+
+  if (!is_root){
+    REQUIRE_EQ(id-1,ghs.get_parent_id());
+  }
+
+  for (int i=1;i<id;i++){
+    REQUIRE(ghs.has_edge(i));
+  }
+
+  return ghs;
 }
 
 TEST_CASE("unit-test get_state"){
   auto s = get_state<32,32>(0,1,1,1,false,false);
   (void)s;
 }
+
 TEST_CASE("unit-test checked_index_of")
 {
   auto s = get_state<32,32>(0,1,1,1,false,false);
@@ -115,38 +106,11 @@ TEST_CASE("unit-test checked_index_of")
   CHECK_EQ(IMPL_REQ_PEER_MY_ID, s.checked_index_of(0,idx));
 }
 
-TEST_CASE("unit-test set_edge_status"){
-  GhsState<4,32> s(0);
-  CHECK_EQ(OK, s.set_edge( {1,0,DELETED, 1}));
-  CHECK_EQ(OK, s.set_edge( {1,0,UNKNOWN, 1}));
-
-  Edge e;
-  CHECK(!s.has_edge(2));
-  CHECK( s.has_edge(1));
-  CHECK_EQ( s.get_n_peers(), 1);
-  CHECK_EQ(OK,s.get_edge(1,e));
-  CHECK_EQ(OK,s.get_edge(1,e));
-  CHECK_EQ(e.peer, 1);
-  CHECK_EQ(e.root,0);
-  CHECK_EQ(e.status, UNKNOWN);
-  CHECK_EQ(e.metric_val, 1);
-
-  Edge e2={9,10,UNKNOWN, 1000};
-  CHECK_EQ(OK, s.set_edge_status(1,MST));
-  CHECK_EQ(OK, s.get_edge(1,e2));
-  CHECK_EQ(e2.peer, 1);
-  CHECK_EQ(e2.root,0);
-  CHECK_EQ(e2.status, MST);
-  CHECK_EQ(e2.metric_val, 1);
-
-  CHECK(!s.has_edge(2));
-}
-
 TEST_CASE("unit-test typecast")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  GhsState<4,32> s(0,{},0);
   msg::Data d;
   d.srch = SrchPayload{0,0};
   size_t sent;
@@ -157,7 +121,7 @@ TEST_CASE("unit-test typecast")
 
   while (buf.size()>0){ buf.pop(); }
 
-  CHECK_EQ(OK,s.set_edge({1,0,UNKNOWN,1}));
+  s = get_state<4,32>(0,1);
   msg::Data pld;
   pld.srch={0,0};
   CHECK_EQ(OK,s.typecast(UNKNOWN, msg::Type::SRCH, pld, buf, sent));
@@ -173,10 +137,8 @@ TEST_CASE("unit-test typecast")
 
   while (buf.size()>0){ buf.pop(); }
 
-  CHECK_EQ(OK,s.set_edge({2,0,MST,1}));
-  //add edge to node 2 of wrong type
-  CHECK_EQ(OK,s.set_edge({2,0,MST,1}));
-  s.set_parent_id(2);
+  //send to unknown, but have MST link
+  s = get_state<4,32>(0,1,0,1,false);
   //look for unknown
   pld.srch={0,0};
   CHECK_EQ(OK,s.typecast(UNKNOWN, msg::Type::SRCH, pld, buf, sent));
@@ -190,7 +152,8 @@ TEST_CASE("unit-test typecast")
 
   while (buf.size()>0){ buf.pop(); }
 
-  CHECK_EQ(OK,s.set_edge({3,0,MST,1}));
+  //broadcast as root
+  s = get_state<4,32>(0,1,0,1,true);
   pld.srch={0,0};
   CHECK_EQ(s.mst_broadcast(msg::Type::SRCH, pld , buf, sent), OK);
   //Now got one here too
@@ -198,7 +161,7 @@ TEST_CASE("unit-test typecast")
   CHECK_EQ(sent,1);
   CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from(), 0);
-  CHECK_EQ(buf_front.to(), 3);
+  CHECK_EQ(buf_front.to(), 2);
   CHECK_EQ(buf_front.type(), msg::Type::SRCH);
 
 }
@@ -207,7 +170,7 @@ TEST_CASE("unit-test mst_broadcast")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0,0,0,0);
   msg::Data pld;
   pld.srch={0,0};
   size_t sent=0;
@@ -218,22 +181,23 @@ TEST_CASE("unit-test mst_broadcast")
 
   while (buf.size()>0){ buf.pop(); }
 
-  s.set_edge({1,0,UNKNOWN,1});
+  s = get_state<4,32>(0,1,0,0);
   pld.srch={0,0};
   CHECK_EQ(OK, s.mst_broadcast(msg::Type::SRCH, pld, buf, sent));
   //nobody to send to, still
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
-  s.set_edge({2,0,MST,1});
-  s.set_parent_id(2);
+  //we're a leaf node
+  s = get_state<4,32>(0,1,0,1,false);
   pld.srch={0,0};
   CHECK_EQ(OK, s.mst_broadcast(msg::Type::SRCH, pld, buf, sent));
   //nobody to send to, still, right!?
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
-  s.set_edge({3,0,MST,1});
+  //we're a link b/w leaf and root
+  s = get_state<4,32>(0,1,0,2,false);
   pld.srch={0,0};
   CHECK_EQ(OK,s.mst_broadcast(msg::Type::SRCH, pld, buf, sent));
   //Now got one
@@ -243,7 +207,7 @@ TEST_CASE("unit-test mst_broadcast")
   Msg buf_front;
   CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from(), 0);
-  CHECK_EQ(buf_front.to(), 3);
+  CHECK_EQ(buf_front.to(), 2);
   CHECK_EQ(buf_front.type(), msg::Type::SRCH);
 
 }
@@ -252,7 +216,7 @@ TEST_CASE("unit-test mst_convergecast")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  GhsState<4,32> s(0,{},0);
   size_t sent;
   msg::Data pld;
   pld.srch={0,0};
@@ -263,7 +227,7 @@ TEST_CASE("unit-test mst_convergecast")
 
   while (buf.size()>0){ buf.pop(); }
 
-  s.set_edge({1,0,UNKNOWN,1});
+  s = get_state<4,32>(0,1,0,0,true);
   pld.srch={0,0};
   CHECK_EQ(OK,s.mst_convergecast(msg::Type::SRCH, pld, buf, sent));
   //nobody to send to, still
@@ -272,17 +236,17 @@ TEST_CASE("unit-test mst_convergecast")
 
   while (buf.size()>0){ buf.pop(); }
 
-  s.set_edge({2,0,MST,1});
+  //Still can't send to children MST
+  s = get_state<4,32>(0,1,0,1,true);
   pld.srch={0,0};
   CHECK_EQ(OK,s.mst_convergecast(msg::Type::SRCH, pld,  buf, sent));
-  //Still can't send to children MST
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(sent,0);
 
   while (buf.size()>0){ buf.pop(); }
 
-  s.set_edge({3,0,MST,1});
-  s.set_parent_id(3);
+  //Still can't send to children MST
+  s = get_state<4,32>(0,1,0,1,false);
   pld.srch={0,0};
   CHECK_EQ(OK, s.mst_convergecast(msg::Type::SRCH, pld, buf, sent));
   //Only to parents!
@@ -291,11 +255,12 @@ TEST_CASE("unit-test mst_convergecast")
   Msg buf_front;
   CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.from(), 0);
-  CHECK_EQ(buf_front.to(), 3);
+  CHECK_EQ(buf_front.to(), 2);
   CHECK_EQ(buf_front.type(), msg::Type::SRCH);
 
 }
 
+/*
 TEST_CASE("unit-test start_round() on leader, unknown peers")
 {
   StaticQueue<Msg,32> buf;
@@ -1417,3 +1382,4 @@ TEST_CASE("ghs_metric")
   m=1;
   CHECK(is_valid(m));
 }
+*/

@@ -42,6 +42,7 @@ using le::ghs::Edge;
 using le::ghs::agent_t;
 using le::ghs::UNKNOWN;
 using le::ghs::MST;
+using le::ghs::MST_PARENT;
 using le::ghs::DELETED;
 using namespace le;
 
@@ -66,15 +67,9 @@ std::string  dump_edges(const le::ghs::GhsState<A,B> &s) {
       ss<<e.root<<"-->"<<e.peer<<" ";
       switch (e.status){
         case UNKNOWN: {ss<<"UNK";break;}
-        case MST: {ss<<"MST";break;}
+        case MST: {ss<<"MST+C";break;}
+        case MST_PARENT: {ss<<"MST+P";break;}
         case DELETED: {ss<<"DEL";break;}
-      }
-      if (e.peer == s.get_parent_id()){
-        ss<<"+P";
-      } else if (e.status==MST){
-        ss<<"+C";
-      } else {
-        ss<<" _";
       }
       if (e.peer == mwoe.peer){
         ss<<"m";
