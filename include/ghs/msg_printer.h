@@ -44,11 +44,11 @@
 #include <string>
 #include <iostream>
 
-std::string to_string(const le::ghs::Msg::Type &type);
+std::string to_string(const le::ghs::msg::Type &type);
 
-std::ostream& operator << ( std::ostream& outs, const le::ghs::Msg::Type & type );
+std::ostream& operator << ( std::ostream& outs, const le::ghs::msg::Type & type );
 
-std::ostream& operator << ( std::ostream& outs, const le::ghs::Msg::Data & d);
+std::ostream& operator << ( std::ostream& outs, const le::ghs::msg::Data & d);
 
 std::ostream& operator << ( std::ostream& outs, const le::ghs::Msg & m);
 

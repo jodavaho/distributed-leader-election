@@ -53,70 +53,76 @@ namespace le{
    */
   namespace ghs{
 
-    /** 
-     * @brief An aggregate type containing all the data to exchange with to/from information
-     *
-     * The Msg struct contains all the data which is passed between GhsState
-     * objects operating on different systems to coordinate the construction
-     * of an MST.
-     *
-     * The usual way to construct a Msg is to construct the payload from a struct of type Msg::Data, then to call to_msg() on that payload.
-     *
-     */
-    struct Msg;
+    namespace msg{
+      /// Stores what type of Msg this is
+      enum Type
+      {
+        UNASSIGNED=0,///< Error checking for unassigned messages
+        NOOP,///< data is a NoopPayload
+        SRCH,///< data is a SrchPayload
+        SRCH_RET,///< data is a SrchRetPayload
+        IN_PART,///< data is a InPartPayload
+        ACK_PART,///< data is a AckPartPayload
+        NACK_PART,///< data is a NackPartPayload
+        JOIN_US,///< data is a JoinUsPayload
+      };
 
-    /// No further action necessary (i.e., we have completed the MST construction)
-    struct NoopPayload{ 
-      Msg to_msg(agent_t to, agent_t from);
-    }; 
+      /// No further action necessary (i.e., we have completed the MST construction)
+      struct NoopPayload{ 
+      }; 
 
-    /// Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing edge (one that spans two partitions).
-    struct SrchPayload{
-      agent_t your_leader;
-      level_t   your_level;
-      Msg to_msg(agent_t to, agent_t from);
-    };
+      /// Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing edge (one that spans two partitions).
+      struct SrchPayload{
+        agent_t your_leader;
+        level_t   your_level;
+      };
 
-    /** 
-     * @brief Returns an edge that represents the minimum weight outgoing edge
-     *
-     * Returns an edge that represents the minimum weight outgoing edge (across paritions) from the MST subtree rooted at the sender.
-     */
-    struct SrchRetPayload{
-      agent_t to;
-      agent_t from;
-      metric_t metric;
-      Msg to_msg(agent_t to, agent_t from);
-    };
+      /** 
+       * @brief Returns an edge that represents the minimum weight outgoing edge
+       *
+       * Returns an edge that represents the minimum weight outgoing edge (across paritions) from the MST subtree rooted at the sender.
+       */
+      struct SrchRetPayload{
+        agent_t to;
+        agent_t from;
+        metric_t metric;
+      };
 
-    /// Asks "Are you in my partition"
-    struct InPartPayload{
-      agent_t leader;
-      level_t   level; 
-      Msg to_msg(agent_t to, agent_t from);
-    };
+      /// Asks "Are you in my partition"
+      struct InPartPayload{
+        agent_t leader;
+        level_t   level; 
+      };
 
-    /// States "I am in your partition"
-    struct AckPartPayload{ 
-      Msg to_msg(agent_t to, agent_t from);
-    };
+      /// States "I am in your partition"
+      struct AckPartPayload{ 
+      };
 
-    /// States "I am not in your partition"
-    struct NackPartPayload{ 
-      Msg to_msg(agent_t to, agent_t from);
-    };
+      /// States "I am not in your partition"
+      struct NackPartPayload{ 
+      };
 
-    /** 
-     * @brief Msgs to merge /absorb two partitions across a given edge
-     *
-     */
-    struct JoinUsPayload{ 
-      agent_t join_peer;
-      agent_t join_root;
-      agent_t proposed_leader;
-      level_t proposed_level;
-      Msg to_msg(agent_t to, agent_t from);
-    };
+      /** 
+       * @brief Msgs to merge /absorb two partitions across a given edge
+       *
+       */
+      struct JoinUsPayload{ 
+        agent_t join_peer;
+        agent_t join_root;
+        agent_t proposed_leader;
+        level_t proposed_level;
+      };
+
+      union Data{
+        NoopPayload noop;
+        SrchPayload srch;
+        SrchRetPayload srch_ret;
+        InPartPayload in_part;
+        AckPartPayload ack_part;
+        NackPartPayload nack_part;
+        JoinUsPayload join_us;
+      };
+    }
 
 
     /** 
@@ -134,53 +140,59 @@ namespace le{
      * specifically made this design design to defend myself from myself after
      * messing up the data fields far too often. 
      */
-    struct Msg
+    class Msg
     {
 
-      /** 
-       * @brief A default constructor
-       *
-       * The usual way to construct a Msg is to construct the payload from a struct of type Msg::Data, then to call to_msg() on that payload.
-       *
-       */
-      Msg();
-      ~Msg();
+      public:
 
-      /// who to send to
-      agent_t to; 
+        Msg();
 
-      /// who it is from
-      agent_t from;
+        /** 
+         * @brief A type-specific constructor for each payload type
+         */
+        Msg(agent_t to, agent_t from, msg::NoopPayload p);
+        Msg(agent_t to, agent_t from, msg::SrchPayload p);
+        Msg(agent_t to, agent_t from, msg::SrchRetPayload p);
+        Msg(agent_t to, agent_t from, msg::InPartPayload p);
+        Msg(agent_t to, agent_t from, msg::AckPartPayload p);
+        Msg(agent_t to, agent_t from, msg::NackPartPayload p);
+        Msg(agent_t to, agent_t from, msg::JoinUsPayload p);
 
-      /// Stores what type of Msg this is
-      enum Type
-      {
-        NOOP=0,///< data is a NoopPayload
-        SRCH,///< data is a SrchPayload
-        SRCH_RET,///< data is a SrchRetPayload
-        IN_PART,///< data is a InPartPayload
-        ACK_PART,///< data is a AckPartPayload
-        NACK_PART,///< data is a NackPartPayload
-        JOIN_US///< data is a JoinUsPayload
-      } type;
+        /**
+         * A 'redirect' constructor that perserves type and payload, but allows new to/from fields
+         */
+        Msg(agent_t to, agent_t from, const Msg &other);
 
-      /// A union of all possible payloads
-      union Data{
-        NoopPayload noop;
-        SrchPayload srch;
-        SrchRetPayload srch_ret;
-        InPartPayload in_part;
-        AckPartPayload ack_part;
-        NackPartPayload nack_part;
-        JoinUsPayload join_us;
-      } data;
+        /**
+         * A generic constructor for generic data, and known type
+         */
+        Msg(agent_t to, agent_t from, msg::Type t, msg::Data d);
+
+        ~Msg();
+        
+        agent_t to() const {return to_;}
+        agent_t from() const {return from_;}
+        msg::Type type() const {return type_;}
+        msg::Data data() const {return data_;}
+
+      private:
+        /// who to send to
+        agent_t to_; 
+
+        /// who it is from
+        agent_t from_;
+
+        msg::Data data_;
+
+        msg::Type type_;
+
     };
 
     /**
      * For an external class that is interested in allocating static storage
      * to queue a set of Msg s, this is the maximum size of the Msg class. 
      */
-    const long long int MAX_MSG_SZ= sizeof(Msg);
+    const unsigned int MAX_MSG_SZ= sizeof(Msg);
 
   }
 }

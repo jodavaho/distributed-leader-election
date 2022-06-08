@@ -1,5 +1,7 @@
 [![Build/Test](https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/jodavaho/distributed-leader-election/actions/workflows/build.yml)
 
+**This documentation best read in doxygen**.  You can view the doxygen docs online [here](https://jodavaho.github.io/distributed-leader-election/html/index.html).
+
 # What is this
 
 This repository provides an implementation of the GHS ([for  Gallager, Humblet and Spira](https://en.wikipedia.org/wiki/Distributed_minimum_spanning_tree#GHS_algorithm)) algorithm, which allows creation of a [distributed minimum spanning tree](https://en.wikipedia.org/wiki/Distributed_minimum_spanning_tree) on a [message passing system](https://en.wikipedia.org/wiki/Message_passing)
@@ -10,7 +12,6 @@ It also provides an exectuable that can be run on a set of linux machines so tha
 
 # What does the repo provide
 
-**This documentation best read in doxygen**.  On your system, that will be in [docs/html/index.html](docs/html/index.html) after you execute `make doxygen`.
 
 This rep provides a few things, in C/C++:
 

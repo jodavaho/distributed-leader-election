@@ -7,12 +7,14 @@ add_library(
   agent.cpp
   edge.cpp
   msg.cpp
+  errno.cpp
   )
 
 add_library(
   ghs_seque 
   SHARED 
   seque.cpp
+  errno.cpp
   )
 
 target_link_libraries(ghs ghs_seque)
