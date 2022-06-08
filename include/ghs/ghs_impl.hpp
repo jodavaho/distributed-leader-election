@@ -922,6 +922,10 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
     return SET_INVALID_EDGE;
   }
 
+  //no self loops
+  if (e.peer == my_id){
+    return SET_INVALID_EDGE;
+  }
 
   agent_t who = e.peer;
   size_t idx;
