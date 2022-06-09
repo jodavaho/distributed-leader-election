@@ -389,22 +389,16 @@ TEST_CASE("unit-test process_srch() checks recipient")
     
 }
 
-/*
 
 TEST_CASE("unit-test process_srch, unknown peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
-  REQUIRE_EQ(buf.size(),0);
-  CHECK_EQ(OK, s.set_edge({1, 0,UNKNOWN,1}));
-  CHECK_EQ(OK,   s.set_edge({2, 0,UNKNOWN,1}));
+  auto s = get_state<4,32>(0,2);
   size_t sz=111;
   CHECK_EQ(OK,   s.start_round(buf, sz));
   CHECK_EQ(buf.size(),2);
   CHECK_EQ(buf.size(),sz);
   while(buf.size()>0){ 
-    //auto m = buf.front();
-
     Msg m;
     CHECK( OK==( buf.front(m) ) );
     CHECK_EQ(m.type(), msg::Type::IN_PART);
@@ -415,24 +409,17 @@ TEST_CASE("unit-test process_srch, unknown peers")
 TEST_CASE("unit-test process_srch,  mst peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0,0,0,3,false);
   REQUIRE_EQ(buf.size(),0);
-  CHECK_EQ(OK, s.set_edge({1, 0,MST,1}));
-  CHECK_EQ(OK, s.set_edge({2, 0,MST,1}));
-  CHECK_EQ(OK, s.set_edge({3, 0,MST,1}));
-  CHECK_EQ(OK, s.set_parent_id(3));
   Msg m = Msg(0,3,SrchPayload{3,0});
   size_t sz=100;
   CHECK_EQ(OK, s.process(m,buf, sz));
 
   CHECK_EQ(buf.size(),2);
   CHECK_EQ(buf.size(),sz);
-  //auto m = buf.front();
   CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type(), msg::Type::SRCH);
   buf.pop();
-  //m = buf.front();
-  //Msg m;
   CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type(), msg::Type::SRCH);
   buf.pop();
@@ -442,30 +429,24 @@ TEST_CASE("unit-test process_srch,  mst peers")
 TEST_CASE("unit-test process_srch, discarded peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0,0,2,1,false);
   REQUIRE_EQ(buf.size(),0);
-  s.set_edge({1, 0,DELETED,1});
-  s.set_edge({2, 0,DELETED,1});
-  s.set_edge({3, 0,MST,1});
-  s.set_parent_id(3);
   Msg m = Msg(0,3,SrchPayload{3,0} );
   size_t sz;
   s.process(m,buf, sz);
   //they should report no MWOE to parent. 
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(buf.size(),sz);
+  CHECK_EQ(OK, buf.pop(m));
+  CHECK_EQ(SRCH_RET, m.type());
+  CHECK_EQ(WORST_METRIC, m.data().srch_ret.metric);
 }
 
 TEST_CASE("unit-test process_srch, mixed peers")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0,1,1,2,false);
   REQUIRE_EQ(buf.size(),0);
-  s.set_edge({1, 0,DELETED,1});
-  s.set_edge({2, 0,MST,1});
-  s.set_edge({3, 0,UNKNOWN,1});
-  s.set_edge({4, 0,MST,1});
-  s.set_parent_id(4);
   Msg m = Msg(0,4,SrchPayload{4,0} );
   size_t sz;
   s.process(m,buf, sz);
@@ -473,18 +454,15 @@ TEST_CASE("unit-test process_srch, mixed peers")
   CHECK_EQ(buf.size(),2);
   CHECK_EQ(buf.size(),sz);
 
-  //auto m = buf.front();
-  CHECK( OK==( buf.front(m) ) );
-  buf.pop();
-  CHECK_EQ(2, m.to());
-  CHECK_EQ(0,m.from());
-  CHECK_EQ(m.type(),msg::Type::SRCH);
-
-  //m = buf.front();
-  //Msg m;
   CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(3, m.to());
+  CHECK_EQ(0,m.from());
+  CHECK_EQ(m.type(),msg::Type::SRCH);
+
+  CHECK( OK==( buf.front(m) ) );
+  buf.pop();
+  CHECK_EQ(1, m.to());
   CHECK_EQ(0, m.from());
   CHECK_EQ(m.type(),msg::Type::IN_PART);
 
@@ -494,33 +472,29 @@ TEST_CASE("unit-test process_srch, mixed peers")
 TEST_CASE("unit-test process_srch, mixed peers, with parent link")
 {
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
-  s.set_leader_id(3);
-  s.set_level(0);
-  REQUIRE_EQ(buf.size(),0);
-  s.set_edge({1, 0,DELETED,1});
-  s.set_edge({2, 0,MST,1});
-  s.set_edge({3, 0,MST,1});
-  s.set_parent_id(3);
+  auto s = get_state<4,32>(0,1,0,2,false);
   Msg m = Msg(0,3,SrchPayload{3,0} );
   size_t sz;
   CHECK_EQ(OK,s.process(m,buf, sz));
-  CHECK_EQ(buf.size(),1);
+  CHECK_EQ(buf.size(),2);
   CHECK_EQ(buf.size(),sz);
-
-  //auto m = buf.front();
-  //
   CHECK( OK==( buf.front(m) ) );
   buf.pop();
   CHECK_EQ(2, m.to());
   CHECK_EQ(0,m.from());
   CHECK_EQ(m.type(),msg::Type::SRCH);
+  CHECK( OK==( buf.front(m) ) );
+  buf.pop();
+  CHECK_EQ(1, m.to());
+  CHECK_EQ(0,m.from());
+  CHECK_EQ(m.type(),msg::Type::IN_PART);
 
   CHECK_EQ(buf.size(),0);
   //now from non-parent, and btw we're busy
-  m = Msg(0,2,SrchPayload{0,0} );
+  m = Msg(0,3,SrchPayload{0,0} );
   CHECK_EQ(SRCH_STILL_WAITING, s.process(m,buf,sz));
 }
+/*
 
 TEST_CASE("Guard against Edge refactoring"){
   Edge y = Edge{4,1,UNKNOWN, 1000};
@@ -548,7 +522,7 @@ TEST_CASE("unit-test process throws with no edge")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   size_t sz;
   Msg m = Msg(0,1, SrchRetPayload{});
   CHECK_EQ(PROCESS_NO_EDGE_FOUND, s.process(m,buf,sz));
@@ -558,7 +532,7 @@ TEST_CASE("unit-test process_srch_ret")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
 
@@ -603,7 +577,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
   s.set_leader_id(0);
@@ -653,7 +627,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 {
 
   StaticQueue<Msg,32> buf;
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   //set up one peer, node 1
   s.set_edge({1, 0,MST,1});
   s.set_edge({2, 0,MST,1});
@@ -698,7 +672,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 }
 
 TEST_CASE("unit-test process_ack_part, happy-path"){
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
   Edge e;
 
@@ -724,7 +698,7 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
 }
 
 TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
 
   //create edge to 1
@@ -748,7 +722,7 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
 }
 
 TEST_CASE("unit-test process_ack_part, no edge"){
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
   Edge e;
 
@@ -769,7 +743,7 @@ TEST_CASE("unit-test process_ack_part, no edge"){
 }
 
 TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
   Edge e;
 
@@ -795,7 +769,7 @@ TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
 }
 
 TEST_CASE("unit-test in_part, happy-path"){
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
   //set partition to led by agent 0 with level 2
   s.set_leader_id(0);
@@ -835,7 +809,7 @@ TEST_CASE("unit-test in_part, happy-path"){
 
 TEST_CASE("unit-test process_nack_part, happy-path"){
 
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
   Msg m;
 
@@ -888,7 +862,7 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
 
 TEST_CASE("unit-test process_nack_part, not-leader"){
 
-  GhsState<4,32> s(0);
+  auto s = get_state<4,32>(0;
   StaticQueue<Msg,32> buf;
   Msg m;
 
