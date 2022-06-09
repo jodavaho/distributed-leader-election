@@ -368,17 +368,12 @@ TEST_CASE("unit-test start_round() on non-leader")
 
 }
 
-/*
-TEST_CASE("unit-test process_srch() checks recipient"){
+TEST_CASE("unit-test process_srch() checks recipient")
+{
 
   StaticQueue<Msg,32> buf;
   //set id to 0, and 4 total nodes
-  GhsState<4,32> s(0);
-  //set leader to 1, level to 0 
-  s.set_leader_id(1);
-  s.set_level(0);
-  s.set_edge({1,0,MST,1});
-  //from rando
+  GhsState<4,32> s = get_state<4,32>(0,1,0,0,false);
   Msg m(0,2,SrchPayload{1,0});
   //for documentation:
   CHECK_EQ(m.from(), 2);
@@ -386,13 +381,15 @@ TEST_CASE("unit-test process_srch() checks recipient"){
   CHECK_EQ(PROCESS_NO_EDGE_FOUND, s.process( m, buf, sz));
   CHECK_EQ(sz,111);//didn't touch it!
   //from leader is ok
-  Msg from_one = Msg(m.to(),1,m.data().srch);
+  Msg from_one = Msg(m.to(),1,m);
   CHECK_EQ(OK, s.process( from_one , buf, sz));
   //from self not allowed
   Msg from_self= Msg(m.to(),0,m.data().srch);
   CHECK_EQ(PROCESS_SELFMSG, s.process( from_self, buf, sz));
     
 }
+
+/*
 
 TEST_CASE("unit-test process_srch, unknown peers")
 {
