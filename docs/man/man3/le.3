@@ -1,4 +1,4 @@
-.TH "le" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "le" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -13,11 +13,163 @@ le
 .RI " \fBghs\fP"
 .br
 .in -1c
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "class \fBLocalGraph\fP"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBErrno\fP { \fBOK\fP = 0, \fBPROCESS_SELFMSG\fP, \fBPROCESS_NOTME\fP, \fBPROCESS_INVALID_TYPE\fP, \fBPROCESS_REQ_MST\fP, \fBSRCH_INAVLID_SENDER\fP, \fBSRCH_STILL_WAITING\fP, \fBERR_QUEUE_MSGS\fP, \fBPROCESS_NO_EDGE_FOUND\fP, \fBUNEXPECTED_SRCH_RET\fP, \fBACK_NOT_WAITING\fP, \fBBAD_MSG\fP, \fBJOIN_BAD_LEADER\fP, \fBJOIN_BAD_LEVEL\fP, \fBJOIN_INIT_BAD_LEADER\fP, \fBJOIN_INIT_BAD_LEVEL\fP, \fBJOIN_MY_LEADER\fP, \fBJOIN_UNEXPECTED_REPLY\fP, \fBERR_IMPL\fP, \fBCAST_INVALID_EDGE\fP, \fBSET_INVALID_EDGE\fP, \fBSET_INVALID_EDGE_METRIC\fP, \fBSET_INVALID_EDGE_NOT_ROOT\fP, \fBSET_INVALID_EDGE_NO_AGENT\fP, \fBSET_INVALID_EDGE_SELF_LOOP\fP, \fBPARENT_UNRECOGNIZED\fP, \fBPARENT_REQ_MST\fP, \fBNO_SUCH_PEER\fP, \fBIMPL_REQ_PEER_MY_ID\fP, \fBTOO_MANY_AGENTS\fP, \fBPARTIAL_RESULT\fP, \fBNO_AGENTS\fP, \fBERR_QUEUE_FULL\fP, \fBERR_QUEUE_EMPTY\fP, \fBERR_BAD_IDX\fP, \fBERR_NO_SUCH_ELEMENT\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "const char * \fBstrerror\fP (const \fBErrno\fP e)"
+.br
+.in -1c
 .SH "Detailed Description"
 .PP 
 LE
 .PP
 Leader Election 
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBle::Errno\fP"
+The Errno enumeration used by all classes for all function calls that may fail\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIOK \fP\fP
+The operation was successful\&. 
+.TP
+\fB\fIPROCESS_SELFMSG \fP\fP
+Could not process a message from self\&. 
+.TP
+\fB\fIPROCESS_NOTME \fP\fP
+Could not process a message not directed towards this agent\&. 
+.TP
+\fB\fIPROCESS_INVALID_TYPE \fP\fP
+Did not recognize or could not process this type of message\&. 
+.TP
+\fB\fIPROCESS_REQ_MST \fP\fP
+This type of message (possibly only at this time) should have come over and MST link, but did not\&. 
+.TP
+\fB\fISRCH_INAVLID_SENDER \fP\fP
+There is no reason to expect a SRCH message from this sender (usually parent and MST link required) 
+.TP
+\fB\fISRCH_STILL_WAITING \fP\fP
+THere is no way to process a SRCH message when we're still executing the last search ( \fCwaiting_count()\fP > 0 ) 
+.TP
+\fB\fIERR_QUEUE_MSGS \fP\fP
+Unable to enqueue messages, received seque::Retcode not OK\&. 
+.TP
+\fB\fIPROCESS_NO_EDGE_FOUND \fP\fP
+Unable to process the message when we don't have an edge to that agent\&. 
+.TP
+\fB\fIUNEXPECTED_SRCH_RET \fP\fP
+Unexpected srch_ret message at this time (not searching or not waiting for that agent) 
+.TP
+\fB\fIACK_NOT_WAITING \fP\fP
+We cannot process an ACK message if we aren't expecting one\&. 
+.TP
+\fB\fIBAD_MSG \fP\fP
+Likely malformed message\&. 
+.TP
+\fB\fIJOIN_BAD_LEADER \fP\fP
+Received join message with a leader not our own, yet we are not on a partition boundary\&. 
+.TP
+\fB\fIJOIN_BAD_LEVEL \fP\fP
+Received join message with a non-matching level, yet we received join msg with different level\&. 
+.TP
+\fB\fIJOIN_INIT_BAD_LEADER \fP\fP
+Told to init join to another parition, but leader unrecognized\&. 
+.TP
+\fB\fIJOIN_INIT_BAD_LEVEL \fP\fP
+Told to init join to another partition, but level unrecognized\&. 
+.TP
+\fB\fIJOIN_MY_LEADER \fP\fP
+Other partition suggested we join our own partition\&. 
+.TP
+\fB\fIJOIN_UNEXPECTED_REPLY \fP\fP
+received higher-level join message: Impossible since we should not have replied to their SRCH yet 
+.TP
+\fB\fIERR_IMPL \fP\fP
+Implementation error: Reached branch that should not have been reachable\&. 
+.TP
+\fB\fICAST_INVALID_EDGE \fP\fP
+*cast operation failed because of bad edge 
+.TP
+\fB\fISET_INVALID_EDGE \fP\fP
+add- or set edge failed because of malformed edge 
+.TP
+\fB\fISET_INVALID_EDGE_METRIC \fP\fP
+add- or set edge failed because metric_val==WORST_METRIC 
+.TP
+\fB\fISET_INVALID_EDGE_NOT_ROOT \fP\fP
+add- or set edge failed because edge was not rooted on my_id 
+.TP
+\fB\fISET_INVALID_EDGE_NO_AGENT \fP\fP
+add- or set edge failed because of NO_AGENT as peer/root 
+.TP
+\fB\fISET_INVALID_EDGE_SELF_LOOP \fP\fP
+add- or set edge failed because Edge\&.peer == my_id 
+.TP
+\fB\fIPARENT_UNRECOGNIZED \fP\fP
+Cannot set parent ID to unrecognized node (no edge to them!) 
+.TP
+\fB\fIPARENT_REQ_MST \fP\fP
+Cannot set parent ID to non-MST node (bad edge type) 
+.TP
+\fB\fINO_SUCH_PEER \fP\fP
+Cannot find peer idx -- no edge or unrecognized ID? 
+.TP
+\fB\fIIMPL_REQ_PEER_MY_ID \fP\fP
+Cannot treat my_id as peer -- bad message? 
+.TP
+\fB\fITOO_MANY_AGENTS \fP\fP
+Set- or add edge failed, too many agents in static storage already\&. 
+.TP
+\fB\fIPARTIAL_RESULT \fP\fP
+When returning the result, this means we have not converged yet\&. 
+.TP
+\fB\fINO_AGENTS \fP\fP
+Operation failed because we have no outgoing edges\&. 
+.TP
+\fB\fIERR_QUEUE_FULL \fP\fP
+Operation failed, the queue is full\&. 
+.TP
+\fB\fIERR_QUEUE_EMPTY \fP\fP
+Operation failed, the queue is empty\&. 
+.TP
+\fB\fIERR_BAD_IDX \fP\fP
+Operation failed and is not possible to succeed: that idx is beyond the static size of the queue\&. 
+.TP
+\fB\fIERR_NO_SUCH_ELEMENT \fP\fP
+Operation failed, there are less elements than the given index in the queue\&. 
+.SH "Function Documentation"
+.PP 
+.SS "const char * le::strerror (const \fBErrno\fP e)"
+
+.PP
+\fBReturns\fP
+.RS 4
+a human-readable string for any value of the passed in Retcode 
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIr\fP a le::Errnoo 
+.RE
+.PP
+
 .SH "Author"
 .PP 
 Generated automatically by Doxygen for GHS from the source code\&.

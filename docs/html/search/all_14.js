@@ -1,6 +1,9 @@
 var searchData=
 [
-  ['unexpected_5fsrch_5fret_221',['UNEXPECTED_SRCH_RET',['../namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaa318120860531525391f1442760c7703',1,'le::ghs']]],
-  ['unique_5flink_5fmetric_5fto_222',['unique_link_metric_to',['../classdemo_1_1Comms.html#a1b2497ecccf0316c8e8c3a643037a8cc',1,'demo::Comms']]],
-  ['unknown_223',['UNKNOWN',['../namespacele_1_1ghs.html#a84d3095aaf4e4704c377dd7fe2195632a84d0576afb701bea755a6cd2752555f2',1,'le::ghs']]]
+  ['wait_5fs_219',['wait_s',['../structdemo_1_1Config.html#ae46a80fa61b7d31743cd11a8b78b5809',1,'demo::Config']]],
+  ['waiting_5fcount_220',['waiting_count',['../classle_1_1ghs_1_1GhsState.html#a30a22ed8e6d3e432da497631a99bd414',1,'le::ghs::GhsState']]],
+  ['wiremessage_221',['WireMessage',['../structdemo_1_1WireMessage.html',1,'demo']]],
+  ['with_5fconfig_222',['with_config',['../classdemo_1_1Comms.html#a136a98dcdbe684313dbd6c141ffea02a',1,'demo::Comms']]],
+  ['worst_5fedge_223',['worst_edge',['../namespacele_1_1ghs.html#acc0f23a676c88aeca736df05ed044fc6',1,'le::ghs']]],
+  ['worst_5fmetric_224',['WORST_METRIC',['../namespacele_1_1ghs.html#a929ca26cda6a13eb5990e93c26a895f9',1,'le::ghs']]]
 ];

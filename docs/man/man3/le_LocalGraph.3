@@ -1,0 +1,67 @@
+.TH "le::LocalGraph< SZ >" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+le::LocalGraph< SZ >
+.SH SYNOPSIS
+.br
+.PP
+.SS "Classes"
+
+.in +1c
+.ti -1c
+.RI "struct \fBLocalEdge\fP"
+.br
+.in -1c
+.SS "Public Types"
+
+.in +1c
+.ti -1c
+.RI "enum \fBErrno\fP { \fBOK\fP =0, \fBDOES_NOT_EXIST\fP, \fBALREADY_EXISTS\fP }"
+.br
+.in -1c
+.SS "Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "unsigned int \fBsize\fP ()"
+.br
+.ti -1c
+.RI "unsigned int \fBmax_size\fP ()"
+.br
+.ti -1c
+.RI "Errno \fBset\fP (const unsigned int to, const unsigned int status, const unsigned int weight)"
+.br
+.ti -1c
+.RI "Errno \fBget\fP (unsigned int &to, unsigned int &status, unsigned int &weight) const"
+.br
+.ti -1c
+.RI "Errno \fBset\fP (unsigned int to, const \fBLocalEdge\fP e)"
+.br
+.ti -1c
+.RI "Errno \fBget\fP (unsigned int to, \fBLocalEdge\fP &out_e) const"
+.br
+.ti -1c
+.RI "Errno \fBset_weight\fP (const unsigned int to, const unsigned int wt)"
+.br
+.ti -1c
+.RI "Errno \fBset_status\fP (const unsigned int to, const unsigned int status)"
+.br
+.ti -1c
+.RI "Errno \fBget_weight\fP (const unsigned int to, unsigned int &out_wt) const"
+.br
+.ti -1c
+.RI "Errno \fBget_status\fP (const unsigned int to, unsigned int &out_status) const"
+.br
+.in -1c
+.SS "Static Public Member Functions"
+
+.in +1c
+.ti -1c
+.RI "static const char * \fBstrerror\fP (const Errno e)"
+.br
+.in -1c
+
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

@@ -1,4 +1,4 @@
-.TH "include/ghs/msg.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "include/ghs/msg.h" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -18,41 +18,40 @@ include/ghs/msg.h \- provides the defs for the struct le::ghs::msg
 
 .in +1c
 .ti -1c
-.RI "struct \fBle::ghs::NoopPayload\fP"
+.RI "struct \fBle::ghs::msg::NoopPayload\fP"
 .br
 .RI "No further action necessary (i\&.e\&., we have completed the MST construction) "
 .ti -1c
-.RI "struct \fBle::ghs::SrchPayload\fP"
+.RI "struct \fBle::ghs::msg::SrchPayload\fP"
 .br
 .RI "Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing edge (one that spans two partitions)\&. "
 .ti -1c
-.RI "struct \fBle::ghs::SrchRetPayload\fP"
+.RI "struct \fBle::ghs::msg::SrchRetPayload\fP"
 .br
 .RI "Returns an edge that represents the minimum weight outgoing edge\&. "
 .ti -1c
-.RI "struct \fBle::ghs::InPartPayload\fP"
+.RI "struct \fBle::ghs::msg::InPartPayload\fP"
 .br
 .RI "Asks 'Are you in my partition'\&. "
 .ti -1c
-.RI "struct \fBle::ghs::AckPartPayload\fP"
+.RI "struct \fBle::ghs::msg::AckPartPayload\fP"
 .br
 .RI "States 'I am in your partition'\&. "
 .ti -1c
-.RI "struct \fBle::ghs::NackPartPayload\fP"
+.RI "struct \fBle::ghs::msg::NackPartPayload\fP"
 .br
 .RI "States 'I am not in your partition'\&. "
 .ti -1c
-.RI "struct \fBle::ghs::JoinUsPayload\fP"
+.RI "struct \fBle::ghs::msg::JoinUsPayload\fP"
 .br
 .RI "Msgs to merge /absorb two partitions across a given edge\&. "
 .ti -1c
-.RI "struct \fBle::ghs::Msg\fP"
+.RI "union \fBle::ghs::msg::Data\fP"
+.br
+.ti -1c
+.RI "class \fBle::ghs::Msg\fP"
 .br
 .RI "An aggregate type containing all the data to exchange with to/from information\&. "
-.ti -1c
-.RI "union \fBle::ghs::Msg::Data\fP"
-.br
-.RI "A union of all possible payloads\&. "
 .in -1c
 .SS "Namespaces"
 
@@ -64,11 +63,19 @@ include/ghs/msg.h \- provides the defs for the struct le::ghs::msg
 .RI " \fBle::ghs\fP"
 .br
 .in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBle::ghs::msg::Type\fP { \fBle::ghs::msg::UNASSIGNED\fP =0, \fBle::ghs::msg::NOOP\fP, \fBle::ghs::msg::SRCH\fP, \fBle::ghs::msg::SRCH_RET\fP, \fBle::ghs::msg::IN_PART\fP, \fBle::ghs::msg::ACK_PART\fP, \fBle::ghs::msg::NACK_PART\fP, \fBle::ghs::msg::JOIN_US\fP }"
+.br
+.RI "Stores what type of Msg this is\&. "
+.in -1c
 .SS "Variables"
 
 .in +1c
 .ti -1c
-.RI "const long long int \fBle::ghs::MAX_MSG_SZ\fP = sizeof(Msg)"
+.RI "const unsigned int \fBle::ghs::MAX_MSG_SZ\fP = sizeof(Msg)"
 .br
 .in -1c
 .SH "Detailed Description"
@@ -96,6 +103,39 @@ Neither the name of Caltech nor its operating division, the Jet Propulsion Labor
 .PP
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
   IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
+.SH "Enumeration Type Documentation"
+.PP 
+.SS "enum \fBle::ghs::msg::Type\fP"
+
+.PP
+Stores what type of Msg this is\&. 
+.PP
+\fBEnumerator\fP
+.in +1c
+.TP
+\fB\fIUNASSIGNED \fP\fP
+Error checking for unassigned messages\&. 
+.TP
+\fB\fINOOP \fP\fP
+data is a \fBNoopPayload\fP 
+.TP
+\fB\fISRCH \fP\fP
+data is a \fBSrchPayload\fP 
+.TP
+\fB\fISRCH_RET \fP\fP
+data is a \fBSrchRetPayload\fP 
+.TP
+\fB\fIIN_PART \fP\fP
+data is a \fBInPartPayload\fP 
+.TP
+\fB\fIACK_PART \fP\fP
+data is a \fBAckPartPayload\fP 
+.TP
+\fB\fINACK_PART \fP\fP
+data is a \fBNackPartPayload\fP 
+.TP
+\fB\fIJOIN_US \fP\fP
+data is a \fBJoinUsPayload\fP 
 .SH "Author"
 .PP 
 Generated automatically by Doxygen for GHS from the source code\&.

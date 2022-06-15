@@ -1,4 +1,4 @@
-.TH "src/tests/tests.cpp" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "src/tests/tests.cpp" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -16,6 +16,8 @@ src/tests/tests.cpp
 .br
 \fC#include <fstream>\fP
 .br
+\fC#include <vector>\fP
+.br
 
 .SS "Functions"
 
@@ -24,13 +26,13 @@ src/tests/tests.cpp
 .RI "template<std::size_t N, std::size_t BUF_SZ> \fBGhsState\fP< N, BUF_SZ > \fBget_state\fP (\fBagent_t\fP my_id=0, size_t n_unknown=1, size_t n_deleted=0, size_t n_MST=0, bool is_root=true, bool waiting=false)"
 .br
 .ti -1c
+.RI "template<std::size_t N, std::size_t BUF_SZ> \fBErrno\fP \fBtrick_partition\fP (\fBGhsState\fP< N, BUF_SZ > &ghs, \fBagent_t\fP from_id, \fBagent_t\fP leader_id, \fBlevel_t\fP level_set)"
+.br
+.ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test get_state')"
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test checked_index_of')"
-.br
-.ti -1c
-.RI "\fBTEST_CASE\fP ('unit\-test set_edge_status')"
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test typecast')"
@@ -45,12 +47,6 @@ src/tests/tests.cpp
 .RI "\fBREQUIRE_EQ\fP (buf\&.size(), 0)"
 .br
 .ti -1c
-.RI "s \fBset_edge\fP ({1, 0, UNKNOWN, 1})"
-.br
-.ti -1c
-.RI "s \fBset_edge\fP ({2, 0, UNKNOWN, 1})"
-.br
-.ti -1c
 .RI "\fBCHECK_EQ\fP (OK, s\&.start_round(buf, sz))"
 .br
 .ti -1c
@@ -60,22 +56,13 @@ src/tests/tests.cpp
 .RI "\fBwhile\fP (buf\&.size()>0)"
 .br
 .ti -1c
-.RI "\fBGhsState\fP< 4, 32 > \fBs\fP (0)"
-.br
-.ti -1c
-.RI "s \fBset_edge\fP ({1, 0, MST, 1})"
-.br
-.ti -1c
-.RI "s \fBset_edge\fP ({2, 0, MST, 1})"
-.br
-.ti -1c
 .RI "s \fBstart_round\fP (buf, sz)"
 .br
 .ti -1c
-.RI "\fBCHECK\fP (Q_OK(buf\&.front(m)))"
+.RI "\fBCHECK\fP (OK==(buf\&.front(m)))"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (m\&.type, Msg::Type::SRCH)"
+.RI "\fBCHECK_EQ\fP (m\&.type(), msg::Type::SRCH)"
 .br
 .ti -1c
 .RI "buf \fBpop\fP ()"
@@ -84,37 +71,64 @@ src/tests/tests.cpp
 .RI "\fBCHECK_EQ\fP (buf\&.size(), 0)"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({1, 0, DELETED, 1}))"
+.RI "\fBCHECK_EQ\fP (3, m\&.to())"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({2, 0, DELETED, 1}))"
+.RI "\fBCHECK_EQ\fP (0, m\&.from())"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({2, 0, MST, 1}))"
+.RI "\fBCHECK_EQ\fP (1, m\&.to())"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (OK, s\&.set_edge({3, 0, UNKNOWN, 1}))"
+.RI "\fBCHECK_EQ\fP (m\&.type(), msg::Type::IN_PART)"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (2, m\&.to)"
+.RI "\fBREQUIRE\fP (s\&.has_edge(1))"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (0, m\&.from)"
+.RI "\fBREQUIRE_EQ\fP (s\&.get_n_peers(), 1)"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (3, m\&.to)"
+.RI "\fBREQUIRE_EQ\fP (OK, s\&.get_edge(1, e))"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (m\&.type, Msg::Type::IN_PART)"
+.RI "\fBREQUIRE_EQ\fP (e\&.status, MST_PARENT)"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (OK, s\&.set_leader_id(1))"
+.RI "\fBREQUIRE_EQ\fP (OK, s\&.process(new_leader, buf, sz))"
 .br
 .ti -1c
-.RI "\fBCHECK_EQ\fP (OK, s\&.set_level(0))"
+.RI "\fBREQUIRE_EQ\fP (sz, 1)"
 .br
 .ti -1c
-.RI "\fBTEST_CASE\fP ('unit\-test process_srch() checks recipient')"
+.RI "\fBREQUIRE_EQ\fP (buf\&.size(), 1)"
+.br
+.ti -1c
+.RI "\fBREQUIRE_EQ\fP (buf\&.pop(m), OK)"
+.br
+.ti -1c
+.RI "\fBREQUIRE_EQ\fP (m\&.type(), SRCH_RET)"
+.br
+.ti -1c
+.RI "buf \fBclear\fP ()"
+.br
+.ti -1c
+.RI "\fBMsg\fP \fBm\fP (0, 2, \fBSrchPayload\fP{1, 0})"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (m\&.from(), 2)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (PROCESS_NO_EDGE_FOUND, s\&.process(m, buf, sz))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (sz, 111)"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (OK, s\&.process(from_one, buf, sz))"
+.br
+.ti -1c
+.RI "\fBCHECK_EQ\fP (PROCESS_SELFMSG, s\&.process(from_self, buf, sz))"
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test process_srch, unknown peers')"
@@ -144,10 +158,7 @@ src/tests/tests.cpp
 .RI "\fBCHECK_EQ\fP (y\&.metric_val, WORST_METRIC)"
 .br
 .ti -1c
-.RI "\fBTEST_CASE\fP ('unit\-test process throws with no edge')"
-.br
-.ti -1c
-.RI "\fBTEST_CASE\fP ('unit\-test process_srch_ret')"
+.RI "\fBTEST_CASE\fP ('unit\-test process_srch_ret none found')"
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test process_srch_ret, one peer, edge found ')"
@@ -160,9 +171,6 @@ src/tests/tests.cpp
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, not waiting for anyone')"
-.br
-.ti -1c
-.RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, no edge')"
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test process_ack_part, waiting, but not for sender')"
@@ -178,6 +186,9 @@ src/tests/tests.cpp
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test join_us response to higher level')"
+.br
+.ti -1c
+.RI "\fBTEST_CASE\fP ('unit\-test join_us non\-responsive case')"
 .br
 .ti -1c
 .RI "\fBTEST_CASE\fP ('unit\-test join_us response to MST edge')"
@@ -205,16 +216,28 @@ src/tests/tests.cpp
 
 .in +1c
 .ti -1c
-.RI "\fBGhsState\fP< 4, 32 > \fBs\fP (0)"
+.RI "\fBGhsState\fP< 4, 32 > \fBs\fP =get_state<4,32>(0,2)"
 .br
 .ti -1c
-.RI "size_t \fBsz\fP"
+.RI "size_t \fBsz\fP =0"
 .br
 .ti -1c
 .RI "\fBMsg\fP \fBm\fP"
 .br
 .ti -1c
-.RI "\fBEdge\fP \fBy\fP = \fBEdge\fP{4,1,UNKNOWN, 1000}"
+.RI "\fBEdge\fP \fBe\fP"
+.br
+.ti -1c
+.RI "\fBMsg\fP \fBnew_leader\fP = \fBMsg\fP(0,1,\fBSrchPayload\fP{1,1})"
+.br
+.ti -1c
+.RI "\fBMsg\fP \fBfrom_one\fP = \fBMsg\fP(m\&.to(),1,m)"
+.br
+.ti -1c
+.RI "\fBMsg\fP \fBfrom_self\fP = \fBMsg\fP(m\&.to(),0,m\&.data()\&.srch)"
+.br
+.ti -1c
+.RI "\fBEdge\fP \fBy\fP = \fBEdge\fP{4,1,UNKNOWN, std::numeric_limits<size_t>::max()}"
 .br
 .in -1c
 .SH "Detailed Description"
@@ -240,15 +263,6 @@ Neither the name of Caltech nor its operating division, the Jet Propulsion Labor
 .PP
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
   IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
-.SH "Variable Documentation"
-.PP 
-.SS "\fBGhsState\fP< 4, 32 > s (0)"
-\fBInitial value:\fP
-.PP
-.nf
-{
-  StaticQueue<Msg,32> buf
-.fi
 .SH "Author"
 .PP 
 Generated automatically by Doxygen for GHS from the source code\&.

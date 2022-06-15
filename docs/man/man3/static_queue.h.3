@@ -1,4 +1,4 @@
-.TH "include/seque/static_queue.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "include/seque/static_queue.h" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -7,7 +7,7 @@ include/seque/static_queue.h \- a static-sized single-ended queue for use in Ghs
 .SH SYNOPSIS
 .br
 .PP
-\fC#include <cstdlib>\fP
+\fC#include 'le/errno\&.h'\fP
 .br
 \fC#include 'seque/static_queue_impl\&.hpp'\fP
 .br
@@ -25,23 +25,6 @@ include/seque/static_queue.h \- a static-sized single-ended queue for use in Ghs
 .in +1c
 .ti -1c
 .RI " \fBseque\fP"
-.br
-.in -1c
-.SS "Enumerations"
-
-.in +1c
-.ti -1c
-.RI "enum \fBseque::Retcode\fP { \fBseque::OK\fP =0, \fBseque::ERR_QUEUE_FULL\fP, \fBseque::ERR_QUEUE_EMPTY\fP, \fBseque::ERR_BAD_IDX\fP, \fBseque::ERR_NO_SUCH_ELEMENT\fP }"
-.br
-.in -1c
-.SS "Functions"
-
-.in +1c
-.ti -1c
-.RI "bool \fBseque::Q_OK\fP (const \fBseque::Retcode\fP &r)"
-.br
-.ti -1c
-.RI "const char * \fBseque::strerr\fP (const \fBseque::Retcode\fP &r)"
 .br
 .in -1c
 .SH "Detailed Description"

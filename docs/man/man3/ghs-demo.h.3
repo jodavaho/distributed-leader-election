@@ -1,4 +1,4 @@
-.TH "src/demo/ghs-demo.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "src/demo/ghs-demo.h" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -53,13 +53,9 @@ src/demo/ghs-demo.h \- provides an 'executable class' for running leader electio
 
 .in +1c
 .ti -1c
-.RI "template<size_t AN, size_t QN> void \fBdemo::initialize_ghs\fP (\fBGhsState\fP< AN, QN > &ghs, Config &cfg, Comms &c)"
+.RI "template<size_t AN, size_t QN> \fBGhsState\fP< AN, QN > \fBdemo::initialize_ghs\fP (Config &cfg, Comms &c)"
 .br
 .RI "Helper function to build edges from configuration information\&. "
-.ti -1c
-.RI "template<size_t AN, size_t QN> void \fBdemo::kill_edge\fP (\fBGhsState\fP< AN, QN > &ghs, Config &cfg, uint8_t agent_to)"
-.br
-.RI "Helper function to remove an edge from the GhsState, but trying to do sanely and without interrupting the execution flow\&. "
 .ti -1c
 .RI "int \fBdemo::do_test_and_die\fP (Comms &comms, Config &config)"
 .br

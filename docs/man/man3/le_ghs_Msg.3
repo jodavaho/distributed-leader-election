@@ -1,4 +1,4 @@
-.TH "le::ghs::Msg" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "le::ghs::Msg" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -9,46 +9,48 @@ le::ghs::Msg \- An aggregate type containing all the data to exchange with to/fr
 .PP
 .PP
 \fC#include <msg\&.h>\fP
-.SS "Classes"
-
-.in +1c
-.ti -1c
-.RI "union \fBData\fP"
-.br
-.RI "A union of all possible payloads\&. "
-.in -1c
-.SS "Public Types"
-
-.in +1c
-.ti -1c
-.RI "enum \fBType\fP { \fBNOOP\fP =0, \fBSRCH\fP, \fBSRCH_RET\fP, \fBIN_PART\fP, \fBACK_PART\fP, \fBNACK_PART\fP, \fBJOIN_US\fP }"
-.br
-.RI "Stores what type of \fBMsg\fP this is\&. "
-.in -1c
 .SS "Public Member Functions"
 
 .in +1c
 .ti -1c
-.RI "\fBMsg\fP ()"
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::NoopPayload\fP p)"
 .br
-.RI "A default constructor\&. "
-.in -1c
-.SS "Public Attributes"
-
-.in +1c
+.RI "A type-specific constructor for each payload type\&. "
 .ti -1c
-.RI "\fBagent_t\fP \fBto\fP"
-.br
-.RI "who to send to "
-.ti -1c
-.RI "\fBagent_t\fP \fBfrom\fP"
-.br
-.RI "who it is from "
-.ti -1c
-.RI "enum \fBle::ghs::Msg::Type\fP \fBtype\fP"
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::SrchPayload\fP p)"
 .br
 .ti -1c
-.RI "union \fBle::ghs::Msg::Data\fP \fBdata\fP"
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::SrchRetPayload\fP p)"
+.br
+.ti -1c
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::InPartPayload\fP p)"
+.br
+.ti -1c
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::AckPartPayload\fP p)"
+.br
+.ti -1c
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::NackPartPayload\fP p)"
+.br
+.ti -1c
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::JoinUsPayload\fP p)"
+.br
+.ti -1c
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, const \fBMsg\fP &other)"
+.br
+.ti -1c
+.RI "\fBMsg\fP (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::Type\fP t, \fBmsg::Data\fP d)"
+.br
+.ti -1c
+.RI "\fBagent_t\fP \fBto\fP () const"
+.br
+.ti -1c
+.RI "\fBagent_t\fP \fBfrom\fP () const"
+.br
+.ti -1c
+.RI "\fBmsg::Type\fP \fBtype\fP () const"
+.br
+.ti -1c
+.RI "\fBmsg::Data\fP \fBdata\fP () const"
 .br
 .in -1c
 .SH "Detailed Description"
@@ -57,45 +59,15 @@ An aggregate type containing all the data to exchange with to/from information\&
 
 The \fBMsg\fP struct contains all the data which is passed between \fBGhsState\fP objects operating on different systems to coordinate the construction of an MST\&.
 .PP
-The usual way to construct a \fBMsg\fP is to construct the payload from a struct of type \fBMsg::Data\fP, then to call to_msg() on that payload\&.
+The usual way to construct a \fBMsg\fP is to construct the payload from a struct of type Msg::Data, then to call to_msg() on that payload\&.
 .PP
 In the example case, the field \fCother_guy\fP is used twice, but that may not be the case always\&. to_msg takes the extra step of setting the to/from fields appropriately and seperate from the payload fields\&. I specifically made this design design to defend myself from myself after messing up the data fields far too often\&. 
-.SH "Member Enumeration Documentation"
-.PP 
-.SS "enum \fBle::ghs::Msg::Type\fP"
-
-.PP
-Stores what type of \fBMsg\fP this is\&. 
-.PP
-\fBEnumerator\fP
-.in +1c
-.TP
-\fB\fINOOP \fP\fP
-data is a \fBNoopPayload\fP 
-.TP
-\fB\fISRCH \fP\fP
-data is a \fBSrchPayload\fP 
-.TP
-\fB\fISRCH_RET \fP\fP
-data is a \fBSrchRetPayload\fP 
-.TP
-\fB\fIIN_PART \fP\fP
-data is a \fBInPartPayload\fP 
-.TP
-\fB\fIACK_PART \fP\fP
-data is a \fBAckPartPayload\fP 
-.TP
-\fB\fINACK_PART \fP\fP
-data is a \fBNackPartPayload\fP 
-.TP
-\fB\fIJOIN_US \fP\fP
-data is a \fBJoinUsPayload\fP 
 .SH "Constructor & Destructor Documentation"
 .PP 
-.SS "le::ghs::Msg::Msg ()"
-
-.PP
-A default constructor\&. The usual way to construct a \fBMsg\fP is to construct the payload from a struct of type \fBMsg::Data\fP, then to call to_msg() on that payload\&. 
+.SS "le::ghs::Msg::Msg (\fBagent_t\fP to, \fBagent_t\fP from, const \fBMsg\fP & other)"
+A 'redirect' constructor that perserves type and payload, but allows new to/from fields 
+.SS "le::ghs::Msg::Msg (\fBagent_t\fP to, \fBagent_t\fP from, \fBmsg::Type\fP t, \fBmsg::Data\fP d)"
+A generic constructor for generic data, and known type 
 
 .SH "Author"
 .PP 

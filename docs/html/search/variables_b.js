@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['sequence_383',['sequence',['../structdemo_1_1Control.html#a62030351008d27db183f00f505c50530',1,'demo::Control']]],
-  ['status_384',['status',['../structle_1_1ghs_1_1Edge.html#aa097ecc6d3006a9442a61836b6a8b9c8',1,'le::ghs::Edge']]]
+  ['test_369',['test',['../structdemo_1_1Config.html#aaf5064e2ded3f48de39eab485a905eac',1,'demo::Config']]],
+  ['type_370',['type',['../structdemo_1_1Header.html#abb8dcb07cdebd3d745df3aea8c3786bb',1,'demo::Header']]]
 ];

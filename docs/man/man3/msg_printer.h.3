@@ -1,4 +1,4 @@
-.TH "include/ghs/msg_printer.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "include/ghs/msg_printer.h" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -18,13 +18,13 @@ include/ghs/msg_printer.h \- provides the implementation of std::ostream operati
 
 .in +1c
 .ti -1c
-.RI "std::string \fBto_string\fP (const \fBle::ghs::Msg::Type\fP &type)"
+.RI "std::string \fBto_string\fP (const \fBle::ghs::msg::Type\fP &type)"
 .br
 .ti -1c
-.RI "std::ostream & \fBoperator<<\fP (std::ostream &outs, const \fBle::ghs::Msg::Type\fP &type)"
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &outs, const \fBle::ghs::msg::Type\fP &type)"
 .br
 .ti -1c
-.RI "std::ostream & \fBoperator<<\fP (std::ostream &outs, const \fBle::ghs::Msg::Data\fP &d)"
+.RI "std::ostream & \fBoperator<<\fP (std::ostream &outs, const \fBle::ghs::msg::Data\fP &d)"
 .br
 .ti -1c
 .RI "std::ostream & \fBoperator<<\fP (std::ostream &outs, const \fBle::ghs::Msg\fP &m)"

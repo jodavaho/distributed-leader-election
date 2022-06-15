@@ -1,4 +1,4 @@
-.TH "include/ghs/ghs.h" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "include/ghs/ghs.h" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -14,6 +14,8 @@ include/ghs/ghs.h \- \fBThe main GhsState object\fP
 \fC#include 'ghs/level\&.h'\fP
 .br
 \fC#include 'ghs/edge\&.h'\fP
+.br
+\fC#include 'le/errno\&.h'\fP
 .br
 \fC#include 'seque/static_queue\&.h'\fP
 .br
@@ -38,27 +40,6 @@ include/ghs/ghs.h \- \fBThe main GhsState object\fP
 .br
 .ti -1c
 .RI " \fBle::ghs\fP"
-.br
-.in -1c
-.SS "Macros"
-
-.in +1c
-.ti -1c
-.RI "#define \fBperror\fP(x)   fprintf(stderr,'[error] %d:%s', x, strerror(x))"
-.br
-.in -1c
-.SS "Enumerations"
-
-.in +1c
-.ti -1c
-.RI "enum \fBle::ghs::Retcode\fP { \fBle::ghs::OK\fP = 0, \fBle::ghs::PROCESS_SELFMSG\fP, \fBle::ghs::PROCESS_NOTME\fP, \fBle::ghs::PROCESS_INVALID_TYPE\fP, \fBle::ghs::PROCESS_REQ_MST\fP, \fBle::ghs::SRCH_INAVLID_SENDER\fP, \fBle::ghs::SRCH_STILL_WAITING\fP, \fBle::ghs::ERR_QUEUE_MSGS\fP, \fBle::ghs::PROCESS_NO_EDGE_FOUND\fP, \fBle::ghs::UNEXPECTED_SRCH_RET\fP, \fBle::ghs::ACK_NOT_WAITING\fP, \fBle::ghs::BAD_MSG\fP, \fBle::ghs::JOIN_BAD_LEADER\fP, \fBle::ghs::JOIN_BAD_LEVEL\fP, \fBle::ghs::JOIN_INIT_BAD_LEADER\fP, \fBle::ghs::JOIN_INIT_BAD_LEVEL\fP, \fBle::ghs::JOIN_MY_LEADER\fP, \fBle::ghs::JOIN_UNEXPECTED_REPLY\fP, \fBle::ghs::ERR_IMPL\fP, \fBle::ghs::CAST_INVALID_EDGE\fP, \fBle::ghs::SET_INVALID_EDGE\fP, \fBle::ghs::PARENT_UNRECOGNIZED\fP, \fBle::ghs::PARENT_REQ_MST\fP, \fBle::ghs::NO_SUCH_PEER\fP, \fBle::ghs::IMPL_REQ_PEER_MY_ID\fP, \fBle::ghs::TOO_MANY_AGENTS\fP }"
-.br
-.in -1c
-.SS "Functions"
-
-.in +1c
-.ti -1c
-.RI "const char * \fBle::ghs::strerror\fP (const Retcode &r)"
 .br
 .in -1c
 .SH "Detailed Description"

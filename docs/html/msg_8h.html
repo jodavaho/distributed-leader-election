@@ -69,6 +69,7 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">msg.h File Reference</div>  </div>
@@ -85,32 +86,31 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1NoopPayload.html">le::ghs::NoopPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">No further action necessary (i.e., we have completed the MST construction)  <a href="structle_1_1ghs_1_1NoopPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1NoopPayload.html">le::ghs::msg::NoopPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">No further action necessary (i.e., we have completed the MST construction)  <a href="structle_1_1ghs_1_1msg_1_1NoopPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1SrchPayload.html">le::ghs::SrchPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing edge (one that spans two partitions).  <a href="structle_1_1ghs_1_1SrchPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1SrchPayload.html">le::ghs::msg::SrchPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing edge (one that spans two partitions).  <a href="structle_1_1ghs_1_1msg_1_1SrchPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1SrchRetPayload.html">le::ghs::SrchRetPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an edge that represents the minimum weight outgoing edge.  <a href="structle_1_1ghs_1_1SrchRetPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1SrchRetPayload.html">le::ghs::msg::SrchRetPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an edge that represents the minimum weight outgoing edge.  <a href="structle_1_1ghs_1_1msg_1_1SrchRetPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1InPartPayload.html">le::ghs::InPartPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asks "Are you in my partition".  <a href="structle_1_1ghs_1_1InPartPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1InPartPayload.html">le::ghs::msg::InPartPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Asks "Are you in my partition".  <a href="structle_1_1ghs_1_1msg_1_1InPartPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1AckPartPayload.html">le::ghs::AckPartPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">States "I am in your partition".  <a href="structle_1_1ghs_1_1AckPartPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1AckPartPayload.html">le::ghs::msg::AckPartPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">States "I am in your partition".  <a href="structle_1_1ghs_1_1msg_1_1AckPartPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1NackPartPayload.html">le::ghs::NackPartPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">States "I am not in your partition".  <a href="structle_1_1ghs_1_1NackPartPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1NackPartPayload.html">le::ghs::msg::NackPartPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">States "I am not in your partition".  <a href="structle_1_1ghs_1_1msg_1_1NackPartPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1JoinUsPayload.html">le::ghs::JoinUsPayload</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Msgs to merge /absorb two partitions across a given edge.  <a href="structle_1_1ghs_1_1JoinUsPayload.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1msg_1_1JoinUsPayload.html">le::ghs::msg::JoinUsPayload</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Msgs to merge /absorb two partitions across a given edge.  <a href="structle_1_1ghs_1_1msg_1_1JoinUsPayload.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structle_1_1ghs_1_1Msg.html">le::ghs::Msg</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An aggregate type containing all the data to exchange with to/from information.  <a href="structle_1_1ghs_1_1Msg.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="unionle_1_1ghs_1_1msg_1_1Data.html">le::ghs::msg::Data</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">union &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="unionle_1_1ghs_1_1Msg_1_1Data.html">le::ghs::Msg::Data</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A union of all possible payloads.  <a href="unionle_1_1ghs_1_1Msg_1_1Data.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classle_1_1ghs_1_1Msg.html">le::ghs::Msg</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An aggregate type containing all the data to exchange with to/from information.  <a href="classle_1_1ghs_1_1Msg.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
@@ -120,10 +120,27 @@ Namespaces</h2></td></tr>
 <tr class="memitem:namespacele_1_1ghs"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacele_1_1ghs.html">le::ghs</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:af67e0b6b29c9670865d7d13fc1c9d699"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699">le::ghs::msg::Type</a> { <br />
+&#160;&#160;<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699ad71251d601373aa13acd4fd252936dca">le::ghs::msg::UNASSIGNED</a> =0, 
+<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699a60a70b30dff699567d23009cdc5e640b">le::ghs::msg::NOOP</a>, 
+<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699a2bc4dd8bc158ceb44b69fd4dd2148a79">le::ghs::msg::SRCH</a>, 
+<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699a3f7d2055cc9ceff08b3f6cc0097c494a">le::ghs::msg::SRCH_RET</a>, 
+<br />
+&#160;&#160;<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699a4eb6bba472244cc10e1d9856e5a5ea36">le::ghs::msg::IN_PART</a>, 
+<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699afaa82db1e4a7f7915d845297da8b5f1e">le::ghs::msg::ACK_PART</a>, 
+<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699ad3d6ed81add43826838dccfa1e38565a">le::ghs::msg::NACK_PART</a>, 
+<a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699aceef0dc3029462b3595248f902e75db4">le::ghs::msg::JOIN_US</a>
+<br />
+ }</td></tr>
+<tr class="memdesc:af67e0b6b29c9670865d7d13fc1c9d699"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stores what type of Msg this is.  <a href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699">More...</a><br /></td></tr>
+<tr class="separator:af67e0b6b29c9670865d7d13fc1c9d699"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
-<tr class="memitem:a90261fff18999ee7975583eacf1b3525"><td class="memItemLeft" align="right" valign="top">const long long int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacele_1_1ghs.html#a90261fff18999ee7975583eacf1b3525">le::ghs::MAX_MSG_SZ</a> = sizeof(Msg)</td></tr>
-<tr class="separator:a90261fff18999ee7975583eacf1b3525"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0b24ab1e6a6ee4a34ca996c46f7fcc3"><td class="memItemLeft" align="right" valign="top">const unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacele_1_1ghs.html#ab0b24ab1e6a6ee4a34ca996c46f7fcc3">le::ghs::MAX_MSG_SZ</a> = sizeof(Msg)</td></tr>
+<tr class="separator:ab0b24ab1e6a6ee4a34ca996c46f7fcc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>provides the defs for the struct le::ghs::msg </p>
@@ -137,7 +154,42 @@ Variables</h2></td></tr>
 </ul>
 <p>THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. </p>
-</div></div><!-- contents -->
+</div><h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="af67e0b6b29c9670865d7d13fc1c9d699"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af67e0b6b29c9670865d7d13fc1c9d699">&#9670;&nbsp;</a></span>Type</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="msg_8h.html#af67e0b6b29c9670865d7d13fc1c9d699">le::ghs::msg::Type</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Stores what type of Msg this is. </p>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699ad71251d601373aa13acd4fd252936dca"></a>UNASSIGNED&#160;</td><td class="fielddoc"><p>Error checking for unassigned messages. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699a60a70b30dff699567d23009cdc5e640b"></a>NOOP&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1NoopPayload.html" title="No further action necessary (i.e., we have completed the MST construction)">NoopPayload</a> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699a2bc4dd8bc158ceb44b69fd4dd2148a79"></a>SRCH&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1SrchPayload.html" title="Requests a search begin in the MST subtree rooted at the receiver, for the minimum weight outgoing ed...">SrchPayload</a> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699a3f7d2055cc9ceff08b3f6cc0097c494a"></a>SRCH_RET&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1SrchRetPayload.html" title="Returns an edge that represents the minimum weight outgoing edge.">SrchRetPayload</a> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699a4eb6bba472244cc10e1d9856e5a5ea36"></a>IN_PART&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1InPartPayload.html" title="Asks &quot;Are you in my partition&quot;.">InPartPayload</a> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699afaa82db1e4a7f7915d845297da8b5f1e"></a>ACK_PART&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1AckPartPayload.html" title="States &quot;I am in your partition&quot;.">AckPartPayload</a> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699ad3d6ed81add43826838dccfa1e38565a"></a>NACK_PART&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1NackPartPayload.html" title="States &quot;I am not in your partition&quot;.">NackPartPayload</a> </p>
+</td></tr>
+<tr><td class="fieldname"><a id="af67e0b6b29c9670865d7d13fc1c9d699aceef0dc3029462b3595248f902e75db4"></a>JOIN_US&#160;</td><td class="fielddoc"><p>data is a <a class="el" href="structle_1_1ghs_1_1msg_1_1JoinUsPayload.html" title="Msgs to merge /absorb two partitions across a given edge.">JoinUsPayload</a> </p>
+</td></tr>
+</table>
+
+</div>
+</div>
+</div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">

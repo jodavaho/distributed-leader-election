@@ -1,4 +1,4 @@
-.TH "seque::StaticQueue< T, N >" 3 "Mon Jun 6 2022" "GHS" \" -*- nroff -*-
+.TH "seque::StaticQueue< T, N >" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
 .ad l
 .nh
 .SH NAME
@@ -22,31 +22,31 @@ seque::StaticQueue< T, N > \- a static-sized single-ended queue for use in GhsSt
 .RI "bool \fBis_empty\fP () const"
 .br
 .ti -1c
-.RI "size_t \fBsize\fP () const"
+.RI "unsigned int \fBsize\fP () const"
 .br
 .ti -1c
-.RI "\fBRetcode\fP \fBfront\fP (T &out_item) const"
+.RI "\fBle::Errno\fP \fBfront\fP (T &out_item) const"
 .br
 .ti -1c
-.RI "\fBRetcode\fP \fBpop\fP ()"
+.RI "\fBle::Errno\fP \fBpop\fP ()"
 .br
 .ti -1c
-.RI "\fBRetcode\fP \fBpop\fP (T &out_item)"
+.RI "\fBle::Errno\fP \fBpop\fP (T &out_item)"
 .br
 .ti -1c
-.RI "\fBRetcode\fP \fBpush\fP (const T item)"
+.RI "\fBle::Errno\fP \fBpush\fP (const T item)"
 .br
 .ti -1c
-.RI "\fBRetcode\fP \fBat\fP (const size_t idx, T &out_item) const"
+.RI "\fBle::Errno\fP \fBat\fP (const unsigned int idx, T &out_item) const"
 .br
 .ti -1c
-.RI "\fBRetcode\fP \fBclear\fP ()"
+.RI "\fBle::Errno\fP \fBclear\fP ()"
 .br
 .in -1c
 .SH "Detailed Description"
 .PP 
 
-.SS "template<typename T, std::size_t N>
+.SS "template<typename T, unsigned int N>
 .br
 class seque::StaticQueue< T, N >"
 a static-sized single-ended queue for use in GhsState 
@@ -63,27 +63,27 @@ The \fBStaticQueue\fP class is a statically-sized, single-ended queue based on a
 
 .SH "Constructor & Destructor Documentation"
 .PP 
-.SS "template<typename T , std::size_t N> StaticQueue::StaticQueue ()"
+.SS "template<typename T , unsigned int N> StaticQueue::StaticQueue ()"
 Constructs with static-sizing a circle-buf-backed queue 
 .SH "Member Function Documentation"
 .PP 
-.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::at (const size_t idx, T & out_item) const"
+.SS "template<typename T , unsigned int N> \fBle::Errno\fP StaticQueue::at (const unsigned int idx, T & out_item) const"
 returns (symantically) the element at \fBfront()\fP+idx, such that if idx==0, \fBfront()\fP is returned\&. If idx==N, the back is returned\&.
 .PP
 Returns ERR_BAD_IDX if idx>N Returns ERR_NO_SUCH_ELEMENT if idx>\fBsize()\fP
 .PP
 In any error condition, out_item is not changed\&. 
-.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::front (T & out_item) const"
+.SS "template<typename T , unsigned int N> \fBle::Errno\fP StaticQueue::front (T & out_item) const"
 Sets the given reference to be identical to the front of the queue, but does not alter the elements of the queue in any way
 .PP
 In any error condition, out_item is not changed\&. 
-.SS "template<typename T , std::size_t N> bool StaticQueue::is_empty () const"
+.SS "template<typename T , unsigned int N> bool StaticQueue::is_empty () const"
 Returns true if \fBsize()\fP==0, and no more elements can be \fBpop()\fP'd or checked via \fBfront()\fP 
-.SS "template<typename T , std::size_t N> bool StaticQueue::is_full () const"
+.SS "template<typename T , unsigned int N> bool StaticQueue::is_full () const"
 Returns true if \fBsize()\fP==N, and no more elements can be \fBpush()\fP'd 
-.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::pop ()"
+.SS "template<typename T , unsigned int N> \fBle::Errno\fP StaticQueue::pop ()"
 Removes the front of the queue, reducing size by 1\&. No memory is recovered, but the element is irretreivable after this operation\&. 
-.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::pop (T & out_item)"
+.SS "template<typename T , unsigned int N> \fBle::Errno\fP StaticQueue::pop (T & out_item)"
 This convenience function is identical to: 
 .PP
 .nf
@@ -96,11 +96,11 @@ return T;
 .PP
 .PP
 It will return an error if either \fBfront()\fP or \fBpop()\fP would\&. In any error condition, out_item is not changed\&. 
-.SS "template<typename T , std::size_t N> \fBRetcode\fP StaticQueue::push (const T item)"
+.SS "template<typename T , unsigned int N> \fBle::Errno\fP StaticQueue::push (const T item)"
 emplaces an element at the back of the queue\&. no memory is allocated\&.
 .PP
 Fails if \fBsize()\fP==N (the static templated size) 
-.SS "template<typename T , std::size_t N> size_t StaticQueue::size () const"
+.SS "template<typename T , unsigned int N> unsigned int StaticQueue::size () const"
 Returns the current number of elements in the queue 
 
 .SH "Author"

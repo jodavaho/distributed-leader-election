@@ -1,0 +1,58 @@
+.TH "include/le/errno.h" 3 "Wed Jun 15 2022" "GHS" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+include/le/errno.h \- Provides error codes for all classes / functions\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+.SS "Namespaces"
+
+.in +1c
+.ti -1c
+.RI " \fBle\fP"
+.br
+.in -1c
+.SS "Enumerations"
+
+.in +1c
+.ti -1c
+.RI "enum \fBle::Errno\fP { \fBle::OK\fP = 0, \fBle::PROCESS_SELFMSG\fP, \fBle::PROCESS_NOTME\fP, \fBle::PROCESS_INVALID_TYPE\fP, \fBle::PROCESS_REQ_MST\fP, \fBle::SRCH_INAVLID_SENDER\fP, \fBle::SRCH_STILL_WAITING\fP, \fBle::ERR_QUEUE_MSGS\fP, \fBle::PROCESS_NO_EDGE_FOUND\fP, \fBle::UNEXPECTED_SRCH_RET\fP, \fBle::ACK_NOT_WAITING\fP, \fBle::BAD_MSG\fP, \fBle::JOIN_BAD_LEADER\fP, \fBle::JOIN_BAD_LEVEL\fP, \fBle::JOIN_INIT_BAD_LEADER\fP, \fBle::JOIN_INIT_BAD_LEVEL\fP, \fBle::JOIN_MY_LEADER\fP, \fBle::JOIN_UNEXPECTED_REPLY\fP, \fBle::ERR_IMPL\fP, \fBle::CAST_INVALID_EDGE\fP, \fBle::SET_INVALID_EDGE\fP, \fBle::SET_INVALID_EDGE_METRIC\fP, \fBle::SET_INVALID_EDGE_NOT_ROOT\fP, \fBle::SET_INVALID_EDGE_NO_AGENT\fP, \fBle::SET_INVALID_EDGE_SELF_LOOP\fP, \fBle::PARENT_UNRECOGNIZED\fP, \fBle::PARENT_REQ_MST\fP, \fBle::NO_SUCH_PEER\fP, \fBle::IMPL_REQ_PEER_MY_ID\fP, \fBle::TOO_MANY_AGENTS\fP, \fBle::PARTIAL_RESULT\fP, \fBle::NO_AGENTS\fP, \fBle::ERR_QUEUE_FULL\fP, \fBle::ERR_QUEUE_EMPTY\fP, \fBle::ERR_BAD_IDX\fP, \fBle::ERR_NO_SUCH_ELEMENT\fP }"
+.br
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "const char * \fBle::strerror\fP (const Errno e)"
+.br
+.in -1c
+.SH "Detailed Description"
+.PP 
+Provides error codes for all classes / functions\&. 
+
+
+.PP
+\fBCopyright\fP
+.RS 4
+Copyright (c) 2022 California Institute of Technology (“Caltech”)\&. U\&.S\&. Government sponsorship acknowledged\&.
+.RE
+.PP
+All rights reserved\&.
+.PP
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+.PP
+.IP "\(bu" 2
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer\&.
+.IP "\(bu" 2
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution\&.
+.IP "\(bu" 2
+Neither the name of Caltech nor its operating division, the Jet Propulsion Laboratory, nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission\&.
+.PP
+.PP
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 'AS
+  IS' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED\&. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for GHS from the source code\&.

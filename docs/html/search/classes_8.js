@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['msg_241',['Msg',['../structle_1_1ghs_1_1Msg.html',1,'le::ghs']]]
+  ['localedge_236',['LocalEdge',['../structle_1_1LocalGraph_1_1LocalEdge.html',1,'le::LocalGraph']]],
+  ['localgraph_237',['LocalGraph',['../classle_1_1LocalGraph.html',1,'le']]]
 ];

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['n_5fagents_377',['n_agents',['../structdemo_1_1Config.html#a5349577afa3f1ef846f84f9b7f36d684',1,'demo::Config']]],
-  ['no_5fagent_378',['NO_AGENT',['../namespacele_1_1ghs.html#acfb2b2dad2c01489b30346645357c7ca',1,'le::ghs']]]
+  ['payload_5fsize_363',['payload_size',['../structdemo_1_1Header.html#add10fe1bdb49ba9d102eb84df7bb64d1',1,'demo::Header']]],
+  ['peer_364',['peer',['../structle_1_1ghs_1_1Edge.html#ac5af30e895dd30418def560ffbcd83a9',1,'le::ghs::Edge']]]
 ];

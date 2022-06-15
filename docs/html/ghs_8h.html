@@ -68,10 +68,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#define-members">Macros</a> &#124;
-<a href="#enum-members">Enumerations</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
 <div class="title">ghs.h File Reference</div>  </div>
 </div><!--header-->
@@ -83,6 +80,7 @@ $(function() {
 <code>#include &quot;<a class="el" href="agent_8h_source.html">ghs/agent.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="level_8h_source.html">ghs/level.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="edge_8h_source.html">ghs/edge.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="errno_8h_source.html">le/errno.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="static__queue_8h_source.html">seque/static_queue.h</a>&quot;</code><br />
 <code>#include &lt;array&gt;</code><br />
 <code>#include &quot;<a class="el" href="ghs__impl_8hpp_source.html">ghs_impl.hpp</a>&quot;</code><br />
@@ -101,56 +99,6 @@ Namespaces</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacele_1_1ghs"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacele_1_1ghs.html">le::ghs</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
-Macros</h2></td></tr>
-<tr class="memitem:a4c9e4bc6e6960028a93fe166af0afd5d"><td class="memItemLeft" align="right" valign="top"><a id="a4c9e4bc6e6960028a93fe166af0afd5d"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>perror</b>(x)&#160;&#160;&#160;fprintf(stderr,&quot;[error] %d:%s&quot;, x, strerror(x))</td></tr>
-<tr class="separator:a4c9e4bc6e6960028a93fe166af0afd5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
-Enumerations</h2></td></tr>
-<tr class="memitem:aac347dba4047a0b57893ee8895e66acb"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acb">le::ghs::Retcode</a> { <br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba3e8f07e33611d026ddfea23364d4c437">le::ghs::OK</a> = 0, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba53c8be0e52810ed0918f850f03a09b67">le::ghs::PROCESS_SELFMSG</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba72b57ef44fc2fccfe7200c3dc840001a">le::ghs::PROCESS_NOTME</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba9db45eef2034d77763713daa766e28a5">le::ghs::PROCESS_INVALID_TYPE</a>, 
-<br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba20434b86199f29210660b66606145d83">le::ghs::PROCESS_REQ_MST</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba1ea53fa4b081c5630120066be7d484b7">le::ghs::SRCH_INAVLID_SENDER</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba1c73728205a64b40c5c358daf404e1a3">le::ghs::SRCH_STILL_WAITING</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaeb6a326ce76752ebe837f5a22266248d">le::ghs::ERR_QUEUE_MSGS</a>, 
-<br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba268354bda0f9357ea0d244fb34c3cadf">le::ghs::PROCESS_NO_EDGE_FOUND</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaa318120860531525391f1442760c7703">le::ghs::UNEXPECTED_SRCH_RET</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaa99fe7d9b9c8b6cf5d5fc13d79f17bf7">le::ghs::ACK_NOT_WAITING</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba9035eef5870de5732eee22e86f69993f">le::ghs::BAD_MSG</a>, 
-<br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaf6bbef691bd4b816c35f7a346c721a54">le::ghs::JOIN_BAD_LEADER</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba1c265edd15d21ed9403c2955914f71fc">le::ghs::JOIN_BAD_LEVEL</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba8cf219895b59958e041456a38f3810f8">le::ghs::JOIN_INIT_BAD_LEADER</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba35c6c77947e58a4f0552ae256978ea65">le::ghs::JOIN_INIT_BAD_LEVEL</a>, 
-<br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaf463bbcf562e5ba94b61aa83622a6aff">le::ghs::JOIN_MY_LEADER</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba80f0148d170d37e75a0b887e47141271">le::ghs::JOIN_UNEXPECTED_REPLY</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbad039adc2443f103b267b1a8d44f9abf5">le::ghs::ERR_IMPL</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbab22c0228cd6363fb8303fddaf3e1f5a7">le::ghs::CAST_INVALID_EDGE</a>, 
-<br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbae6cf5614809639dd91915b16ba1093bb">le::ghs::SET_INVALID_EDGE</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba2dd3c9f149a883a2a78bbcca5ef0ee91">le::ghs::PARENT_UNRECOGNIZED</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbaac43749d8a18ca73f883d12040ecb508">le::ghs::PARENT_REQ_MST</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbadb9ae26cd6905be6ef244c24eea40587">le::ghs::NO_SUCH_PEER</a>, 
-<br />
-&#160;&#160;<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acbae917037e3db09b3c3a7f263ac27b032a">le::ghs::IMPL_REQ_PEER_MY_ID</a>, 
-<a class="el" href="namespacele_1_1ghs.html#aac347dba4047a0b57893ee8895e66acba219c611f01e92dfc826f1c4f5460a7ef">le::ghs::TOO_MANY_AGENTS</a>
-<br />
- }</td></tr>
-<tr class="separator:aac347dba4047a0b57893ee8895e66acb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:aae453b8c5ad07a483f01c531dbe3cd78"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacele_1_1ghs.html#aae453b8c5ad07a483f01c531dbe3cd78">le::ghs::strerror</a> (const Retcode &amp;r)</td></tr>
-<tr class="separator:aae453b8c5ad07a483f01c531dbe3cd78"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><b>The main GhsState object</b> </p>

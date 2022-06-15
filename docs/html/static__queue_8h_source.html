@@ -74,87 +74,68 @@ $(function() {
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#ifndef STATIC_QUEUE_H</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#define STATIC_QUEUE_H</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;cstdlib&gt;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="errno_8h.html">le/errno.h</a>&quot;</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="namespaceseque.html">   47</a></span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceseque.html">seque</a>{</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno"><a class="line" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">   52</a></span>&#160;  <span class="keyword">enum</span> <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a>{</div>
-<div class="line"><a name="l00053"></a><span class="lineno"><a class="line" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca6db7d02c36017b6c1cea04b4d8d1354d">   53</a></span>&#160;    <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca6db7d02c36017b6c1cea04b4d8d1354d">OK</a>=0,</div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca410ee58799978ee68a138dab090f1afd">   54</a></span>&#160;    <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca410ee58799978ee68a138dab090f1afd">ERR_QUEUE_FULL</a>,</div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca89802aaefdd03852da78c49143f63710">   55</a></span>&#160;    <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca89802aaefdd03852da78c49143f63710">ERR_QUEUE_EMPTY</a>,</div>
-<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440cad892083b2887e600020f1c76f35beb19">   56</a></span>&#160;    <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440cad892083b2887e600020f1c76f35beb19">ERR_BAD_IDX</a>,</div>
-<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca3a68c6c5a6bb2bc6e26695e629e27f5a">   57</a></span>&#160;    <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca3a68c6c5a6bb2bc6e26695e629e27f5a">ERR_NO_SUCH_ELEMENT</a>,</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  };</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="namespaceseque.html#aeb4be6dd256dbe61f42cb1c003955c0b">Q_OK</a>(<span class="keyword">const</span> <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">seque::Retcode</a> &amp;r);</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> N&gt;</div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classseque_1_1StaticQueue.html">   60</a></span>&#160;    <span class="keyword">class </span><a class="code" href="classseque_1_1StaticQueue.html">StaticQueue</a></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    {</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;      <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keyword">const</span> <span class="keywordtype">char</span>* <a class="code" href="namespaceseque.html#a137bb7c82a5a80bb51d465c986810aa8">strerr</a>(<span class="keyword">const</span> <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">seque::Retcode</a> &amp;r);</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <a class="code" href="classseque_1_1StaticQueue.html#a6064c31f4371fbf91f52cf8d29174175">StaticQueue</a>();</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        ~<a class="code" href="classseque_1_1StaticQueue.html">StaticQueue</a>();</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> T, std::<span class="keywordtype">size_t</span> N&gt;</div>
-<div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="classseque_1_1StaticQueue.html">   83</a></span>&#160;    <span class="keyword">class </span><a class="code" href="classseque_1_1StaticQueue.html">StaticQueue</a></div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    {</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;      <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="classseque_1_1StaticQueue.html#a7803b784f2d6a407fce63bcf9cf25312">is_full</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="classseque_1_1StaticQueue.html#a665a0183275e2053613977e10aaad085">is_empty</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="classseque_1_1StaticQueue.html#a8ccd0073c0cbf7c7f650e119362bb8ed">size</a>() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160; </div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;        <a class="code" href="classseque_1_1StaticQueue.html#a6064c31f4371fbf91f52cf8d29174175">StaticQueue</a>();</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        ~<a class="code" href="classseque_1_1StaticQueue.html">StaticQueue</a>();</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160; </div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="classseque_1_1StaticQueue.html#a7803b784f2d6a407fce63bcf9cf25312">is_full</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keywordtype">bool</span> <a class="code" href="classseque_1_1StaticQueue.html#a665a0183275e2053613977e10aaad085">is_empty</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        <span class="keywordtype">size_t</span> <a class="code" href="classseque_1_1StaticQueue.html#a1411a295dffaaebd346dae90a15fca8d">size</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a> <a class="code" href="classseque_1_1StaticQueue.html#a32a0c618374fdc804df93eb6845e6220">front</a>(T &amp;out_item) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <a class="code" href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a> <a class="code" href="classseque_1_1StaticQueue.html#ad758698cf6926083f15d556b9e4dc90f">front</a>(T &amp;out_item) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160; </div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <a class="code" href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a> <a class="code" href="classseque_1_1StaticQueue.html#a4f95e6062a639b389c5ac95c32cd8bb4">pop</a>();</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <a class="code" href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a> <a class="code" href="classseque_1_1StaticQueue.html#a4f95e6062a639b389c5ac95c32cd8bb4">pop</a>(T &amp;out_item);</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160; </div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a> <a class="code" href="classseque_1_1StaticQueue.html#ae1614af1da8a98ff8b0e8666de036a88">pop</a>();</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;        <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a> <a class="code" href="classseque_1_1StaticQueue.html#ae1614af1da8a98ff8b0e8666de036a88">pop</a>(T &amp;out_item);</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <a class="code" href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a> <a class="code" href="classseque_1_1StaticQueue.html#aab3bc7c49ec2e45735d72d5e9c8e44d6">push</a>(<span class="keyword">const</span> T item);</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160; </div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        <a class="code" href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a> <a class="code" href="classseque_1_1StaticQueue.html#ac2d4e5351c7278265b82d8e7cab254dc">at</a>(<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> idx, T &amp;out_item ) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        <a class="code" href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a> clear();</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160; </div>
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160; </div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a> <a class="code" href="classseque_1_1StaticQueue.html#ad527d3ce61dc2573e440e334df1d7050">push</a>(<span class="keyword">const</span> T item);</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160; </div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;      <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        T circle_buf[N];</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> idx_front;</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> idx_back;</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> count;</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160; </div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    };</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a> <a class="code" href="classseque_1_1StaticQueue.html#a1672a9f0dfe6c382d76292c5b7e332b4">at</a>(<span class="keyword">const</span> <span class="keywordtype">size_t</span> idx, T &amp;out_item ) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160; </div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        <a class="code" href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">Retcode</a> clear();</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160; </div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160; </div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;      <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        T circle_buf[N];</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        <span class="keywordtype">size_t</span> idx_front;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <span class="keywordtype">size_t</span> idx_back;</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        <span class="keywordtype">size_t</span> count;</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160; </div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    };</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160; </div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="static__queue__impl_8hpp.html">seque/static_queue_impl.hpp</a>&quot;</span></div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160; </div>
-<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;}</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160; </div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="static__queue__impl_8hpp.html">seque/static_queue_impl.hpp</a>&quot;</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160; </div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;}</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160; </div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="preprocessor">#endif</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_a1672a9f0dfe6c382d76292c5b7e332b4"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a1672a9f0dfe6c382d76292c5b7e332b4">seque::StaticQueue::at</a></div><div class="ttdeci">Retcode at(const size_t idx, T &amp;out_item) const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:125</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_a1411a295dffaaebd346dae90a15fca8d"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a1411a295dffaaebd346dae90a15fca8d">seque::StaticQueue::size</a></div><div class="ttdeci">size_t size() const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:63</div></div>
 <div class="ttc" id="astatic__queue__impl_8hpp_html"><div class="ttname"><a href="static__queue__impl_8hpp.html">static_queue_impl.hpp</a></div><div class="ttdoc">Static Queue Implementation.</div></div>
-<div class="ttc" id="anamespaceseque_html_a83d9a4dc1b5b513df2fcf67dca9d440cad892083b2887e600020f1c76f35beb19"><div class="ttname"><a href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440cad892083b2887e600020f1c76f35beb19">seque::ERR_BAD_IDX</a></div><div class="ttdeci">@ ERR_BAD_IDX</div><div class="ttdoc">Operation failed and is not possible to succeed: that idx is beyond the static size of the queue.</div><div class="ttdef"><b>Definition:</b> static_queue.h:56</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_ad527d3ce61dc2573e440e334df1d7050"><div class="ttname"><a href="classseque_1_1StaticQueue.html#ad527d3ce61dc2573e440e334df1d7050">seque::StaticQueue::push</a></div><div class="ttdeci">Retcode push(const T item)</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:68</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_a32a0c618374fdc804df93eb6845e6220"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a32a0c618374fdc804df93eb6845e6220">seque::StaticQueue::front</a></div><div class="ttdeci">Retcode front(T &amp;out_item) const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:90</div></div>
-<div class="ttc" id="anamespaceseque_html_a83d9a4dc1b5b513df2fcf67dca9d440ca6db7d02c36017b6c1cea04b4d8d1354d"><div class="ttname"><a href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca6db7d02c36017b6c1cea04b4d8d1354d">seque::OK</a></div><div class="ttdeci">@ OK</div><div class="ttdoc">OK.</div><div class="ttdef"><b>Definition:</b> static_queue.h:53</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_a6064c31f4371fbf91f52cf8d29174175"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a6064c31f4371fbf91f52cf8d29174175">seque::StaticQueue::StaticQueue</a></div><div class="ttdeci">StaticQueue()</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:42</div></div>
-<div class="ttc" id="anamespaceseque_html_a83d9a4dc1b5b513df2fcf67dca9d440c"><div class="ttname"><a href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440c">seque::Retcode</a></div><div class="ttdeci">Retcode</div><div class="ttdef"><b>Definition:</b> static_queue.h:52</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html"><div class="ttname"><a href="classseque_1_1StaticQueue.html">seque::StaticQueue</a></div><div class="ttdoc">a static-sized single-ended queue for use in GhsState</div><div class="ttdef"><b>Definition:</b> static_queue.h:83</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_ae1614af1da8a98ff8b0e8666de036a88"><div class="ttname"><a href="classseque_1_1StaticQueue.html#ae1614af1da8a98ff8b0e8666de036a88">seque::StaticQueue::pop</a></div><div class="ttdeci">Retcode pop()</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:95</div></div>
-<div class="ttc" id="anamespaceseque_html_a83d9a4dc1b5b513df2fcf67dca9d440ca410ee58799978ee68a138dab090f1afd"><div class="ttname"><a href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca410ee58799978ee68a138dab090f1afd">seque::ERR_QUEUE_FULL</a></div><div class="ttdeci">@ ERR_QUEUE_FULL</div><div class="ttdoc">Operation failed, the queue is full.</div><div class="ttdef"><b>Definition:</b> static_queue.h:54</div></div>
-<div class="ttc" id="anamespaceseque_html_a83d9a4dc1b5b513df2fcf67dca9d440ca89802aaefdd03852da78c49143f63710"><div class="ttname"><a href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca89802aaefdd03852da78c49143f63710">seque::ERR_QUEUE_EMPTY</a></div><div class="ttdeci">@ ERR_QUEUE_EMPTY</div><div class="ttdoc">Operation failed, the queue is empty.</div><div class="ttdef"><b>Definition:</b> static_queue.h:55</div></div>
+<div class="ttc" id="anamespacele_html_a8527120ca75deda9dc60249a6d3c9929"><div class="ttname"><a href="namespacele.html#a8527120ca75deda9dc60249a6d3c9929">le::Errno</a></div><div class="ttdeci">Errno</div><div class="ttdef"><b>Definition:</b> errno.h:49</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_a6064c31f4371fbf91f52cf8d29174175"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a6064c31f4371fbf91f52cf8d29174175">seque::StaticQueue::StaticQueue</a></div><div class="ttdeci">StaticQueue()</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:43</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html"><div class="ttname"><a href="classseque_1_1StaticQueue.html">seque::StaticQueue</a></div><div class="ttdoc">a static-sized single-ended queue for use in GhsState</div><div class="ttdef"><b>Definition:</b> static_queue.h:60</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_ac2d4e5351c7278265b82d8e7cab254dc"><div class="ttname"><a href="classseque_1_1StaticQueue.html#ac2d4e5351c7278265b82d8e7cab254dc">seque::StaticQueue::at</a></div><div class="ttdeci">le::Errno at(const unsigned int idx, T &amp;out_item) const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:126</div></div>
 <div class="ttc" id="anamespaceseque_html"><div class="ttname"><a href="namespaceseque.html">seque</a></div><div class="ttdef"><b>Definition:</b> static_queue.h:47</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_a665a0183275e2053613977e10aaad085"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a665a0183275e2053613977e10aaad085">seque::StaticQueue::is_empty</a></div><div class="ttdeci">bool is_empty() const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:58</div></div>
-<div class="ttc" id="anamespaceseque_html_a83d9a4dc1b5b513df2fcf67dca9d440ca3a68c6c5a6bb2bc6e26695e629e27f5a"><div class="ttname"><a href="namespaceseque.html#a83d9a4dc1b5b513df2fcf67dca9d440ca3a68c6c5a6bb2bc6e26695e629e27f5a">seque::ERR_NO_SUCH_ELEMENT</a></div><div class="ttdeci">@ ERR_NO_SUCH_ELEMENT</div><div class="ttdoc">Operation failed, there are less elements than the given index in the queue.</div><div class="ttdef"><b>Definition:</b> static_queue.h:57</div></div>
-<div class="ttc" id="anamespaceseque_html_a137bb7c82a5a80bb51d465c986810aa8"><div class="ttname"><a href="namespaceseque.html#a137bb7c82a5a80bb51d465c986810aa8">seque::strerr</a></div><div class="ttdeci">const char * strerr(const seque::Retcode &amp;r)</div><div class="ttdef"><b>Definition:</b> seque.cpp:50</div></div>
-<div class="ttc" id="anamespaceseque_html_aeb4be6dd256dbe61f42cb1c003955c0b"><div class="ttname"><a href="namespaceseque.html#aeb4be6dd256dbe61f42cb1c003955c0b">seque::Q_OK</a></div><div class="ttdeci">bool Q_OK(const seque::Retcode &amp;r)</div><div class="ttdef"><b>Definition:</b> seque.cpp:45</div></div>
-<div class="ttc" id="aclassseque_1_1StaticQueue_html_a7803b784f2d6a407fce63bcf9cf25312"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a7803b784f2d6a407fce63bcf9cf25312">seque::StaticQueue::is_full</a></div><div class="ttdeci">bool is_full() const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:53</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_a665a0183275e2053613977e10aaad085"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a665a0183275e2053613977e10aaad085">seque::StaticQueue::is_empty</a></div><div class="ttdeci">bool is_empty() const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:59</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_a4f95e6062a639b389c5ac95c32cd8bb4"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a4f95e6062a639b389c5ac95c32cd8bb4">seque::StaticQueue::pop</a></div><div class="ttdeci">le::Errno pop()</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:96</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_aab3bc7c49ec2e45735d72d5e9c8e44d6"><div class="ttname"><a href="classseque_1_1StaticQueue.html#aab3bc7c49ec2e45735d72d5e9c8e44d6">seque::StaticQueue::push</a></div><div class="ttdeci">le::Errno push(const T item)</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:69</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_ad758698cf6926083f15d556b9e4dc90f"><div class="ttname"><a href="classseque_1_1StaticQueue.html#ad758698cf6926083f15d556b9e4dc90f">seque::StaticQueue::front</a></div><div class="ttdeci">le::Errno front(T &amp;out_item) const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:91</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_a7803b784f2d6a407fce63bcf9cf25312"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a7803b784f2d6a407fce63bcf9cf25312">seque::StaticQueue::is_full</a></div><div class="ttdeci">bool is_full() const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:54</div></div>
+<div class="ttc" id="aclassseque_1_1StaticQueue_html_a8ccd0073c0cbf7c7f650e119362bb8ed"><div class="ttname"><a href="classseque_1_1StaticQueue.html#a8ccd0073c0cbf7c7f650e119362bb8ed">seque::StaticQueue::size</a></div><div class="ttdeci">unsigned int size() const</div><div class="ttdef"><b>Definition:</b> static_queue_impl.hpp:64</div></div>
+<div class="ttc" id="aerrno_8h_html"><div class="ttname"><a href="errno_8h.html">errno.h</a></div><div class="ttdoc">Provides error codes for all classes / functions.</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">
