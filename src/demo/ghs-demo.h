@@ -213,14 +213,14 @@ namespace demo{
     sleep(1);
     comms.print_iperf();
 
-    GhsState<MAX_N,COMMS_Q_SZ>*ghsp=nullptr;
+    GhsState<MAX_N,COMMS_Q_SZ> ghsp(-1,{},0);
 
     if (config.command==demo::Config::START){
     //initialize all the message-driven state machines that need msg callbacks.
     //In this case. Just GHS...
-      *ghsp =  demo::initialize_ghs<MAX_N,COMMS_Q_SZ>(config,comms);
+      ghsp =  demo::initialize_ghs<MAX_N,COMMS_Q_SZ>(config,comms);
       size_t sent;
-      auto ret = ghsp->start_round(ghs_buf, sent);
+      auto ret = ghsp.start_round(ghs_buf, sent);
       if (ret != le::OK){
         printf("[error] could not start ghs! (%d)\n", ret);
         return 1;
@@ -258,20 +258,20 @@ namespace demo{
               ss<<payload_msg;
               printf("[info] received GHS msg: %s\n",ss.str().c_str());
               size_t new_msg_ct=0;
-              le::Errno retval = ghsp->process(payload_msg,ghs_buf, new_msg_ct);
+              le::Errno retval = ghsp.process(payload_msg,ghs_buf, new_msg_ct);
               if (retval != le::OK){
-                printf("[error] could not call ghsp->process():%s",le::strerror(retval));
+                printf("[error] could not call ghsp.process():%s",le::strerror(retval));
                 return 1;
               }
               printf("[info] # response msgs: %zu\n", new_msg_ct);
               printf("[info] GHS waiting: %zu, delayed: %zu, leader: %d, parent: %d, level: %d\n", 
-                  ghsp->waiting_count(),
-                  ghsp->delayed_count(),
-                  ghsp->get_leader_id(), 
-                  ghsp->get_parent_id(),
-                  ghsp->get_level());
+                  ghsp.waiting_count(),
+                  ghsp.delayed_count(),
+                  ghsp.get_leader_id(), 
+                  ghsp.get_parent_id(),
+                  ghsp.get_level());
               printf("[info] Edges: %s\n",
-                  dump_edges(*ghsp).c_str());
+                  dump_edges(ghsp).c_str());
               break;
             }
           default: { printf("[error] unknown payload type: %d\n", in.header.type); wegood=false; break;}
@@ -319,7 +319,7 @@ namespace demo{
         }
       }
 
-      if (ghsp->is_converged()){
+      if (ghsp.is_converged()){
         printf("Converged!\n");
         wegood=false;
       }
