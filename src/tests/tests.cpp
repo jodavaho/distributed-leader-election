@@ -494,7 +494,7 @@ TEST_CASE("unit-test process_srch, mixed peers, with parent link")
   m = Msg(0,3,SrchPayload{0,0} );
   CHECK_EQ(SRCH_STILL_WAITING, s.process(m,buf,sz));
 }
-/*
+
 
 TEST_CASE("Guard against Edge refactoring"){
   Edge y = Edge{4,1,UNKNOWN, 1000};
@@ -510,14 +510,14 @@ TEST_CASE("unit-test worst_edge()")
   CHECK(edge.root== NO_AGENT);
   CHECK(edge.status== UNKNOWN);
   CHECK(edge.metric_val == WORST_METRIC);
-  Edge y = Edge{4,1,UNKNOWN, 1000};
+  Edge y = Edge{4,1,UNKNOWN, std::numeric_limits<size_t>::max()};
   CHECK(y.peer == 4);
   CHECK(y.root== 1);
-  CHECK(y.metric_val== 1000);
   y = edge;
   CHECK_EQ(y.metric_val,WORST_METRIC );
 }
 
+/*
 TEST_CASE("unit-test process throws with no edge")
 {
 
