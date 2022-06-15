@@ -68,6 +68,10 @@ namespace le{
     ERR_IMPL,                  ///< Implementation error: Reached branch that should not have been reachable
     CAST_INVALID_EDGE,         ///< *cast operation failed because of bad edge
     SET_INVALID_EDGE,          ///< add- or set edge failed because of malformed edge
+    SET_INVALID_EDGE_METRIC,   ///< add- or set edge failed because metric_val==WORST_METRIC
+    SET_INVALID_EDGE_NOT_ROOT, ///< add- or set edge failed because edge was not rooted on my_id
+    SET_INVALID_EDGE_NO_AGENT, ///< add- or set edge failed because of NO_AGENT as peer/root
+    SET_INVALID_EDGE_SELF_LOOP, ///< add- or set edge failed because Edge.peer == my_id
     PARENT_UNRECOGNIZED,       ///< Cannot set parent ID to unrecognized node (no edge to them!)
     PARENT_REQ_MST,            ///< Cannot set parent ID to non-MST node (bad edge type)
     NO_SUCH_PEER,              ///< Cannot find peer idx -- no edge or unrecognized ID?

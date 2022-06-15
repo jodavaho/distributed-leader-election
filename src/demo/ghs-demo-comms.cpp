@@ -485,4 +485,9 @@ send_cleanup:
     return sym_metric(agent_id, ghs_cfg.my_id, kbps[agent_id]);
   }
 
+
+  Kbps Comms::kbps_to(const uint16_t to) const
+  {
+    return kbps[to];
+  }
 }

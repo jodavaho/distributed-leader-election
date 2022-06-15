@@ -84,6 +84,8 @@ namespace le{
       UNKNOWN = 0,
       /// We have added this edge as an MST link
       MST     = 1,
+      /// We have added this edge as parent MST link
+      MST_PARENT =2, 
       /// We have decided not to further consider this edge, either it was "bad", or it is already part of our partition
       DELETED =-1,
     };
