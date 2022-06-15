@@ -67,8 +67,8 @@ std::string  dump_edges(const le::ghs::GhsState<A,B> &s) {
       ss<<e.root<<"-->"<<e.peer<<" ";
       switch (e.status){
         case UNKNOWN: {ss<<"UNK";break;}
-        case MST: {ss<<"MST+C";break;}
-        case MST_PARENT: {ss<<"MST+P";break;}
+        case MST: {ss<<"MST+C ";break;}
+        case MST_PARENT: {ss<<"MST+P ";break;}
         case DELETED: {ss<<"DEL";break;}
       }
       if (e.peer == mwoe.peer){

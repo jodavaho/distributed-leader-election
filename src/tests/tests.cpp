@@ -54,15 +54,15 @@ GhsState<N,BUF_SZ> get_state(agent_t my_id=0, size_t n_unknown=1, size_t n_delet
   agent_t id=1;
   std::vector<Edge> edges;
   for (size_t i=0;i<n_unknown;i++, id++){
-    metric_t useless_metric = id+i;
+    metric_t useless_metric = id*10;
     edges.push_back({id,my_id,UNKNOWN, useless_metric});
   }
   for (size_t i=0;i<n_deleted;i++, id++){
-    metric_t useless_metric = id+i;
+    metric_t useless_metric = id*10;
     edges.push_back({id,my_id,DELETED, useless_metric});
   }
   for (size_t i=0;i<n_MST;i++, id++){
-    metric_t useless_metric = id+i;
+    metric_t useless_metric = id*10;
     edges.push_back({id,my_id,MST, useless_metric});
   }
 
@@ -87,6 +87,14 @@ GhsState<N,BUF_SZ> get_state(agent_t my_id=0, size_t n_unknown=1, size_t n_delet
   }
 
   return ghs;
+}
+
+template<std::size_t N, std::size_t BUF_SZ>
+Errno trick_partition(GhsState<N,BUF_SZ> &ghs, agent_t from_id, agent_t leader_id, level_t level_set){
+  Msg m=Msg(ghs.get_id(), from_id, SrchPayload{leader_id, level_set});
+  StaticQueue<Msg,BUF_SZ> buf;
+  size_t sz;
+  return ghs.process(m,buf,sz);
 }
 
 TEST_CASE("unit-test get_state"){
@@ -608,12 +616,8 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   //parent is 2
 
   //start it by getting a search from leader to node 0
-  //not our parent:
+  //not our parent, but that's OK!
   Msg m =Msg(0,1,SrchPayload{2,0});
-  CHECK_EQ(PROCESS_REQ_MST , s.process( m, buf, sz));
-
-  //2 is our parent
-  m =Msg(0,2,SrchPayload{2,0});
   CHECK_EQ(OK, s.process( m, buf, sz));
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
@@ -624,21 +628,21 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   Msg buf_front;
   CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type(), msg::Type::SRCH);
-  CHECK_EQ(buf_front.to(), 1);
+  CHECK_EQ(buf_front.to(), 2);
   buf.pop();
   CHECK_EQ(s.waiting_count(),1);//waiting on node 2
   //pretend node 2 returned a good edge (from 2 to 3 with wt 0) back to node 0
  
   //srch_ret from parent? Preposterous
-  auto srch_ret_msg =Msg(0,2,SrchRetPayload{3,2,1});
+  auto srch_ret_msg =Msg(0,1,SrchRetPayload{3,2,1});
   CHECK_EQ(UNEXPECTED_SRCH_RET,s.process( srch_ret_msg, buf, sz));
   CHECK_EQ(s.waiting_count(),1);
 
-  srch_ret_msg =Msg(0,1,SrchRetPayload{3,2,1});
+  srch_ret_msg =Msg(0,2,SrchRetPayload{3,2,1});
   CHECK_EQ(OK,s.process( srch_ret_msg, buf, sz));
   CHECK_EQ(s.waiting_count(),0);
 
-  //verify srch return was essentially "no edge"
+  //verify srch return was essentially "no edge" as from payload above
   CHECK_EQ(s.mwoe().root, 2);
   CHECK_EQ(s.mwoe().peer, 3);
   CHECK_EQ(s.mwoe().metric_val, 1);
@@ -649,23 +653,17 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   //in this case, we have to tell parent
   CHECK ( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type(), msg::Type::SRCH_RET);
-  CHECK_EQ(buf_front.to(), 2);
+  CHECK_EQ(buf_front.to(), 1);
 
 }
-/*
 
-TEST_CASE("unit-test process_ack_part, happy-path"){
-  auto s = get_state<4,32>(0;
+TEST_CASE("unit-test process_ack_part, happy-path")
+{
   StaticQueue<Msg,32> buf;
   Edge e;
 
-  //create edge to 1
-  Edge e1 = {1,0,UNKNOWN,10};
-  CHECK_EQ(1, e1.peer);
-  CHECK_EQ(0, e1.root);
-  CHECK_EQ(OK,s.set_edge( e1 ));
-  CHECK_EQ(OK,s.get_edge(1,e));
-  CHECK_EQ(e.status, UNKNOWN);
+  //create edge to 1 (unknown)
+  auto s = get_state<4,32>(0,1);
   size_t sz;
   s.start_round(buf, sz);
   CHECK_EQ(1,s.waiting_count());
@@ -680,19 +678,16 @@ TEST_CASE("unit-test process_ack_part, happy-path"){
   CHECK_EQ(e.status, DELETED);
 }
 
-TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
-  auto s = get_state<4,32>(0;
+
+TEST_CASE("unit-test process_ack_part, not waiting for anyone")
+{
+  //create edge to 1
+  auto s = get_state<4,32>(0,1);
   StaticQueue<Msg,32> buf;
 
-  //create edge to 1
-  Edge e1 = {1,0,UNKNOWN,10};
-  CHECK_EQ(1, e1.peer);
-  CHECK_EQ(0, e1.root);
-  CHECK_EQ(OK,s.set_edge( e1 ));
   Edge e;
   CHECK_EQ(OK, s.get_edge(1,e));
   CHECK_EQ(e.status, UNKNOWN);
-
   CHECK_EQ(0,s.waiting_count());
   
   Msg m =Msg(0,1,AckPartPayload{});
@@ -704,37 +699,13 @@ TEST_CASE("unit-test process_ack_part, not waiting for anyone"){
   CHECK_EQ(tmp.status, UNKNOWN); //<--unmodified!
 }
 
-TEST_CASE("unit-test process_ack_part, no edge"){
-  auto s = get_state<4,32>(0;
+
+TEST_CASE("unit-test process_ack_part, waiting, but not for sender")
+{
+  auto s = get_state<4,32>(0,2);
   StaticQueue<Msg,32> buf;
   Edge e;
 
-  //create edge to 1
-  Edge e1 = {1,0,UNKNOWN,10};
-  CHECK_EQ(1, e1.peer);
-  CHECK_EQ(0, e1.root);
-  CHECK( !s.has_edge(1) );
-  s.add_edge(e1);
-  CHECK( s.has_edge(1) );
-  CHECK_EQ(OK, s.get_edge(1,e));
-  CHECK_EQ(0,s.waiting_count());
-
-  Msg m =Msg(0,1,AckPartPayload{});
-  CHECK_EQ(m.from(),1);//<-- code should modify using "from" field
-  size_t sz;
-  CHECK_EQ(ACK_NOT_WAITING,s.process(m,buf, sz));
-}
-
-TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
-  auto s = get_state<4,32>(0;
-  StaticQueue<Msg,32> buf;
-  Edge e;
-
-  //create edge to 1
-  Edge e1 = {1,0,UNKNOWN,10};
-  Edge e2 = {2,0,UNKNOWN,10};
-  CHECK_EQ(OK,s.set_edge( e1 ));
-  CHECK_EQ(OK,s.set_edge( e2 ));
   size_t sz;
   s.start_round(buf, sz);
   CHECK_EQ(2,s.waiting_count());
@@ -752,14 +723,10 @@ TEST_CASE("unit-test process_ack_part, waiting, but not for sender"){
 }
 
 TEST_CASE("unit-test in_part, happy-path"){
-  auto s = get_state<4,32>(0;
+  auto s = get_state<4,32>(0,1);
   StaticQueue<Msg,32> buf;
-  //set partition to led by agent 0 with level 2
-  s.set_leader_id(0);
-  s.set_level(2);
-  //are you, node 0, in partition led by agent 1 with level 2? 
-  s.add_edge( {1,0,UNKNOWN,999} );
-  Msg m =Msg(0,1,InPartPayload{1,2});
+  //are you, node 0, in partition led by agent 2 with level 0? 
+  Msg m =Msg(0,1,InPartPayload{1,0});
   size_t sz;
   CHECK_EQ(OK, s.process( m, buf, sz));
   CHECK_EQ(buf.size(),1);
@@ -769,8 +736,8 @@ TEST_CASE("unit-test in_part, happy-path"){
   CHECK_EQ(m.type(), msg::Type::NACK_PART);
   buf.pop();
 
-  //are you, node 0,  in partition led by agent 0 with level 2? 
-  m =Msg(0,1,InPartPayload{0,2});
+  //are you, node 0,  in partition led by agent 0 with level 0? 
+  m =Msg(0,1,InPartPayload{0,0});
   CHECK_EQ(OK, s.process( m, buf, sz));
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(buf.size(),sz);
@@ -780,10 +747,10 @@ TEST_CASE("unit-test in_part, happy-path"){
   CHECK_EQ(m.type(), msg::Type::ACK_PART);
   buf.pop();
 
-  //are you, node 0, in partition led by agent 0 with level 3?
-  m =Msg(0,1,InPartPayload{0,3});
+  //are you, node 0, in partition led by agent 0 with level 1?
+  m =Msg(0,1,InPartPayload{0,1});
   CHECK_EQ(OK, s.process( m, buf, sz));
-  //well, I can't say, I'm only level 2
+  //well, I can't say, I'm only level 0
   CHECK_EQ(buf.size(),0);
   CHECK_EQ(buf.size(),sz);
   CHECK_EQ(s.waiting_count(),0);
@@ -792,42 +759,35 @@ TEST_CASE("unit-test in_part, happy-path"){
 
 TEST_CASE("unit-test process_nack_part, happy-path"){
 
-  auto s = get_state<4,32>(0;
+  auto s = get_state<4,32>(0,2);
   StaticQueue<Msg,32> buf;
   Msg m;
-
-  CHECK_EQ(OK,s.set_edge({1,0,UNKNOWN,10}));
-  CHECK_EQ(OK,s.set_edge({2,0,UNKNOWN,20}));
-  s.set_leader_id(0);
-  s.set_level(0);
-
   size_t sz;
   s.start_round(buf, sz);
-  CHECK_EQ(buf.size(),2);
+  CHECK_EQ(buf.size(),2);//SRCH x2
+  CHECK_EQ(s.waiting_count(),2);
   buf.pop();buf.pop();
 
-  CHECK_EQ(s.waiting_count(),2);
   m =Msg(0,2,NackPartPayload{}); 
   REQUIRE_EQ(OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),           0);
   CHECK_EQ(s.waiting_count(),    1);
-  CHECK_EQ(s.mwoe().metric_val, 20);
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        2);
+  CHECK_EQ(s.mwoe().metric_val, 20);//see get_state for how it's set to idx10
   //can't do twice
   CHECK_EQ(ACK_NOT_WAITING, s.process(m,buf, sz));
   CHECK_EQ(buf.size(),0);
-
 
   m =Msg(0,1,NackPartPayload{}); 
   REQUIRE_EQ(OK,s.process(m,buf, sz));
   CHECK_EQ(buf.size(),           1);
   CHECK_EQ(s.waiting_count(),    0);
-  CHECK_EQ(s.mwoe().metric_val,  10);
   CHECK_EQ(s.mwoe().root,        0);
   CHECK_EQ(s.mwoe().peer,        1);
+  CHECK_EQ(s.mwoe().metric_val,  10);
 
-  //response should be to tell the other guy we're joining up
+  //response should be to tell the other guy we're joining up, since we're "root"
   Msg buf_front;
   CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type(),  msg::Type::JOIN_US);
@@ -845,21 +805,12 @@ TEST_CASE("unit-test process_nack_part, happy-path"){
 
 TEST_CASE("unit-test process_nack_part, not-leader"){
 
-  auto s = get_state<4,32>(0;
+  //add two outgoing unkonwn edges & leader
+  auto s = get_state<4,32>(0,2,0,1,false);
   StaticQueue<Msg,32> buf;
   Msg m;
 
-  //add two outgoing unkonwn edges
-  CHECK_EQ(OK,s.set_edge({1,0,UNKNOWN,10}));
-  CHECK_EQ(OK,s.set_edge({2,0,UNKNOWN,20}));
-  //add leader
-  CHECK_EQ(OK,s.set_edge({3,0,MST,20}));
-  CHECK_EQ(OK,s.set_parent_id(3));
-  CHECK_EQ(OK,s.set_leader_id(3));
-  CHECK_EQ(OK,s.set_level(0));
-
-
-  //send the start message
+  //send the start message (from leader)
   m =Msg(0,3,SrchPayload{3,0});
   size_t sz;
   CHECK_EQ(OK,s.process(m, buf, sz));
@@ -898,6 +849,9 @@ TEST_CASE("unit-test process_nack_part, not-leader"){
   CHECK( OK== ( buf.front( buf_front) ) );
   CHECK_EQ(buf_front.type(),  msg::Type::SRCH_RET);
   CHECK_EQ(buf_front.to(),    s.get_leader_id());
+  CHECK_EQ(buf_front.data().srch_ret.to,    s.mwoe().peer);
+  CHECK_EQ(buf_front.data().srch_ret.from,    s.mwoe().root);
+  CHECK_EQ(buf_front.data().srch_ret.metric,    s.mwoe().metric_val);
   CHECK_EQ(buf_front.from(),  0);
   //should not add edge yet
   Edge e; 
@@ -917,15 +871,19 @@ TEST_CASE("unit-test join_us nodes pass")
   //note: it's { {edge}, {partition} }
   //aka        {root, peer, leader, level}
   Msg m;
-  m =Msg(0,2,JoinUsPayload{4,5,5,0});
-  
+  size_t sz;
+  //gotta trick leader to be 2
   StaticQueue<Msg,32> buf;
+  m=Msg(0,2,SrchPayload{2,0});
+  CHECK_EQ(OK, s.process(m,buf,sz));
+  CHECK_EQ(buf.size(),1);
+  buf.pop();
+  
   CHECK_EQ(m.from(),2);
   CHECK_EQ(m.to(),  0);
-  size_t sz;
+  m =Msg(0,2,JoinUsPayload{4,5,5,0});
   CHECK_EQ(JOIN_BAD_LEADER, s.process(m,buf, sz));
-  s.set_leader_id(5);
-  s.set_level(0);
+  m =Msg(0,2,JoinUsPayload{9,8,2,0});//<-- ignore payload, as long as leader matches
   CHECK_EQ(s.process(m,buf, sz), OK);
   CHECK_EQ(buf.size(),        1);
   CHECK_EQ(buf.size(),       sz);
@@ -942,6 +900,17 @@ TEST_CASE("unit-test join_us root relays to peer")
   //JOIN us emits new_sheriff messages, cleverly designed. 
   //2(root) -> 0 <-> 1 <- some other root
   auto s = get_state<3,32>(0,1,0,1,false,false);
+  REQUIRE_EQ(s.get_parent_id(), 2);
+  size_t sz;
+  StaticQueue<Msg,32> buf;
+  Msg m;
+  //trick leader again
+  m = Msg(0,2,SrchPayload{2,0});
+  REQUIRE_EQ(OK, s.process(m,buf,sz));
+  REQUIRE_EQ(s.get_leader_id(), 2);
+  REQUIRE_EQ(buf.size(),1);
+  buf.pop();
+  
   //create a join_us that involves me as root
   //this means I'm in_initiating_partition
   //note: it's { {edge}, {partition} }
@@ -952,13 +921,11 @@ TEST_CASE("unit-test join_us root relays to peer")
   s.get_edge(1,e);
   REQUIRE_EQ(e.status, UNKNOWN);
   REQUIRE(s.has_edge(2));
-  s.get_edge(2,e);
-  REQUIRE_EQ(e.status, MST);
-  Msg m =Msg(0,2,JoinUsPayload{1,0,2,0});
-  StaticQueue<Msg,32> buf;
+  REQUIRE_EQ(OK,s.get_edge(2,e));
+  REQUIRE_EQ(e.status, MST_PARENT);
+  m =Msg(0,2,JoinUsPayload{1,0,2,0});
   CHECK_EQ(m.from(),2);
   CHECK_EQ(m.to(),  0);
-  size_t sz;
   CHECK_EQ(OK,s.process(m,buf, sz));
   s.get_edge(1,e);
   CHECK_EQ(e.status , MST);
@@ -991,8 +958,7 @@ TEST_CASE("unit-test join_us response to higher level")
   //3 is mst & leader
   //Let's test the case where 1 sends 0 a join_us
   //and we should trigger an obsorb of 1's partition.
-  s.set_leader_id(3);
-  s.set_level(0);
+  REQUIRE_EQ(OK, trick_partition(s,3,3,0));
   Msg m_one =Msg(0,1,JoinUsPayload{0,1,1,1});// 1 says to zero "Join my solo partition that I lead with level 1" across edge 0-1
   StaticQueue<Msg,32> buf;
   //error: we shoudl never receive a join_ from a this person with this level
@@ -1000,17 +966,9 @@ TEST_CASE("unit-test join_us response to higher level")
   //we detect that they should not have recieved our response to reply to, yet, since they are higher level
   CHECK_EQ(JOIN_UNEXPECTED_REPLY,s.process(m_one,buf, sz));
   //let's assume we are at their level
-  s.set_level(1);
-  Edge e;
-  CHECK_EQ(OK, s.get_edge(m_one.from(), e));
-  CHECK_EQ(OK, s.process(m_one,buf, sz));
-  CHECK_EQ(buf.size(),0);//no msgs to send
-  Edge tmp;
-  CHECK_EQ(OK,s.get_edge(1,tmp));
-  CHECK_EQ(tmp.status,MST); //we marked as MST
 }
 
-TEST_CASE("unit-test join_us response to MST edge")
+TEST_CASE("unit-test join_us non-responsive case")
 {
   auto s = get_state<4,32>(0,1,1,1,false,false);
   //0 is me
@@ -1019,9 +977,7 @@ TEST_CASE("unit-test join_us response to MST edge")
   //3 is mst & leader
   //Let's test the case where 1 sends 0 a join_us
   //and we should trigger an obsorb of 1's partition.
-  s.set_leader_id(3);
-  s.set_level(0);
-  s.set_edge_status(1,MST); //previous one-way join (see prior test case)
+  REQUIRE_EQ(OK, trick_partition(s,3,3,0));
   Msg m =Msg(0,1,JoinUsPayload{0,1,1,0});// 1 says to zero "Join my solo partition that I lead with level 0" across edge 0-1
   StaticQueue<Msg,32> buf;
   size_t sz;
@@ -1030,7 +986,34 @@ TEST_CASE("unit-test join_us response to MST edge")
   Edge e;
   CHECK_EQ(OK,s.get_edge(1,e));
   CHECK_EQ(e.status,MST); //we marked as MST
+  CHECK_EQ(s.get_level(), 0); // not a merge, just an aborb for now.
+  CHECK_EQ(s.get_leader_id(), 3);//we don't update with theirs right now
+  //we're quiet, leader will talk later
+
+}
+
+TEST_CASE("unit-test join_us response to MST edge")
+{
+  //liek before, but we have one extra MST edge as child as though we sent a JOIN_US
+  auto s = get_state<4,32>(0,0,0,3,false,false);
+  //Let's test the case where 1 sends 0 a join_us
+  //and we should trigger an obsorb of 1's partition.
+  REQUIRE_EQ(OK, trick_partition(s,3,3,0));
+  Msg m =Msg(0,1,JoinUsPayload{0,1,1,0});
+  // 1 says to zero "Join my solo partition that I lead with level 0" across
+  // edge 0-1 (which is weird b/c we have them as MST, meaning we must have
+  // sent JOIN_US but they didn't receive it yet or are acting on it and think
+  // they are leader (which in this case they are with higher ID)
+  StaticQueue<Msg,32> buf;
+  size_t sz;
+  CHECK_EQ(OK,s.process(m,buf, sz));
+  CHECK_EQ(buf.size(),0);//No action: we are 0, JOIN_US was from new_leader.
+  Edge e;
+  CHECK_EQ(OK,s.get_edge(1,e));
+  CHECK_EQ(e.status,MST); //we marked as MST
+  CHECK_EQ(s.get_level(), 1); // we detected merge!
   CHECK_EQ(s.get_leader_id(), 1);
+  //but we're quiet, they'll send SRCH
 
 }
 
@@ -1043,8 +1026,7 @@ TEST_CASE("unit-test join_us merge")
   //3 is mst & leader
   //Let's test the case where 1 sends 0 a join_us
   //and we should trigger an obsorb of 1's partition.
-  s.set_leader_id(3);
-  s.set_level(0);
+  trick_partition(s,3,3,0);
   StaticQueue<Msg,32> buf;
   Msg m;
 
@@ -1074,22 +1056,33 @@ TEST_CASE("unit-test join_us merge")
 TEST_CASE("unit-test join_us merge leader-side")
 {
   //essentially the other side of above test
-  GhsState<4,32> s(1);
   //0 is unknown
   //1 is me
   //3 is my leader (not same as 3 above)
-  s.set_leader_id(3);
-  s.set_level(0);
-  s.set_edge({3,1,MST,1});
-  s.set_edge({0,1,UNKNOWN,1});
-  s.set_parent_id(3);
-  CHECK_EQ(s.get_parent_id(),3); 
-  StaticQueue<Msg,32> buf;
+  Edge edges[2] = {
+    Edge{3,1,MST_PARENT,1},
+    Edge{0,1,UNKNOWN,1},
+  };
+  GhsState<4,32> s(1,edges,2);
   Msg m;
-
-  //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 2.
-  m =Msg(1,3,JoinUsPayload{0,1,3,0}); // 3 says to 1 "add the edge 1->0 to partition 3 with level 0. 
   size_t sz;
+  StaticQueue<Msg,32> buf;
+  trick_partition(s,3,3,0);
+  //now it's waiting for the unknown guy, unfortunatley
+  m=Msg(1,0,NackPartPayload{});
+  REQUIRE_EQ(OK,s.process(m,buf,sz));
+  REQUIRE_EQ(s.waiting_count(),0);
+  REQUIRE_EQ(buf.size(),1);
+  buf.pop();
+  //OK, it's not waiting, and partition and leader are all set. 
+
+
+  CHECK_EQ(s.get_parent_id(),3); 
+
+  //FIRST, 1 gets the message that the edge 1-0 is the MWOE from partition with leader 3.
+  m =Msg(1,3,JoinUsPayload{0,1,3,0}); 
+  // 3 says to 1 "add the edge 1->0 to partition 3 with level 0. (essentially
+  // its own partition)
   CHECK_EQ(OK,s.process(m,buf, sz));
   //ok, side effects are:
   //1 sends a message to 0 saying "Join our partition"
@@ -1139,8 +1132,11 @@ TEST_CASE("unit-test join_us merge leader-side")
 
 TEST_CASE("integration-test two nodes")
 {
-  GhsState<4,32> s0(0); s0.add_edge(Edge{1,0,UNKNOWN,1});
-  GhsState<4,32> s1(1); s1.add_edge(Edge{0,1,UNKNOWN,2});
+  Edge edge0[1]={Edge{1,0,UNKNOWN,1}};
+  Edge edge1[1]={Edge{0,1,UNKNOWN,1}};
+
+  GhsState<4,32> s0(0,edge0,1); 
+  GhsState<4,32> s1(1,edge1,1); 
   StaticQueue<Msg,32> buf;
   //let's turn the crank and see what happens
   size_t sz;
@@ -1191,8 +1187,11 @@ TEST_CASE("integration-test two nodes")
 
 TEST_CASE("integration-test opposite two nodes")
 {
-  GhsState<4,32> s0(0); s0.add_edge({1,0,UNKNOWN,1});
-  GhsState<4,32> s1(1); s1.add_edge({0,1,UNKNOWN,2});
+  Edge edge0[1]={Edge{1,0,UNKNOWN,1}};
+  Edge edge1[1]={Edge{0,1,UNKNOWN,1}};
+
+  GhsState<4,32> s0(0,edge0,1); 
+  GhsState<4,32> s1(1,edge1,1); 
   StaticQueue<Msg,32> buf;
   //let's turn the crank and see what happens
   //
@@ -1271,37 +1270,47 @@ TEST_CASE("sim-test 3 node frenzy")
 
   std::ofstream f("sim-test-3-node-frenzy.msgs");
 
-  GhsState<4,32> states[3]={
-    {0},{1},{2}
-  };
+  std::vector<Edge> edges[3];//array of vec so what.
+
   for (int i=0;i<3;i++){
     for (int j=0;j<3;j++){
       if (i!=j){
         //add N^2 edges
-        Edge to_add = {i,j,UNKNOWN,(metric_t)( (1<<i) + (1<<j))};
-        states[j].set_edge(to_add);
+        Edge to_add = {j,i,UNKNOWN,(metric_t)( (1<<i) + (1<<j))};
+        edges[i].push_back(to_add);
       }
     }
   }
+  REQUIRE_EQ(edges[0].size(),2);
+  REQUIRE_EQ(edges[1].size(),2);
+  REQUIRE_EQ(edges[2].size(),2);
+
+  GhsState<4,32> states[3]={
+    {0,edges[0].data(),edges[0].size()},
+    {1,edges[1].data(),edges[1].size()},
+    {2,edges[2].data(),edges[2].size()},
+  };
+
   StaticQueue<Msg,32> buf;
   for (int i=0;i<3;i++){
     size_t sz;
     states[i].start_round(buf, sz);
   }
-  int msg_limit = 100;
+  int msg_limit = 1000;
   int msg_count = 0;
   //here we go:
   //
   while(buf.size()>0 && msg_count++ < msg_limit){
-    Msg m; buf.pop(m);
+    Msg m; 
+    if (OK!=buf.pop(m)){break;}
     StaticQueue<Msg,32> added;
 
     f << "f: "<<states[m.from()]<<std::endl;
     f << "t: "<<states[m.to()]<<std::endl;
     f << "-  "<<m << std::endl;
     size_t sz;
-    states[m.to()].process(m,added, sz);
-    f << "t':"<< states[m.to()]<<std::endl;
+    auto err = states[m.to()].process(m,added, sz);
+    f << "t':"<< states[m.to()]<<" "<<le::strerror(err)<<std::endl;
 
     int added_sz = added.size();
     for (int i=0;i<added_sz;i++){
@@ -1336,4 +1345,4 @@ TEST_CASE("ghs_metric")
   m=1;
   CHECK(is_valid(m));
 }
-*/
+

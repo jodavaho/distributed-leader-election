@@ -156,10 +156,15 @@ le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_srch(  agent_t from, const msg::
     { 
       return ret; 
     }
-    if (to_them.status!=MST_PARENT ) 
-    { 
-      return PROCESS_REQ_MST; 
-    }
+    //HOWEVER. it may not be an MST_PARENT at the moment, because in fact the
+    //parent-status is set by the SRCH messages propegating (see, like 10 lines
+    //later).
+    //
+    //SO DONT DO THIS:
+    //if (to_them.status!=MST_PARENT ) 
+    //{ 
+    //  return PROCESS_REQ_MST; 
+    //}
   }
 
   if (waiting_count() != 0 )
