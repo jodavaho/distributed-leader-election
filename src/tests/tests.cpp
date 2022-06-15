@@ -517,24 +517,11 @@ TEST_CASE("unit-test worst_edge()")
   CHECK_EQ(y.metric_val,WORST_METRIC );
 }
 
-/*
-TEST_CASE("unit-test process throws with no edge")
+TEST_CASE("unit-test process_srch_ret none found")
 {
 
   StaticQueue<Msg,32> buf;
-  auto s = get_state<4,32>(0;
-  size_t sz;
-  Msg m = Msg(0,1, SrchRetPayload{});
-  CHECK_EQ(PROCESS_NO_EDGE_FOUND, s.process(m,buf,sz));
-}
-
-TEST_CASE("unit-test process_srch_ret")
-{
-
-  StaticQueue<Msg,32> buf;
-  auto s = get_state<4,32>(0;
-  //set up one peer, node 1
-  s.set_edge({1, 0,MST,1});
+  auto s = get_state<4,32>(0,0,0,1,true);
 
   //start it
   size_t sz;
@@ -544,7 +531,6 @@ TEST_CASE("unit-test process_srch_ret")
   CHECK_EQ(buf.size(),sz); // SRCH
   Msg m;
   CHECK( OK==( buf.front(m) ) );
-  //CHECK_EQ(buf.front().type(), msg::Type::SRCH);
   CHECK_EQ(m.type(),msg::Type::SRCH);
   buf.pop();
   CHECK_EQ(s.waiting_count(),1);//the MST and UNKNOWN edges
@@ -564,24 +550,17 @@ TEST_CASE("unit-test process_srch_ret")
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(buf.size(),sz);
   //in this case, we didn't create a good edge, so they assume there's none avail
-  //CHECK_EQ(buf.front().type(), msg::Type::NOOP);
-
-  //Msg m;
   CHECK( OK==( buf.front(m) ) );
   CHECK_EQ(m.type(), msg::Type::NOOP);
-
-
 }
+
 
 TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
 {
 
   StaticQueue<Msg,32> buf;
-  auto s = get_state<4,32>(0;
   //set up one peer, node 1
-  s.set_edge({1, 0,MST,1});
-  s.set_leader_id(0);
-  s.set_level(0);
+  auto s = get_state<4,32>(0,0,0,1,true);
 
   //start it
   size_t sz;
@@ -615,10 +594,7 @@ TEST_CASE("unit-test process_srch_ret, one peer, edge found ")
   //check the response (leaders either add edges or call for elections)
   CHECK_EQ(buf.size(),1);
   CHECK_EQ(buf.size(),sz);
-  //in this case, we have a candidate, that should join_us
-  //Msg m;
   CHECK( OK==( buf.front(m) ) );
-  //CHECK_EQ(buf.front().type(), msg::Type::JOIN_US);
   CHECK_EQ(m.type(), msg::Type::JOIN_US);
 
 }
@@ -627,18 +603,18 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
 {
 
   StaticQueue<Msg,32> buf;
-  auto s = get_state<4,32>(0;
-  //set up one peer, node 1
-  s.set_edge({1, 0,MST,1});
-  s.set_edge({2, 0,MST,1});
-  s.set_parent_id(1);
-  s.set_leader_id(1); 
-  s.set_level(0);
+  auto s = get_state<4,32>(0,0,0,2,false);
+  size_t sz;
+  //parent is 2
 
   //start it by getting a search from leader to node 0
-  Msg m =Msg(0,1,SrchPayload{1,0});
-  size_t sz;
-  s.process( m, buf, sz);
+  //not our parent:
+  Msg m =Msg(0,1,SrchPayload{2,0});
+  CHECK_EQ(PROCESS_REQ_MST , s.process( m, buf, sz));
+
+  //2 is our parent
+  m =Msg(0,2,SrchPayload{2,0});
+  CHECK_EQ(OK, s.process( m, buf, sz));
   CHECK_EQ(s.mwoe().root, 0);
   CHECK_EQ(s.mwoe().peer, -1);
   CHECK_EQ(s.mwoe().metric_val, WORST_METRIC);
@@ -648,15 +624,21 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   Msg buf_front;
   CHECK( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type(), msg::Type::SRCH);
-  CHECK_EQ(buf_front.to(), 2);
+  CHECK_EQ(buf_front.to(), 1);
   buf.pop();
   CHECK_EQ(s.waiting_count(),1);//waiting on node 2
   //pretend node 2 returned a good edge (from 2 to 3 with wt 0) back to node 0
-  
+ 
+  //srch_ret from parent? Preposterous
   auto srch_ret_msg =Msg(0,2,SrchRetPayload{3,2,1});
+  CHECK_EQ(UNEXPECTED_SRCH_RET,s.process( srch_ret_msg, buf, sz));
+  CHECK_EQ(s.waiting_count(),1);
 
+  srch_ret_msg =Msg(0,1,SrchRetPayload{3,2,1});
   CHECK_EQ(OK,s.process( srch_ret_msg, buf, sz));
   CHECK_EQ(s.waiting_count(),0);
+
+  //verify srch return was essentially "no edge"
   CHECK_EQ(s.mwoe().root, 2);
   CHECK_EQ(s.mwoe().peer, 3);
   CHECK_EQ(s.mwoe().metric_val, 1);
@@ -667,9 +649,10 @@ TEST_CASE("unit-test process_srch_ret, one peer, not leader")
   //in this case, we have to tell parent
   CHECK ( OK==( buf.front(buf_front) ) );
   CHECK_EQ(buf_front.type(), msg::Type::SRCH_RET);
-  CHECK_EQ(buf_front.to(), 1);
+  CHECK_EQ(buf_front.to(), 2);
 
 }
+/*
 
 TEST_CASE("unit-test process_ack_part, happy-path"){
   auto s = get_state<4,32>(0;
