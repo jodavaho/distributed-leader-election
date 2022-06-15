@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2022-06-14
 
 ### Added
 
@@ -13,6 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Doxygen output set to ${CMAKE_PROJECT_ROOT}/docs for easier reading
 - Various CI files for github
 - Funding links
+
+### Changed
+
+- API BREAKING changes! 
+  - Msg objects now constructed normally, rather than with weird to_msg() call.
+  - GhsState now requires a list of edges, and does not support editing edges after construction
+  - Errno now unified under le::Errno and le::strerror()
+- Increment to 2.0 to reflect API breaking changes
+
+### Fixed
+
+### Deprecated
+
+- Deprecated all the compression (-DENABLE_COMPRESSION) will be removed in future release
+- Deprecated all the tools/ (-DBUILD_TOOLS) will be removed in future release
 
 ## [1.0.0] - 2022-06-01
 ### Added
