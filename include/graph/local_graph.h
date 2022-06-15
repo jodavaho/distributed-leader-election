@@ -33,56 +33,59 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * @file msg.cpp
+ * @file local_graph.h
+ * @brief provides le::LocalGraph defintion
  *
  */
-#include "ghs/msg.h"
+#ifndef LOCAL_GRAPH_H
+#define LOCAL_GRAPH_H 
 
 namespace le{
-  namespace ghs{
 
-    using namespace msg;
+  template<unsigned int SZ>
+  class LocalGraph{
+    public:
 
-    Msg::Msg(): to_(NO_AGENT), from_(NO_AGENT), type_(UNASSIGNED)
-    {}
-    Msg::Msg(agent_t to, agent_t from, NoopPayload p):to_(to),from_(from){
-      type_=NOOP;
-      data_.noop = p;
-    }
-    Msg::Msg(agent_t to, agent_t from, SrchPayload p):to_(to),from_(from){
-      type_=SRCH;
-      data_.srch=p;
-    }
-    Msg::Msg(agent_t to, agent_t from, SrchRetPayload p):to_(to),from_(from){
-      type_=SRCH_RET;
-      data_.srch_ret=p;
-    }
-    Msg::Msg(agent_t to, agent_t from, InPartPayload p):to_(to),from_(from){
-      type_=IN_PART;
-      data_.in_part=p;
-    }
-    Msg::Msg(agent_t to, agent_t from, AckPartPayload p):to_(to),from_(from){
-      type_=ACK_PART;
-      data_.ack_part=p;
-    }
-    Msg::Msg(agent_t to, agent_t from, NackPartPayload p):to_(to),from_(from){
-      type_=NACK_PART;
-      data_.nack_part=p;
-    }
-    Msg::Msg(agent_t to, agent_t from, JoinUsPayload p):to_(to),from_(from){
-      type_=JOIN_US;
-      data_.join_us=p;
-    }
-    Msg::Msg(agent_t to, agent_t from, const Msg &other):to_(to),from_(from){
-      type_=other.type();
-      data_=other.data();
-    }
-    Msg::Msg(agent_t to, agent_t from, Type t, Data d):to_(to),from_(from){
-      type_=t;
-      data_=d;
-    }
-    Msg::~Msg()
-    { }
+      LocalGraph()
+        :sz_(0){}
 
-  }
+      struct LocalEdge
+      {
+        unsigned int to;
+        unsigned int status;
+        unsigned int weight;
+      };
+
+      enum class Errno{
+        OK=0,
+        DOES_NOT_EXIST,
+        ALREADY_EXISTS
+      };
+
+      unsigned int size(){return sz_;}
+      unsigned int max_size(){ return SZ; }
+
+      Errno set(const unsigned int to, const unsigned int status, const unsigned int weight);
+      Errno get(unsigned int & to, unsigned int & status, unsigned int & weight) const;
+
+      Errno set(unsigned int to, const LocalEdge e);
+      Errno get(unsigned int to, LocalEdge &out_e) const;
+
+      Errno set_weight(const unsigned int to, const unsigned int wt);
+      Errno set_status(const unsigned int to, const unsigned int status);
+
+      Errno get_weight(const unsigned int to, unsigned int &out_wt)const;
+      Errno get_status(const unsigned int to, unsigned int &out_status)const;
+
+      static const char * strerror(const Errno e);
+
+    private:
+
+      unsigned int sz_;
+      LocalEdge links[SZ];
+
+  };
 }
+
+#endif
+

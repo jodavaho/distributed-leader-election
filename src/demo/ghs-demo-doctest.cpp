@@ -52,25 +52,25 @@ demo::Config get_cfg(int a=4){
 }
 
 using le::ghs::Msg;
-using le::ghs::InPartPayload;
+using le::ghs::msg::InPartPayload;
+using le::ghs::msg::Type;
 
 TEST_CASE("to_bytes"){
-  InPartPayload pld{2,3};
-  Msg ghs_msg = pld.to_msg(0,1);
-  CHECK_EQ(ghs_msg.to, 0);
-  CHECK_EQ(ghs_msg.from, 1);
-  CHECK_EQ(ghs_msg.data.in_part.leader,2);
-  CHECK_EQ(ghs_msg.data.in_part.level,3);
+  auto ghs_msg = Msg(0,1,InPartPayload {2,3});
+  CHECK_EQ(ghs_msg.to(), 0);
+  CHECK_EQ(ghs_msg.from(), 1);
+  CHECK_EQ(ghs_msg.data().in_part.leader,2);
+  CHECK_EQ(ghs_msg.data().in_part.level,3);
 
   using le::ghs::MAX_MSG_SZ;
   unsigned char buf[MAX_MSG_SZ];
   to_bytes<MAX_MSG_SZ>(ghs_msg, buf);
   auto ghs_again = from_bytes<MAX_MSG_SZ>(buf);
-  CHECK_EQ(ghs_again.type, le::ghs::Msg::IN_PART);
-  CHECK_EQ(ghs_again.to, 0);
-  CHECK_EQ(ghs_again.from, 1);
-  CHECK_EQ(ghs_again.data.in_part.leader,2);
-  CHECK_EQ(ghs_again.data.in_part.level,3);
+  CHECK_EQ(ghs_again.type(), Type::IN_PART);
+  CHECK_EQ(ghs_again.to(), 0);
+  CHECK_EQ(ghs_again.from(), 1);
+  CHECK_EQ(ghs_again.data().in_part.leader,2);
+  CHECK_EQ(ghs_again.data().in_part.level,3);
 }
 
 TEST_CASE("unique_metric")

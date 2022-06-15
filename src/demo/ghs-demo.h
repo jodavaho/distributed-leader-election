@@ -97,13 +97,27 @@ namespace demo{
 
   /// Helper function to build edges from configuration information
   template<size_t AN, size_t QN>
-    void initialize_ghs(GhsState<AN,QN>& ghs, Config& cfg, Comms& c)
+    GhsState<AN,QN> initialize_ghs(Config& cfg, Comms& c)
     {
-      ghs.reset();
+      std::vector<Edge> edges;
       for (int i=0;i<cfg.n_agents;i++){
+        //don't add self links
+        if (i==cfg.my_id){ continue; }
+
+        //dont' add dead links
+        if (c.kbps_to(i)==0){ continue; }
+
+        //OK, link is fine
+        metric_t link_wt = (metric_t) c.unique_link_metric_to(i);
+        edges.push_back( { (agent_t)i, (agent_t)cfg.my_id, UNKNOWN, link_wt, } ); 
+      }
+
+      //construct with all live links
+      GhsState<AN,QN> ghs(cfg.my_id,edges.data(),edges.size());
+
+      //and eyeball-verify the links were added
+      for(int i=0;i<cfg.n_agents;i++){
         if (i!=cfg.my_id){
-          metric_t link_wt = (metric_t) c.unique_link_metric_to(i);
-          ghs.set_edge( { (agent_t)i, (agent_t)cfg.my_id, UNKNOWN, link_wt, } ); 
           printf("[info] Set edge: %d from %d (check=%d)\n",
               i,
               cfg.my_id,
@@ -112,33 +126,10 @@ namespace demo{
           ghs.get_edge(i,e);
           printf("[info] (%d<--%d, %d %lu)\n",
               e.peer,e.root,e.status,e.metric_val);
-        }else{
-          printf("[info] Ignoring: %d (it's me)\n", i);
         }
       }
+      return ghs;
     }
-
-  /// Helper function to remove an edge from the GhsState, but trying to do sanely and without interrupting the execution flow
-  template<size_t AN, size_t QN>
-    void kill_edge(GhsState<AN,QN>& ghs, Config & cfg, uint8_t agent_to)
-    {
-      bool resp_req=false, waiting_for=false;
-      ghs.set_edge( {agent_to, (agent_t) cfg.my_id, DELETED, 0} );
-
-      ghs.is_response_required(agent_to, resp_req);
-      if (resp_req)
-      {
-        printf("[info] response impossible: alerting GHS state machine to loss of agent\n");
-        ghs.set_response_required(agent_to, false);
-      }
-
-      ghs.is_waiting_for(agent_to, waiting_for);
-      if (waiting_for){
-        printf("[info] waiting illogical: alerting GHS state machine to loss of agent\n");
-        ghs.set_waiting_for(agent_to, false);
-      }
-    }
-
 
   /// Run a quick little_iperf() round to check connectivity
   int do_test_and_die(Comms& comms, Config &config){
@@ -184,9 +175,6 @@ namespace demo{
     //Use your own here ... 
     seque::StaticQueue<Msg,COMMS_Q_SZ> buf;
 
-    //initialize all the message-driven state machines that need msg callbacks.
-    //In this case. Just GHS...
-    le::ghs::GhsState<MAX_N,COMMS_Q_SZ> ghs(config.my_id);
 
     //here's the queue to/from ghs TODO: unify message types.
     seque::StaticQueue<Msg,COMMS_Q_SZ> ghs_buf;
@@ -225,11 +213,15 @@ namespace demo{
     sleep(1);
     comms.print_iperf();
 
+    GhsState<MAX_N,COMMS_Q_SZ> ghsp(-1,{},0);
+
     if (config.command==demo::Config::START){
-      demo::initialize_ghs(ghs,config,comms);
+    //initialize all the message-driven state machines that need msg callbacks.
+    //In this case. Just GHS...
+      ghsp =  demo::initialize_ghs<MAX_N,COMMS_Q_SZ>(config,comms);
       size_t sent;
-      auto ret = ghs.start_round(ghs_buf, sent);
-      if (ret != le::ghs::OK){
+      auto ret = ghsp.start_round(ghs_buf, sent);
+      if (ret != le::OK){
         printf("[error] could not start ghs! (%d)\n", ret);
         return 1;
       }
@@ -266,20 +258,20 @@ namespace demo{
               ss<<payload_msg;
               printf("[info] received GHS msg: %s\n",ss.str().c_str());
               size_t new_msg_ct=0;
-              le::ghs::Retcode retval = ghs.process(payload_msg,ghs_buf, new_msg_ct);
-              if (retval != le::ghs::OK){
-                printf("[error] could not call ghs.process():%s",le::ghs::strerror(retval));
+              le::Errno retval = ghsp.process(payload_msg,ghs_buf, new_msg_ct);
+              if (retval != le::OK){
+                printf("[error] could not call ghsp.process():%s",le::strerror(retval));
                 return 1;
               }
               printf("[info] # response msgs: %zu\n", new_msg_ct);
               printf("[info] GHS waiting: %zu, delayed: %zu, leader: %d, parent: %d, level: %d\n", 
-                  ghs.waiting_count(),
-                  ghs.delayed_count(),
-                  ghs.get_leader_id(), 
-                  ghs.get_parent_id(),
-                  ghs.get_level());
+                  ghsp.waiting_count(),
+                  ghsp.delayed_count(),
+                  ghsp.get_leader_id(), 
+                  ghsp.get_parent_id(),
+                  ghsp.get_level());
               printf("[info] Edges: %s\n",
-                  dump_edges(ghs).c_str());
+                  dump_edges(ghsp).c_str());
               break;
             }
           default: { printf("[error] unknown payload type: %d\n", in.header.type); wegood=false; break;}
@@ -296,13 +288,13 @@ namespace demo{
         demo::WireMessage out;
         le::ghs::Msg out_pld;
 
-        printf("[info] Have %zu msgs to send\n", ghs_buf.size());
+        printf("[info] Have %u msgs to send\n", ghs_buf.size());
         if (seque::OK!=ghs_buf.pop(out_pld)){
           wegood=false;
           break;
         }
-        out.header.agent_to=out_pld.to;
-        out.header.agent_from=out_pld.from;
+        out.header.agent_to=out_pld.to();
+        out.header.agent_from=out_pld.from();
         out.header.type=demo::PAYLOAD_TYPE_GHS;
         out.header.payload_size=sizeof(out_pld);
         size_t bsz = sizeof(out_pld);
@@ -321,14 +313,13 @@ namespace demo{
             break;
           } else {
             printf("[error] Could not send, assuming gone: %d\n",retval);
-            kill_edge(ghs, config, out.header.agent_to);
           }
         } else {
           printf("[error] demo error. We may have populated a message incorreclty %d\n",-retval);
         }
       }
 
-      if (ghs.is_converged()){
+      if (ghsp.is_converged()){
         printf("Converged!\n");
         wegood=false;
       }

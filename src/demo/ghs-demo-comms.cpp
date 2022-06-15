@@ -261,10 +261,10 @@ namespace demo{
           case PAYLOAD_TYPE_GHS:
             {
               std::lock_guard<std::mutex> guard(q_mut);
-              seque::Retcode ret;
+              le::Errno ret;
               if ( (ret= in_q.push(m)) != seque::OK)
               {
-                printf("[error] queue err: %s", seque::strerr(ret)); 
+                printf("[error] queue err: %s", le::strerror(ret)); 
               }
               break;
             }
@@ -300,7 +300,7 @@ namespace demo{
   bool Comms::get_next(WireMessage&m){
     std::lock_guard<std::mutex> guard(q_mut);
     if (in_q.size()>0){
-      seque::Retcode ret;
+      le::Errno ret;
       if ( (ret=in_q.pop(m)) == seque::OK){
         return true;
       } else {
@@ -485,4 +485,9 @@ send_cleanup:
     return sym_metric(agent_id, ghs_cfg.my_id, kbps[agent_id]);
   }
 
+
+  Kbps Comms::kbps_to(const uint16_t to) const
+  {
+    return kbps[to];
+  }
 }

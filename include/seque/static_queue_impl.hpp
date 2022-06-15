@@ -37,35 +37,36 @@
  */
 
 
+using namespace le;
 
-template <typename T, std::size_t N>
+template <typename T, unsigned int N>
 StaticQueue<T,N>::StaticQueue():
   idx_front(0), idx_back(0), count(0)
 {
 }
 
-template <typename T, std::size_t N>
+template <typename T, unsigned int N>
 StaticQueue<T,N>::~StaticQueue()
 {
 }
 
-template <typename T, std::size_t N>
+template <typename T, unsigned int N>
 bool StaticQueue<T,N>::is_full() const{
   return size()==N;
 }
 
-template <typename T, std::size_t N>
+template <typename T, unsigned int N>
 bool StaticQueue<T,N>::is_empty() const{
   return size()==0;;
 }
 
-template <typename T, std::size_t N>
-size_t StaticQueue<T,N>::size() const{
+template <typename T, unsigned int N>
+unsigned int StaticQueue<T,N>::size() const{
   return count;
 }
 
-template <typename T, std::size_t N>
-Retcode StaticQueue<T,N>::push(const T item){
+template <typename T, unsigned int N>
+le::Errno StaticQueue<T,N>::push(const T item){
   if (is_full())
   {
     return ERR_QUEUE_FULL;
@@ -86,13 +87,13 @@ Retcode StaticQueue<T,N>::push(const T item){
   return OK;
 }
 
-template <typename T, std::size_t N>
-Retcode StaticQueue<T,N>::front(T &out_item) const {
+template <typename T, unsigned int N>
+le::Errno StaticQueue<T,N>::front(T &out_item) const {
   return at(0,out_item);
 }
 
-template <typename T, std::size_t N>
-Retcode StaticQueue<T,N>::pop(){
+template <typename T, unsigned int N>
+le::Errno StaticQueue<T,N>::pop(){
   if (is_empty())
   {
     return ERR_QUEUE_EMPTY;
@@ -110,10 +111,10 @@ Retcode StaticQueue<T,N>::pop(){
   return OK;
 }
 
-template <typename T, std::size_t N>
-Retcode StaticQueue<T,N>::pop(T &out_item){
+template <typename T, unsigned int N>
+le::Errno StaticQueue<T,N>::pop(T &out_item){
   auto r = front(out_item);
-  if (!Q_OK(r)){
+  if (OK!=r){
     return r;
   }
   r = pop();
@@ -121,8 +122,8 @@ Retcode StaticQueue<T,N>::pop(T &out_item){
 }
 
 
-template <typename T, std::size_t N>
-Retcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
+template <typename T, unsigned int N>
+le::Errno StaticQueue<T,N>::at(const unsigned int idx, T &out_item) const
 {
 
   if (size()==0){
@@ -137,7 +138,7 @@ Retcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
     return ERR_NO_SUCH_ELEMENT;
   }
 
-  size_t actual_idx = idx+idx_front;
+  unsigned int actual_idx = idx+idx_front;
   if (actual_idx > N){
     actual_idx -= N;
   }
@@ -148,8 +149,8 @@ Retcode StaticQueue<T,N>::at(const size_t idx, T &out_item) const
 }
 
 
-template <typename T, std::size_t N>
-Retcode StaticQueue<T,N>::clear()
+template <typename T, unsigned int N>
+le::Errno StaticQueue<T,N>::clear()
 {
   idx_front=0;
   idx_back =0;
