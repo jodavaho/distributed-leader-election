@@ -36,6 +36,6 @@
  * @file ghs_printer.cpp
  *
  */
-#include "ghs/ghs_printer.h"
+#include <dle/ghs_printer.h>
 #include <sstream>
 

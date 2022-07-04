@@ -38,7 +38,7 @@
  */
 #include "ghs-demo-msgutils.h"
 
-Msg from_bytes(unsigned char *b, size_t c_sz)
+GhsMsg from_bytes(unsigned char *b, size_t c_sz)
 {
   Msg r;
   void* rp = (void*)&r;
@@ -46,7 +46,7 @@ Msg from_bytes(unsigned char *b, size_t c_sz)
   return r;
 }
 
-void to_bytes(const Msg&m, unsigned char* b, size_t &bsz){
+void to_bytes(const GhsMsg&m, unsigned char* b, size_t &bsz){
 
   void* mp = (void*)&m;
   void* bp = (void*)&b[0];

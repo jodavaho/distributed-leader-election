@@ -36,14 +36,14 @@
  * @file ghs-demo-msgutils-z.cpp
  *
  */
-#include "ghs-demo-msgutils.hpp"
+#include "ghs-demo-msgutils.h"
 #include "miniz.h"
 #include <assert.h>
 
 
-Msg from_bytes(uint8_t *b, size_t c_sz)
+GhsMsg from_bytes(uint8_t *b, size_t c_sz)
 {
-  Msg m;
+  GhsMsg m;
   auto bp = (unsigned char*) &b[0];
   auto mp = (unsigned char*) &m;
   mz_ulong mz_c_sz = c_sz;
@@ -55,7 +55,7 @@ Msg from_bytes(uint8_t *b, size_t c_sz)
   return m;
 }
 
-void to_bytes(const Msg&m, uint8_t* b, size_t &bsz){
+void to_bytes(const GhsMsg&m, uint8_t* b, size_t &bsz){
 
   auto bp = (unsigned char*) &b[0];
   auto mp = (unsigned char*) &m;

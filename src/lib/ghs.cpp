@@ -36,10 +36,7 @@
  * @file ghs.cpp
  *
  */
-#include "ghs/ghs.h"
+#include <dle/ghs.h>
 
-namespace le{
-  namespace ghs{
-
-  }
+namespace dle{
 }

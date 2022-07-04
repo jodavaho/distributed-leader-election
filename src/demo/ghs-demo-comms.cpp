@@ -261,10 +261,10 @@ namespace demo{
           case PAYLOAD_TYPE_GHS:
             {
               std::lock_guard<std::mutex> guard(q_mut);
-              le::Errno ret;
-              if ( (ret= in_q.push(m)) != seque::OK)
+              dle::Errno ret;
+              if ( (ret= in_q.push(m)) != dle::OK)
               {
-                printf("[error] queue err: %s", le::strerror(ret)); 
+                printf("[error] queue err: %s", dle::strerror(ret)); 
               }
               break;
             }
@@ -300,23 +300,23 @@ namespace demo{
   bool Comms::get_next(WireMessage&m){
     std::lock_guard<std::mutex> guard(q_mut);
     if (in_q.size()>0){
-      le::Errno ret;
-      if ( (ret=in_q.pop(m)) == seque::OK){
+      dle::Errno ret;
+      if ( (ret=in_q.pop(m)) == dle::OK){
         return true;
       } else {
         switch(ret)
         {
-          case seque::ERR_QUEUE_EMPTY:
+          case dle::ERR_QUEUE_EMPTY:
             {
               printf("[error] Queue empty unexpectedly!");
               break;
             }
-          case seque::ERR_BAD_IDX:
+          case dle::ERR_BAD_IDX:
             {
               printf("[error] Queue error, no element 0!");
               break;
             }
-          case seque::ERR_NO_SUCH_ELEMENT:
+          case dle::ERR_NO_SUCH_ELEMENT:
             {
               printf("[error] Queue error, no element 0!");
               break;

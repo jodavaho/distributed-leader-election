@@ -87,7 +87,7 @@ namespace dle{
 
   /**
    * @return a human-readable string for any value of the passed in Retcode
-   * @param r a le::Errnoo
+   * @param r a dle::Errnoo
    */
   const char* strerror( const Errno e);
 

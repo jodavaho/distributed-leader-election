@@ -35,21 +35,21 @@
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @file msg_printer.h
- * @brief provides the implementation of std::ostream operations for dle::GhsMsg objects
+ * @brief provides the implementation of std::ostream operations for dle::ghs_msg::GhsMsg objects
  *
  */
 #ifndef msg_printer_hpp
 #define msg_printer_hpp
-#include <ghs_msg.h>
+#include <dle/ghs_msg.h>
 #include <string>
 #include <iostream>
 
-std::string to_string(const dle::GhsMsg::Type &type);
+std::string to_string(const dle::ghs_msg::Type &type);
 
-std::ostream& operator << ( std::ostream& outs, const dle::GhsMsg::Type & type );
+std::ostream& operator << ( std::ostream& outs, const dle::ghs_msg::Type & type );
 
-std::ostream& operator << ( std::ostream& outs, const dle::GhsMsg::Data & d);
+std::ostream& operator << ( std::ostream& outs, const dle::ghs_msg::Data & d);
 
-std::ostream& operator << ( std::ostream& outs, const dle::GhsMsg & m);
+std::ostream& operator << ( std::ostream& outs, const dle::ghs_msg::GhsMsg & m);
 
 #endif

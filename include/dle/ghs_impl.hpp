@@ -39,7 +39,7 @@
  */
 
 #include <dle/ghs.h>
-#include <dle/msg.h>
+#include <dle/ghs_msg.h>
 
 #ifndef NDEBUG
 #include <stdexcept>
@@ -71,7 +71,7 @@ namespace dle{
    * Reset the algorithm status completely
    */
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::reset() {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::reset() {
       n_peers=0;
       set_leader_id(my_id);
       set_level(LEVEL_START);
@@ -96,7 +96,7 @@ namespace dle{
    *
    */
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::start_round(StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t & qsz) {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::start_round(StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &outgoing_buffer, size_t & qsz) {
       //If I'm leader, then I need to start the process. Otherwise wait.
       if (get_leader_id() == get_id()){
         //nobody tells us what to do but ourselves
@@ -112,7 +112,7 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process(const Msg &msg, StaticQueue<Msg,BUF_SZ> &outgoing_buffer, size_t &qsz) {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process(const ghs_msg::GhsMsg &msg, StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &outgoing_buffer, size_t &qsz) {
 
       if (msg.from()==my_id){
         //ghs_debug_crash("Received msg.from() self!");
@@ -128,20 +128,20 @@ namespace dle{
       }
 
       switch (msg.type()){
-        case    (msg::Type::SRCH):{         return  process_srch(         msg.from(), msg.data().srch, outgoing_buffer, qsz);  }
-        case    (msg::Type::SRCH_RET):{     return  process_srch_ret(     msg.from(), msg.data().srch_ret, outgoing_buffer, qsz);  }
-        case    (msg::Type::IN_PART):{      return  process_in_part(      msg.from(), msg.data().in_part, outgoing_buffer, qsz);  }
-        case    (msg::Type::ACK_PART):{     return  process_ack_part(     msg.from(), msg.data().ack_part, outgoing_buffer, qsz);  }
-        case    (msg::Type::NACK_PART):{    return  process_nack_part(    msg.from(), msg.data().nack_part, outgoing_buffer, qsz);  }
-        case    (msg::Type::JOIN_US):{      return  process_join_us(      msg.from(), msg.data().join_us, outgoing_buffer, qsz);  }
-        case    (msg::Type::NOOP):{         return  process_noop(         outgoing_buffer , qsz); }
+        case    (ghs_msg::Type::SRCH):{         return  process_srch(         msg.from(), msg.data().srch, outgoing_buffer, qsz);  }
+        case    (ghs_msg::Type::SRCH_RET):{     return  process_srch_ret(     msg.from(), msg.data().srch_ret, outgoing_buffer, qsz);  }
+        case    (ghs_msg::Type::IN_PART):{      return  process_in_part(      msg.from(), msg.data().in_part, outgoing_buffer, qsz);  }
+        case    (ghs_msg::Type::ACK_PART):{     return  process_ack_part(     msg.from(), msg.data().ack_part, outgoing_buffer, qsz);  }
+        case    (ghs_msg::Type::NACK_PART):{    return  process_nack_part(    msg.from(), msg.data().nack_part, outgoing_buffer, qsz);  }
+        case    (ghs_msg::Type::JOIN_US):{      return  process_join_us(      msg.from(), msg.data().join_us, outgoing_buffer, qsz);  }
+        case    (ghs_msg::Type::NOOP):{         return  process_noop(         outgoing_buffer , qsz); }
         default:{ return PROCESS_INVALID_TYPE; }
       }
       return OK;
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_srch(  agent_t from, const msg::SrchPayload& data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_srch(  agent_t from, const ghs_msg::SrchPayload& data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ>&buf, size_t & qsz)
     {
 
       //this msg is weird, in that we sometimes trigger internally with from==my_id
@@ -183,13 +183,13 @@ namespace dle{
       best_edge.root = my_id;
 
       //we'll cache outgoing messages temporarily
-      StaticQueue<Msg,BUF_SZ> srchbuf;
+      StaticQueue<ghs_msg::GhsMsg,BUF_SZ> srchbuf;
 
       //first broadcast the SRCH down the tree
-      msg::Data to_send;
-      to_send.srch = SrchPayload{my_leader, my_level};
+      ghs_msg::Data to_send;
+      to_send.srch = ghs_msg::SrchPayload{my_leader, my_level};
       size_t srch_sent=0;
-      Errno srch_ret = mst_broadcast(msg::Type::SRCH, to_send, srchbuf,srch_sent);
+      Errno srch_ret = mst_broadcast(ghs_msg::Type::SRCH, to_send, srchbuf,srch_sent);
       if (srch_ret!=OK){
         return srch_ret;
       }
@@ -197,9 +197,9 @@ namespace dle{
       //then ping unknown edges
       //OPTIMIZATION: Ping neighbors in sorted order, rather than flooding
 
-      to_send.in_part = InPartPayload{my_leader, my_level};
+      to_send.in_part = ghs_msg::InPartPayload{my_leader, my_level};
       size_t part_sent=0;
-      Errno part_ret = typecast(status_t::UNKNOWN, msg::Type::IN_PART, to_send, srchbuf, part_sent);
+      Errno part_ret = typecast(status_t::UNKNOWN, ghs_msg::Type::IN_PART, to_send, srchbuf, part_sent);
       if (part_ret!=OK){
         return part_ret;
       }
@@ -226,7 +226,7 @@ namespace dle{
       //ID so we can track their response later.
       size_t buf_sz_before = buf.size();
       for (size_t i=0;i<srchbuf_sz;i++){
-        Msg m;
+        ghs_msg::GhsMsg m;
         srchbuf.pop(m);
         set_waiting_for(m.to(), true);
         buf.push(m);
@@ -251,17 +251,17 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::respond_no_mwoe( StaticQueue<Msg, BUF_SZ> &buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::respond_no_mwoe( StaticQueue<ghs_msg::GhsMsg, BUF_SZ> &buf, size_t & qsz)
     {
-      msg::Data pld;
+      ghs_msg::Data pld;
       pld.srch_ret.to=0;
       pld.srch_ret.from=0;
       pld.srch_ret.metric = WORST_METRIC;
-      return mst_convergecast(msg::Type::SRCH_RET, pld, buf,qsz);
+      return mst_convergecast(ghs_msg::Type::SRCH_RET, pld, buf,qsz);
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_srch_ret(  agent_t from, const SrchRetPayload &data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_srch_ret(  agent_t from, const ghs_msg::SrchRetPayload &data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ>&buf, size_t & qsz)
     {
 
 
@@ -300,7 +300,7 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_in_part(  agent_t from, const InPartPayload& data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_in_part(  agent_t from, const ghs_msg::InPartPayload& data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ>&buf, size_t & qsz)
     {
       //let them know if we're in their partition or not. Easy.
       agent_t part_id = data.leader;
@@ -313,7 +313,7 @@ namespace dle{
       if (their_level <= our_level){
         //They aren't behind, so we can respond
         if (part_id == this->my_leader){
-          Msg to_send (from, my_id, AckPartPayload{});
+          ghs_msg::GhsMsg to_send (from, my_id, ghs_msg::AckPartPayload{});
           buf.push( to_send );
           //do not do this: 
           //waiting_for.erase(from);
@@ -323,7 +323,7 @@ namespace dle{
           qsz=1;
           return OK;
         } else {
-          Msg to_send (from, my_id, NackPartPayload{});
+          ghs_msg::GhsMsg to_send (from, my_id, ghs_msg::NackPartPayload{});
           buf.push (to_send); 
           qsz=1;
           return OK;
@@ -336,7 +336,7 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_ack_part(  agent_t from, const AckPartPayload& data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_ack_part(  agent_t from, const ghs_msg::AckPartPayload& data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ>&buf, size_t & qsz)
     {
       //is this the right time to receive this msg?
       bool wf=false; 
@@ -364,7 +364,7 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_nack_part(  agent_t from, const NackPartPayload &data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_nack_part(  agent_t from, const ghs_msg::NackPartPayload &data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ>&buf, size_t & qsz)
     {
       //is this the right time to receive this msg?
       bool wf=false; 
@@ -398,7 +398,7 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::check_search_status(StaticQueue<Msg,BUF_SZ> &buf, size_t & qsz){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::check_search_status(StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &buf, size_t & qsz){
 
       if (waiting_count() == 0)
       {
@@ -409,9 +409,9 @@ namespace dle{
 
         if (!am_leader){
           //pass on results, no matter how bad
-          msg::Data send_data;
-          send_data.srch_ret = SrchRetPayload{e.peer, e.root, e.metric_val};
-          return mst_convergecast( msg::Type::SRCH_RET, send_data, buf, qsz);
+          ghs_msg::Data send_data;
+          send_data.srch_ret = ghs_msg::SrchRetPayload{e.peer, e.root, e.metric_val};
+          return mst_convergecast( ghs_msg::Type::SRCH_RET, send_data, buf, qsz);
         }
 
         if (am_leader && found_new_edge && its_my_edge){
@@ -430,9 +430,9 @@ namespace dle{
         if (am_leader && found_new_edge && !its_my_edge){
           //inform the crew to add the edge
           //This is a bit awkward ... 
-          msg::Data data;
-          data.join_us = JoinUsPayload{e.peer, e.root, get_leader_id(), get_level()};
-          return mst_broadcast( JOIN_US, data, buf, qsz);
+          ghs_msg::Data data;
+          data.join_us = ghs_msg::JoinUsPayload{e.peer, e.root, get_leader_id(), get_level()};
+          return mst_broadcast( ghs_msg::JOIN_US, data, buf, qsz);
         }
       } 
 
@@ -443,13 +443,13 @@ namespace dle{
 
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::check_new_level( StaticQueue<Msg,BUF_SZ> &buf, size_t & qsz){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::check_new_level( StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &buf, size_t & qsz){
 
       qsz=0;
       for (size_t idx=0;idx<n_peers;idx++){
         if (response_required[idx]){
           agent_t who = peers[idx];
-          InPartPayload &m = response_prompt[idx];
+          ghs_msg::InPartPayload &m = response_prompt[idx];
           level_t their_level = m.level; 
           if (their_level <= get_level() )
           {
@@ -470,7 +470,7 @@ namespace dle{
 
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_join_us(  agent_t from, const JoinUsPayload &data, StaticQueue<Msg,BUF_SZ>&buf, size_t & qsz)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_join_us(  agent_t from, const ghs_msg::JoinUsPayload &data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ>&buf, size_t & qsz)
     {
 
       auto join_peer  = data.join_peer; // the side of the edge that is in the other partition 
@@ -489,9 +489,9 @@ namespace dle{
           return JOIN_BAD_LEVEL;
         }  
 
-        msg::Data to_send;
+        ghs_msg::Data to_send;
         to_send.join_us = data;
-        return mst_broadcast(msg::Type::JOIN_US, to_send, buf, qsz);
+        return mst_broadcast(ghs_msg::Type::JOIN_US, to_send, buf, qsz);
       }
 
       //let's find the edge to the other partition
@@ -541,7 +541,15 @@ namespace dle{
 
       if ( edge_to_other_part.status == MST){
         //we already absorbed once, so now we merge()
-        auto leader_id = max(join_peer, join_root);
+        agent_t leader_id=NO_AGENT;
+        if (join_peer > join_root){
+          leader_id = join_peer;
+        } else if (join_root>join_peer){
+          leader_id=join_root;
+        } else {
+          return ERR_IMPL;
+        }
+
         my_leader = leader_id;
         my_level++;
         if (leader_id == my_id){
@@ -569,9 +577,9 @@ namespace dle{
           //they would not have responded to our search (see process_in_part). So
           //this absorb request is valid and setting their link as MST is OK. 
           set_edge_status(join_peer, MST);
-          auto payload = JoinUsPayload{ data.join_peer, data.join_root, 
+          auto payload = ghs_msg::JoinUsPayload{ data.join_peer, data.join_root, 
             data.proposed_leader, data.proposed_level };
-          Msg to_send = Msg( join_peer, my_id, payload ); 
+          ghs_msg::GhsMsg to_send = ghs_msg::GhsMsg( join_peer, my_id, payload ); 
           buf.push(to_send);
           qsz=1;
           return OK;
@@ -613,13 +621,13 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::process_noop(StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::process_noop(StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &buf, size_t &qsz){
       algorithm_converged=true;
-      return mst_broadcast(msg::Type::NOOP, {},buf, qsz);
+      return mst_broadcast(ghs_msg::Type::NOOP, {},buf, qsz);
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::typecast(const status_t status, const msg::Type m, const msg::Data &data, StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz)const {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::typecast(const status_t status, const ghs_msg::Type m, const ghs_msg::Data &data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &buf, size_t &qsz)const {
       size_t sent=0;
       for (size_t idx=0;idx<n_peers;idx++){
         const Edge &e = outgoing_edges[idx];
@@ -628,7 +636,7 @@ namespace dle{
         }
         if ( e.status == status ){
           sent++;
-          Msg to_send (e.peer, my_id, m, data);
+          ghs_msg::GhsMsg to_send (e.peer, my_id, m, data);
           buf.push( to_send );
         }
       }
@@ -638,7 +646,7 @@ namespace dle{
 
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::mst_broadcast(const msg::Type m, const msg::Data &data, StaticQueue<Msg,BUF_SZ> &buf, size_t&qsz)const {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::mst_broadcast(const ghs_msg::Type m, const ghs_msg::Data &data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &buf, size_t&qsz)const {
       size_t sent =0;
       for (size_t idx =0;idx<n_peers;idx++){
         const Edge&e = outgoing_edges[idx];
@@ -647,7 +655,7 @@ namespace dle{
         }
         if (e.status == MST ){
           sent++;
-          Msg to_send( e.peer, my_id, m, data);
+          ghs_msg::GhsMsg to_send( e.peer, my_id, m, data);
           buf.push( to_send );
         }
       }
@@ -656,7 +664,7 @@ namespace dle{
     }
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::mst_convergecast(const msg::Type m, const msg::Data& data, StaticQueue<Msg,BUF_SZ> &buf, size_t &qsz)const {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::mst_convergecast(const ghs_msg::Type m, const ghs_msg::Data& data, StaticQueue<ghs_msg::GhsMsg,BUF_SZ> &buf, size_t &qsz)const {
       size_t sent=0;
       for (size_t idx =0;idx<n_peers;idx++){
         const Edge&e = outgoing_edges[idx];
@@ -665,7 +673,7 @@ namespace dle{
         }
         if (e.status == MST_PARENT ){
           sent++;
-          Msg to_send ( e.peer, my_id, m, data);
+          ghs_msg::GhsMsg to_send ( e.peer, my_id, m, data);
           buf.push( to_send );
         }
       }
@@ -675,7 +683,7 @@ namespace dle{
 
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_parent_id(const agent_t& id) {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_parent_id(const agent_t& id) {
 
       //clear old id
       for (size_t idx=0;idx<n_peers;idx++){
@@ -723,7 +731,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_leader_id(const agent_t& leader) {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_leader_id(const agent_t& leader) {
       my_leader = leader;
       return OK;
     }
@@ -735,7 +743,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_level(const level_t & l){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_level(const level_t & l){
       my_level = l;
       return OK;
     }
@@ -747,7 +755,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::checked_index_of(const agent_t& who, size_t &idx) const{
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::checked_index_of(const agent_t& who, size_t &idx) const{
       if (who == my_id){
         return IMPL_REQ_PEER_MY_ID;
       }
@@ -762,7 +770,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_waiting_for(const agent_t &who, bool waiting){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_waiting_for(const agent_t &who, bool waiting){
 
       size_t idx;
       Errno retcode=checked_index_of(who,idx);
@@ -774,7 +782,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::is_waiting_for(const agent_t& who, bool& waiting_for){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::is_waiting_for(const agent_t& who, bool& waiting_for){
       size_t idx;
       Errno retcode=checked_index_of(who,idx);
       if (retcode!=OK){return retcode;}
@@ -785,7 +793,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_response_required(const agent_t &who, bool resp)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_response_required(const agent_t &who, bool resp)
     {
       size_t idx;
       Errno retcode=checked_index_of(who,idx);
@@ -797,7 +805,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::is_response_required(const agent_t &who, bool &res_req ){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::is_response_required(const agent_t &who, bool &res_req ){
       size_t idx;
       Errno retcode=checked_index_of(who,idx);
       if (retcode!=OK){return retcode;}
@@ -808,7 +816,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_response_prompt(const agent_t &who, const InPartPayload& m){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_response_prompt(const agent_t &who, const ghs_msg::InPartPayload& m){
       size_t idx;
       Errno retcode=checked_index_of(who,idx);
       if (retcode!=OK){return retcode;}
@@ -819,7 +827,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>:: get_response_prompt(const agent_t &who, InPartPayload &out){
+    Errno GhsState<MAX_AGENTS, BUF_SZ>:: get_response_prompt(const agent_t &who, ghs_msg::InPartPayload &out){
       size_t idx;
       Errno retcode=checked_index_of(who,idx);
       if (retcode!=OK){return retcode;}
@@ -830,7 +838,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::respond_later(const agent_t&from, const InPartPayload m)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::respond_later(const agent_t&from, const ghs_msg::InPartPayload m)
     {
       size_t idx;
       Errno retcode=checked_index_of(from,idx);
@@ -849,7 +857,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::get_edge(const agent_t& to, Edge &out)  const
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::get_edge(const agent_t& to, Edge &out)  const
     {
       size_t idx;
       Errno retcode=checked_index_of(to,idx);
@@ -861,7 +869,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::get_edge_status(const agent_t& to, status_t & out)  const
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::get_edge_status(const agent_t& to, status_t & out)  const
     {
       size_t idx;
       Errno retcode=checked_index_of(to,idx);
@@ -874,7 +882,7 @@ namespace dle{
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge_status(const agent_t &to, const status_t &status)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge_status(const agent_t &to, const status_t &status)
     {
       size_t idx;
       Errno retcode=checked_index_of(to,idx);
@@ -886,7 +894,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::get_edge_metric(const agent_t& to, metric_t & out)  const
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::get_edge_metric(const agent_t& to, metric_t & out)  const
     {
       size_t idx;
       Errno retcode=checked_index_of(to,idx);
@@ -898,7 +906,7 @@ namespace dle{
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
 
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge_metric(const agent_t &to, const metric_t m)
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge_metric(const agent_t &to, const metric_t m)
     {
       size_t idx;
       Errno retcode=checked_index_of(to,idx);
@@ -910,7 +918,7 @@ namespace dle{
 
 
   template <std::size_t MAX_AGENTS, std::size_t BUF_SZ>
-    le::Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
+    Errno GhsState<MAX_AGENTS, BUF_SZ>::set_edge(const Edge &e) {
 
       if (e.root == NO_AGENT || e.peer == NO_AGENT){
         return SET_INVALID_EDGE_NO_AGENT;

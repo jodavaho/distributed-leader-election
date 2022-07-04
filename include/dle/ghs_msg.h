@@ -49,8 +49,8 @@
 /**
 */
 namespace dle{
-  namespace GhsMsg{
-    /// Stores what type of Msg this is
+  namespace ghs_msg{
+    /// Stores what type of GhsMsg this is
     enum Type
     {
       UNASSIGNED=0,///< Error checking for unassigned messages
@@ -99,7 +99,7 @@ namespace dle{
     };
 
     /** 
-     * @brief Msgs to merge /absorb two partitions across a given edge
+     * @brief GhsMsgs to merge /absorb two partitions across a given edge
      *
      */
     struct JoinUsPayload{ 
@@ -118,77 +118,75 @@ namespace dle{
       NackPartPayload nack_part;
       JoinUsPayload join_us;
     };
+
+
+    /** 
+     * @brief An aggregate type containing all the data to exchange with to/from information
+     *
+     * The GhsMsg struct contains all the data which is passed between GhsState
+     * objects operating on different systems to coordinate the construction
+     * of an MST.
+     *
+     * In the example case, the field `other_guy` is used twice, but that may
+     * not be the case always. to_msg takes the extra step of setting the
+     * to/from fields appropriately and seperate from the payload fields. I
+     * specifically made this design design to defend myself from myself after
+     * messing up the data fields far too often. 
+     */
+    class GhsMsg
+    {
+
+      public:
+
+        GhsMsg();
+
+        /** 
+         * @brief A type-specific constructor for each payload type
+         */
+        GhsMsg(agent_t to, agent_t from, ghs_msg::NoopPayload p);
+        GhsMsg(agent_t to, agent_t from, ghs_msg::SrchPayload p);
+        GhsMsg(agent_t to, agent_t from, ghs_msg::SrchRetPayload p);
+        GhsMsg(agent_t to, agent_t from, ghs_msg::InPartPayload p);
+        GhsMsg(agent_t to, agent_t from, ghs_msg::AckPartPayload p);
+        GhsMsg(agent_t to, agent_t from, ghs_msg::NackPartPayload p);
+        GhsMsg(agent_t to, agent_t from, ghs_msg::JoinUsPayload p);
+
+        /**
+         * A 'redirect' constructor that perserves type and payload, but allows new to/from fields
+         */
+        GhsMsg(agent_t to, agent_t from, const GhsMsg &other);
+
+        /**
+         * A generic constructor for generic data, and known type
+         */
+        GhsMsg(agent_t to, agent_t from, ghs_msg::Type t, ghs_msg::Data d);
+
+        ~GhsMsg();
+
+        agent_t to() const {return to_;}
+        agent_t from() const {return from_;}
+        ghs_msg::Type type() const {return type_;}
+        ghs_msg::Data data() const {return data_;}
+
+      private:
+        /// who to send to
+        agent_t to_; 
+
+        /// who it is from
+        agent_t from_;
+
+        ghs_msg::Data data_;
+
+        ghs_msg::Type type_;
+
+    };
+
+    /**
+     * For an external class that is interested in allocating static storage
+     * to queue a set of GhsMsg s, this is the maximum size of the GhsMsg class. 
+     */
+    const unsigned int MAX_MSG_SZ= sizeof(GhsMsg);
   }
-
-
-  /** 
-   * @brief An aggregate type containing all the data to exchange with to/from information
-   *
-   * The Msg struct contains all the data which is passed between GhsState
-   * objects operating on different systems to coordinate the construction
-   * of an MST.
-   *
-   * The usual way to construct a Msg is to construct the payload from a struct of type Msg::Data, then to call to_msg() on that payload.
-   *
-   * In the example case, the field `other_guy` is used twice, but that may
-   * not be the case always. to_msg takes the extra step of setting the
-   * to/from fields appropriately and seperate from the payload fields. I
-   * specifically made this design design to defend myself from myself after
-   * messing up the data fields far too often. 
-   */
-  class GhsMsg
-  {
-
-    public:
-
-      GhsMsg();
-
-      /** 
-       * @brief A type-specific constructor for each payload type
-       */
-      GhsMsg(agent_t to, agent_t from, msg::NoopPayload p);
-      GhsMsg(agent_t to, agent_t from, msg::SrchPayload p);
-      GhsMsg(agent_t to, agent_t from, msg::SrchRetPayload p);
-      GhsMsg(agent_t to, agent_t from, msg::InPartPayload p);
-      GhsMsg(agent_t to, agent_t from, msg::AckPartPayload p);
-      GhsMsg(agent_t to, agent_t from, msg::NackPartPayload p);
-      GhsMsg(agent_t to, agent_t from, msg::JoinUsPayload p);
-
-      /**
-       * A 'redirect' constructor that perserves type and payload, but allows new to/from fields
-       */
-      GhsMsg(agent_t to, agent_t from, const Msg &other);
-
-      /**
-       * A generic constructor for generic data, and known type
-       */
-      GhsMsg(agent_t to, agent_t from, msg::Type t, msg::Data d);
-
-      ~GhsMsg();
-
-      agent_t to() const {return to_;}
-      agent_t from() const {return from_;}
-      GhsMsg::Type type() const {return type_;}
-      GhsMsg::Data data() const {return data_;}
-
-    private:
-      /// who to send to
-      agent_t to_; 
-
-      /// who it is from
-      agent_t from_;
-
-      GhsMsg::Data data_;
-
-      GhsMsg::Type type_;
-
-  };
-
-  /**
-   * For an external class that is interested in allocating static storage
-   * to queue a set of Msg s, this is the maximum size of the Msg class. 
-   */
-  const unsigned int MAX_MSG_SZ= sizeof(Msg);
 
 }
 

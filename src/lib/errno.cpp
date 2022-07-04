@@ -38,10 +38,10 @@
  *
  */
 
-#include "le/errno.h"
+#include <dle/errno.h>
 
-namespace le{
-  const char* strerror( const le::Errno e){
+namespace dle{
+  const char* strerror( const Errno e){
     switch (e){
       case OK:{return "No Error";}
       case PROCESS_SELFMSG:{return "Cannot process msg from self";}

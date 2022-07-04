@@ -39,13 +39,13 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #include "doctest/doctest.h"
-#include "ghs/ghs.h"
-#include "ghs/ghs_printer.h"
-#include "ghs/msg_printer.h"
+#include <dle/ghs.h>
+#include <dle/ghs_printer.h>
+#include <dle/msg_printer.h>
 #include <fstream>
 #include <vector>
 
-using namespace le::ghs;
+using namespace dle;
 
 
 template<std::size_t N, std::size_t BUF_SZ>
@@ -1310,7 +1310,7 @@ TEST_CASE("sim-test 3 node frenzy")
     f << "-  "<<m << std::endl;
     size_t sz;
     auto err = states[m.to()].process(m,added, sz);
-    f << "t':"<< states[m.to()]<<" "<<le::strerror(err)<<std::endl;
+    f << "t':"<< states[m.to()]<<" "<<dle::strerror(err)<<std::endl;
 
     int added_sz = added.size();
     for (int i=0;i<added_sz;i++){

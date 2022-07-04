@@ -36,27 +36,27 @@
  * @file msg_printer.cpp
  *
  */
-#include "ghs/msg_printer.h"
+#include <dle/msg_printer.h>
 
 #include <sstream>
 
-using le::ghs::Msg;
-using namespace le::ghs;
+using namespace dle;
+using Msg=ghs_msg::GhsMsg;
 
-std::string to_string(const msg::Type &type){
+std::string to_string(const ghs_msg::Type &type){
 	switch (type){
-		case msg::Type::NOOP:{return "NOOP";}
-		case msg::Type::SRCH:{return "SRCH";}
-		case msg::Type::SRCH_RET:{return "SRCH_RET";}
-		case msg::Type::IN_PART:{return "IN_PART";}
-		case msg::Type::ACK_PART:{return "ACK_PART";}
-		case msg::Type::NACK_PART:{return "NACK_PART";}
-		case msg::Type::JOIN_US:{return "JOIN_US";}
+		case ghs_msg::Type::NOOP:{return "NOOP";}
+		case ghs_msg::Type::SRCH:{return "SRCH";}
+		case ghs_msg::Type::SRCH_RET:{return "SRCH_RET";}
+		case ghs_msg::Type::IN_PART:{return "IN_PART";}
+		case ghs_msg::Type::ACK_PART:{return "ACK_PART";}
+		case ghs_msg::Type::NACK_PART:{return "NACK_PART";}
+		case ghs_msg::Type::JOIN_US:{return "JOIN_US";}
 		default: {return "??";};
 	}
 }
 
-std::ostream& operator << ( std::ostream& outs, const msg::Type & type )
+std::ostream& operator << ( std::ostream& outs, const ghs_msg::Type & type )
 {
   return outs << to_string(type);
 }
@@ -64,36 +64,36 @@ std::ostream& operator << ( std::ostream& outs, const msg::Type & type )
 
 std::ostream& operator << ( std::ostream& outs, const Msg & m)
 {
-  using namespace le::ghs;
+  
   outs << "("<<m.from()<<"-->"<< m.to()<<") "<< m.type()<<" {";
   switch (m.type()){
-    case msg::Type::UNASSIGNED: { break; }
-    case msg::Type::NOOP:
+    case ghs_msg::Type::UNASSIGNED: { break; }
+    case ghs_msg::Type::NOOP:
       { break; }
-    case msg::Type::SRCH:
+    case ghs_msg::Type::SRCH:
       {
         outs<<"ldr:"<<m.data().srch.your_leader<<" ";
         outs<<"lvl:"<<m.data().srch.your_level;
         break;
       }
-    case msg::Type::SRCH_RET:
+    case ghs_msg::Type::SRCH_RET:
       {
         outs<<"peer"<<m.data().srch_ret.to<<" ";
         outs<<"root:"<<m.data().srch_ret.from<<" ";
         outs<<"val:"<<m.data().srch_ret.metric;
         break;
       }
-    case msg::Type::IN_PART:
+    case ghs_msg::Type::IN_PART:
       {
         outs<<"ldr:"<<m.data().in_part.leader<<" ";
         outs<<"lvl:"<<m.data().in_part.level;
         break;
       }
-    case msg::Type::ACK_PART:
+    case ghs_msg::Type::ACK_PART:
       { break; }
-    case msg::Type::NACK_PART:
+    case ghs_msg::Type::NACK_PART:
       { break; }
-    case msg::Type::JOIN_US:
+    case ghs_msg::Type::JOIN_US:
       {
         outs<<"peer:"<<m.data().join_us.join_peer<<" ";
         outs<<"root:"<<m.data().join_us.join_root<<" ";
