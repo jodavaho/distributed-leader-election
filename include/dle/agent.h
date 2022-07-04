@@ -1,5 +1,4 @@
 /**
- *
  *   @copyright 
  *   Copyright (c) 2022 California Institute of Technology (“Caltech”). 
  *   U.S.  Government sponsorship acknowledged.
@@ -33,25 +32,40 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * @file level.h
- * @brief defintion for le::ghs::level_t 
+ *
+ * @file agent.h
+ * @brief provides dle::agent_t defintion
  *
  */
-#ifndef GHS_LEVEL
-#define GHS_LEVEL
+#ifndef DLE_AGENT
+#define DLE_AGENT
 
-namespace le{
-  namespace ghs{
+namespace dle{
 
-    /**
-     * @brief A "level" which is an internal item for GhsState to track how many times the MST has merged with another
-     */
-    typedef int level_t;
+  /**
+   *
+   * @typedef dle::agent_t 
+   * @brief The distributed leader election library
+   * implementation supports arbitrary integers, as long as they are / greater
+   * than or equal to zero. 
+   *
+   * Use is_valid() to ensure an agent_t will not
+   * generate / problems for GhsState
+   */
+  typedef int agent_t;
 
-    /**
-     * @brief All levels start at 0
-     */
-    const level_t LEVEL_START=0;
-  }
+  /** 
+   * @brief This means not set 
+   */
+  const agent_t NO_AGENT=-1;
+
+  /**
+   * Just in case you want an official alias for a>=0.
+   *
+   * @return true if a>=0
+   * @return false if a==NO_AGENT or is otherwise <0
+   */
+  bool is_valid(const agent_t a);
+
 }
-#endif 
+#endif
