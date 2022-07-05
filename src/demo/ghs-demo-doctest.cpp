@@ -44,6 +44,9 @@
 #include "ghs-demo-config.h"
 #include "ghs-demo-comms.h"
 
+using namespace dle;
+using namespace dle::ghs_msg;
+
 demo::Config get_cfg(int a=4){
   demo::Config ret;
   ret.my_id=0;
@@ -58,7 +61,6 @@ TEST_CASE("to_bytes"){
   CHECK_EQ(ghs_msg.data().in_part.leader,2);
   CHECK_EQ(ghs_msg.data().in_part.level,3);
 
-  using le::ghs::MAX_MSG_SZ;
   unsigned char buf[MAX_MSG_SZ];
   to_bytes<MAX_MSG_SZ>(ghs_msg, buf);
   auto ghs_again = from_bytes<MAX_MSG_SZ>(buf);

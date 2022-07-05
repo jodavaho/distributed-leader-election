@@ -43,7 +43,7 @@
 #include "ghs-demo-config.h"
 #include "ghs-demo-msgutils.h"
 #include "ghs-demo-edgemetrics.h"
-#include "seque/static_queue.h"
+#include <dle/static_queue.h>
 #include <nng/nng.h>//req_s, rep_s, msg
 #include <cstring> //memcpy, memset
 #include <unordered_map>
@@ -304,7 +304,7 @@ namespace demo{
       int recv(demo::WireMessage& buf);
       demo::Errno internal_send(demo::WireMessage &m, const char* endpoint, long &us_rt);
 
-      seque::StaticQueue<demo::WireMessage,1024> in_q;
+      dle::StaticQueue<demo::WireMessage,1024> in_q;
       bool read_continues;
       Config ghs_cfg;
       nng_listener ctr_listener = NNG_LISTENER_INITIALIZER;

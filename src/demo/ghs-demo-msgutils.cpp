@@ -38,6 +38,10 @@
  */
 #include "ghs-demo-msgutils.h"
 
+using namespace dle;
+using namespace dle::ghs_msg;
+using Msg=GhsMsg;
+
 GhsMsg from_bytes(unsigned char *b, size_t c_sz)
 {
   Msg r;

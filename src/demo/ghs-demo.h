@@ -45,18 +45,15 @@
 #include "ghs-demo-msgutils.h"
 #include "ghs-demo-comms.h"
 
-#include <ghs/ghs.h>
-#include <ghs/ghs_printer.h> //dump_edges
-#include <ghs/msg_printer.h> //for printing GHS msgs.
-#include <ghs/agent.h>"
-#include <ghs/edge.h>
+#include <dle/ghs.h>
+#include <dle/ghs_printer.h> //dump_edges
+#include <dle/msg_printer.h> //for printing GHS msgs.
+#include <dle/agent.h>
+#include <dle/edge.h>
 #include <dle/static_queue.h>
 
-using dle::GhsState;
-using dle::metric_t;
-using dle::agent_t;
-using dle::Edge;
-using dle::GhsMsg;
+using namespace dle;
+using namespace dle::ghs_msg;
 
 ///
 namespace demo{
@@ -87,7 +84,7 @@ namespace demo{
        *
        * @see demo::Config
        * @see dle::GhsState
-       * @see dle::Msg
+       * @see dle::GhsMsg
        * @see demo::WireMessage
        * @see sym_metric()
        *
@@ -173,11 +170,11 @@ namespace demo{
     //initialize the buffer used for input & output to get response messages from
     //those state machines. 
     //Use your own here ... 
-    seque::StaticQueue<Msg,COMMS_Q_SZ> buf;
+    dle::StaticQueue<GhsMsg,COMMS_Q_SZ> buf;
 
 
     //here's the queue to/from ghs TODO: unify message types.
-    seque::StaticQueue<Msg,COMMS_Q_SZ> ghs_buf;
+    dle::StaticQueue<GhsMsg,COMMS_Q_SZ> ghs_buf;
 
     demo::Comms comms;
     comms.with_config(config);
@@ -250,9 +247,9 @@ namespace demo{
           case demo::PAYLOAD_TYPE_GHS:
             {
               //with static size checking:
-              //Msg payload_msg=from_bytes<MAX_MSG_SZ>(in.bytes); 
+              //GhsMsg payload_msg=from_bytes<MAX_MSG_SZ>(in.bytes); 
               //or with compression / variable sizes
-              Msg payload_msg = from_bytes(in.bytes, in.header.payload_size);
+              GhsMsg payload_msg = from_bytes(in.bytes, in.header.payload_size);
               //push msg to the subsystem
               std::stringstream ss;
               ss<<payload_msg;
@@ -260,7 +257,7 @@ namespace demo{
               size_t new_msg_ct=0;
               dle::Errno retval = ghsp.process(payload_msg,ghs_buf, new_msg_ct);
               if (retval != dle::OK){
-                printf("[error] could not call ghsp.process():%s",le::strerror(retval));
+                printf("[error] could not call ghsp.process():%s",dle::strerror(retval));
                 return 1;
               }
               printf("[info] # response msgs: %zu\n", new_msg_ct);
@@ -286,10 +283,10 @@ namespace demo{
       //You don't really *need* to wrap messages like this ... 
       while(ghs_buf.size()>0){
         demo::WireMessage out;
-        dle::Msg out_pld;
+        GhsMsg out_pld;
 
         printf("[info] Have %u msgs to send\n", ghs_buf.size());
-        if (seque::OK!=ghs_buf.pop(out_pld)){
+        if (dle::OK!=ghs_buf.pop(out_pld)){
           wegood=false;
           break;
         }

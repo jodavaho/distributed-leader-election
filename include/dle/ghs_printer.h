@@ -47,13 +47,13 @@
  * @brief Will dump edges in a readable format
  */
 template <std::size_t N, std::size_t A>
-std::string dump_edges(const le::ghs::GhsState<N,A>&) ;
+std::string dump_edges(const dle::GhsState<N,A>&) ;
 
 /**
  * @brief Will dump the whole object in a readable format
  */
 template <std::size_t N, std::size_t A>
-std::ostream& operator << ( std::ostream&, const le::ghs::GhsState<N,A>&);
+std::ostream& operator << ( std::ostream&, const dle::GhsState<N,A>&);
 
 #include <dle/ghs_printer_impl.hpp>
 

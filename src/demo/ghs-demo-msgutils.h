@@ -34,14 +34,15 @@
  * @file ghs-demo-msgutils.h
  * @brief Provides some convenience functions for dealing with demo::WireMessage buffers
  */
+
 #ifndef GHS_DEMO_MSGUTILS
 #define GHS_DEMO_MSGUTILS
 
-#include "ghs/msg.h"
+#include <dle/ghs_msg.h>
 #include <cstring>
 
-using dle::GhsMsg;
-using dle::MAX_MSG_SZ;
+using dle::ghs_msg::GhsMsg;
+using dle::ghs_msg::MAX_MSG_SZ;
 
 /**
  * @brief quick and dirty static-sized message move

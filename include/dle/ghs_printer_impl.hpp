@@ -34,7 +34,7 @@
  * @brief the implementation of ghs_printer.h Just include ghs_printer.h
  *
  */
-#include <ghs/ghs_printer.h>
+#include <dle/ghs_printer.h>
 #include <sstream>
 
 /** 
@@ -44,6 +44,7 @@ template <std::size_t A, std::size_t B>
 std::string  dump_edges(const dle::GhsState<A,B> &s) {
 
   using dle::Edge;
+  using dle::agent_t;
 
   std::stringstream ss;
   ss<<"( ";
@@ -53,17 +54,17 @@ std::string  dump_edges(const dle::GhsState<A,B> &s) {
   for (std::size_t i=0;i<A;i++){
     if (s.has_edge(i)){
       Edge e;
-      if (OK!=s.get_edge((agent_t)i,e)){
+      if (dle::OK!=s.get_edge((agent_t)i,e)){
         ss<<"Err: "<<i;
         continue;
       };
       ss<<" ";
       ss<<e.root<<"-->"<<e.peer<<" ";
       switch (e.status){
-        case UNKNOWN: {ss<<"UNK";break;}
-        case MST: {ss<<"MST+C ";break;}
-        case MST_PARENT: {ss<<"MST+P ";break;}
-        case DELETED: {ss<<"DEL";break;}
+        case dle::UNKNOWN: {ss<<"UNK";break;}
+        case dle::MST: {ss<<"MST+C ";break;}
+        case dle::MST_PARENT: {ss<<"MST+P ";break;}
+        case dle::DELETED: {ss<<"DEL";break;}
       }
       if (e.peer == mwoe.peer){
         ss<<"m";

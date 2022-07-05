@@ -23,5 +23,5 @@ add_library(
   errno.cpp
   )
 
-target_link_libraries(ghs dle_seque dle_graph)
+target_link_libraries(dle_ghs dle_seque dle_graph)
 
