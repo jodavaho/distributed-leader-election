@@ -1,5 +1,4 @@
 /**
- *
  *   @copyright 
  *   Copyright (c) 2022 California Institute of Technology (“Caltech”). 
  *   U.S.  Government sponsorship acknowledged.
@@ -33,25 +32,55 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * @file level.h
- * @brief defintion for le::ghs::level_t 
+ *
+ * @file msg.cpp
  *
  */
-#ifndef GHS_LEVEL
-#define GHS_LEVEL
+#include <dle/ghs_msg.h>
 
-namespace le{
-  namespace ghs{
+namespace dle{
+  namespace ghs_msg{
 
-    /**
-     * @brief A "level" which is an internal item for GhsState to track how many times the MST has merged with another
-     */
-    typedef int level_t;
-
-    /**
-     * @brief All levels start at 0
-     */
-    const level_t LEVEL_START=0;
+    GhsMsg::GhsMsg(): to_(NO_AGENT), from_(NO_AGENT), type_(UNASSIGNED)
+    {}
+    GhsMsg::GhsMsg(agent_t to, agent_t from, NoopPayload p):to_(to),from_(from){
+      type_=NOOP;
+      data_.noop = p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, SrchPayload p):to_(to),from_(from){
+      type_=SRCH;
+      data_.srch=p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, SrchRetPayload p):to_(to),from_(from){
+      type_=SRCH_RET;
+      data_.srch_ret=p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, InPartPayload p):to_(to),from_(from){
+      type_=IN_PART;
+      data_.in_part=p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, AckPartPayload p):to_(to),from_(from){
+      type_=ACK_PART;
+      data_.ack_part=p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, NackPartPayload p):to_(to),from_(from){
+      type_=NACK_PART;
+      data_.nack_part=p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, JoinUsPayload p):to_(to),from_(from){
+      type_=JOIN_US;
+      data_.join_us=p;
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, const GhsMsg &other):to_(to),from_(from){
+      type_=other.type();
+      data_=other.data();
+    }
+    GhsMsg::GhsMsg(agent_t to, agent_t from, Type t, Data d):to_(to),from_(from){
+      type_=t;
+      data_=d;
+    }
+    GhsMsg::~GhsMsg()
+    { }
   }
+
 }
-#endif 

@@ -38,11 +38,14 @@
  */
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
-#include "doctest/doctest.h"
-#include "ghs/msg.h"
+#include <doctest/doctest.h>
+#include <dle/ghs_msg.h>
 #include "ghs-demo-msgutils.h"
 #include "ghs-demo-config.h"
 #include "ghs-demo-comms.h"
+
+using namespace dle;
+using namespace dle::ghs_msg;
 
 demo::Config get_cfg(int a=4){
   demo::Config ret;
@@ -51,18 +54,13 @@ demo::Config get_cfg(int a=4){
   return ret;
 }
 
-using le::ghs::Msg;
-using le::ghs::msg::InPartPayload;
-using le::ghs::msg::Type;
-
 TEST_CASE("to_bytes"){
-  auto ghs_msg = Msg(0,1,InPartPayload {2,3});
+  auto ghs_msg = GhsMsg(0,1,InPartPayload {2,3});
   CHECK_EQ(ghs_msg.to(), 0);
   CHECK_EQ(ghs_msg.from(), 1);
   CHECK_EQ(ghs_msg.data().in_part.leader,2);
   CHECK_EQ(ghs_msg.data().in_part.level,3);
 
-  using le::ghs::MAX_MSG_SZ;
   unsigned char buf[MAX_MSG_SZ];
   to_bytes<MAX_MSG_SZ>(ghs_msg, buf);
   auto ghs_again = from_bytes<MAX_MSG_SZ>(buf);

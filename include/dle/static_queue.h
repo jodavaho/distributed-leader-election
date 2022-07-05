@@ -34,17 +34,14 @@
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * @file static_queue.h
- * @brief a static-sized single-ended queue for use in GhsState
+ * @brief a static-sized single-ended queue for use in most objects
  */
-#ifndef STATIC_QUEUE_H
-#define STATIC_QUEUE_H
+#ifndef DLE_STATIC_QUEUE
+#define DLE_STATIC_QUEUE
 
-#include "le/errno.h"
+#include <dle/errno.h>
 
-/**
- * This namespace presents a Single Ended QUEue implementation that is part of the I/O with le::ghs::GhsState objects
- */
-namespace seque{
+namespace dle{
 
   /**
    *
@@ -91,14 +88,14 @@ namespace seque{
          * In any error condition, out_item is not changed.
          *
          */
-        le::Errno front(T &out_item) const;
+        dle::Errno front(T &out_item) const;
 
         /** 
          *
          * Removes the front of the queue, reducing size by 1. No memory is
          * recovered, but the element is irretreivable after this operation.
          */
-        le::Errno pop();
+        dle::Errno pop();
 
         /**
          *
@@ -114,7 +111,7 @@ namespace seque{
          * In any error condition, out_item is not changed.
          *
          */
-        le::Errno pop(T &out_item);
+        dle::Errno pop(T &out_item);
 
         /**
          *
@@ -123,7 +120,7 @@ namespace seque{
          * Fails if size()==N (the static templated size)
          *
          */
-        le::Errno push(const T item);
+        dle::Errno push(const T item);
 
         /**
          *
@@ -134,9 +131,9 @@ namespace seque{
          *
          * In any error condition, out_item is not changed.
          */
-        le::Errno at(const unsigned int idx, T &out_item ) const;
+        dle::Errno at(const unsigned int idx, T &out_item ) const;
 
-        le::Errno clear();
+        dle::Errno clear();
 
 
 
@@ -149,8 +146,9 @@ namespace seque{
     };
 
 
-#include "seque/static_queue_impl.hpp"
 
 }
+
+#include <dle/static_queue_impl.hpp>
 
 #endif

@@ -38,8 +38,8 @@
  */
 
 #include "doctest/doctest.h"
-#include "ghs/msg.hpp"
-#include "ghs-demo-msgutils.hpp"
+#include <dle/ghs_msg.h>
+#include "ghs-demo-msgutils.h"
 #include "miniz.h"
 #include <string>
 #include <sstream>

@@ -32,37 +32,29 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * @file agent.h
- * @brief provides le::ghs::agent_t defintion
+ * @file ghs_printer.h
+ * @brief some conveneience implementations to print dle::GhsState objects with std::ostream
  *
  */
-#ifndef GHS_AGENT
-#define GHS_AGENT
+#ifndef ghs_printer_hpp
+#define ghs_printer_hpp
 
-namespace le{
-  namespace ghs{
+#include <dle/ghs.h>
+#include <string>
+#include <iostream>
 
-    /// @typedef le::ghs::agent_t 
-    /// The ghs implementation supports arbitrary integers, as long as they are
-    /// greater than or equal to zero. Use is_valid() to ensure an agent_t will
-    //not generate
-    /// problems for GhsState
-    typedef int agent_t;
+/**
+ * @brief Will dump edges in a readable format
+ */
+template <std::size_t N, std::size_t A>
+std::string dump_edges(const dle::GhsState<N,A>&) ;
 
-    /** 
-     * This means not set 
-     */
-    const agent_t NO_AGENT=-1;
+/**
+ * @brief Will dump the whole object in a readable format
+ */
+template <std::size_t N, std::size_t A>
+std::ostream& operator << ( std::ostream&, const dle::GhsState<N,A>&);
 
-    /**
-     * Just in case you want an official alias for a>=0.
-     *
-     * @return true if a>=0
-     * @return false if a==NO_AGENT or is otherwise <0
-     */
-    bool is_valid(const agent_t a);
+#include <dle/ghs_printer_impl.hpp>
 
-  }
-}
 #endif

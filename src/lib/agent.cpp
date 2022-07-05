@@ -36,13 +36,11 @@
  * @file agent.cpp
  *
  */
-#include "ghs/agent.h"
+#include <dle/agent.h>
 
-namespace le{
-  namespace ghs{
+namespace dle{
     bool is_valid(const agent_t id)
     {
       return (id>=0);
     }
-  }
 }

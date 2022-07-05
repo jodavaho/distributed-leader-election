@@ -38,10 +38,10 @@
  *
  */
 
-#ifndef LE_ERRNO_H
-#define LE_ERRNO_H
+#ifndef DLE_ERRNO
+#define DLE_ERRNO
 
-namespace le{
+namespace dle{
   /**
    * The Errno enumeration used by all classes for all function calls
    * that may fail. 
@@ -87,7 +87,7 @@ namespace le{
 
   /**
    * @return a human-readable string for any value of the passed in Retcode
-   * @param r a le::Errnoo
+   * @param r a dle::Errnoo
    */
   const char* strerror( const Errno e);
 

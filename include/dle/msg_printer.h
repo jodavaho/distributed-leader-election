@@ -1,4 +1,6 @@
 /**
+ *
+ *
  *   @copyright 
  *   Copyright (c) 2022 California Institute of Technology (“Caltech”). 
  *   U.S.  Government sponsorship acknowledged.
@@ -32,29 +34,22 @@
  *   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  *   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * @file ghs_printer.h
- * @brief some conveneience implementations to print le::ghs::GhsState objects with std::ostream
+ * @file msg_printer.h
+ * @brief provides the implementation of std::ostream operations for dle::ghs_msg::GhsMsg objects
  *
  */
-#ifndef ghs_printer_hpp
-#define ghs_printer_hpp
-
-#include "ghs/ghs.h"
+#ifndef msg_printer_hpp
+#define msg_printer_hpp
+#include <dle/ghs_msg.h>
 #include <string>
 #include <iostream>
 
-/**
- * @brief Will dump edges in a readable format
- */
-template <std::size_t N, std::size_t A>
-std::string dump_edges(const le::ghs::GhsState<N,A>&) ;
+std::string to_string(const dle::ghs_msg::Type &type);
 
-/**
- * @brief Will dump the whole object in a readable format
- */
-template <std::size_t N, std::size_t A>
-std::ostream& operator << ( std::ostream&, const le::ghs::GhsState<N,A>&);
+std::ostream& operator << ( std::ostream& outs, const dle::ghs_msg::Type & type );
 
-#include "ghs/ghs_printer_impl.hpp"
+std::ostream& operator << ( std::ostream& outs, const dle::ghs_msg::Data & d);
+
+std::ostream& operator << ( std::ostream& outs, const dle::ghs_msg::GhsMsg & m);
 
 #endif

@@ -43,7 +43,7 @@
 #include "ghs-demo-config.h"
 #include "ghs-demo-msgutils.h"
 #include "ghs-demo-edgemetrics.h"
-#include "seque/static_queue.h"
+#include <dle/static_queue.h>
 #include <nng/nng.h>//req_s, rep_s, msg
 #include <cstring> //memcpy, memset
 #include <unordered_map>
@@ -160,10 +160,10 @@ namespace demo{
    * @brief A wire-ready message structure that can encapsulate a variety of payloads for sending across the wire to an endpoint
    *
    *
-   * Used to pass le::ghs::Msg payloads across the internet between agents, among other things
+   * Used to pass dle::GhsMsg payloads across the internet between agents, among other things
    *
    *
-   * @see le::ghs::Msg
+   * @see dle::GhsMsg
    */
   struct 
     //__attribute__((__packed__,aligned(1))) <-- messes with doxygen
@@ -293,7 +293,7 @@ namespace demo{
        * The implementation I used is sym_metric() but that's not required, compile in your own if you want. 
        *
        * @see sym_metric
-       * @see le::ghs::metric_t
+       * @see dle::metric_t
        */
       CommsEdgeMetric unique_link_metric_to(const uint16_t agent_id) const;
 
@@ -304,7 +304,7 @@ namespace demo{
       int recv(demo::WireMessage& buf);
       demo::Errno internal_send(demo::WireMessage &m, const char* endpoint, long &us_rt);
 
-      seque::StaticQueue<demo::WireMessage,1024> in_q;
+      dle::StaticQueue<demo::WireMessage,1024> in_q;
       bool read_continues;
       Config ghs_cfg;
       nng_listener ctr_listener = NNG_LISTENER_INITIALIZER;

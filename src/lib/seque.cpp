@@ -37,7 +37,7 @@
  *
  */
 
-#include "seque/static_queue.h"
+#include <dle/static_queue.h>
 
-namespace seque{
+namespace dle{
 }

@@ -1,21 +1,27 @@
 cmake_minimum_required(VERSION 3.10)
 
 add_library(
-  ghs 
-  SHARED 
-  ghs.cpp 
+  dle_graph
+  SHARED
   agent.cpp
   edge.cpp
-  msg.cpp
   errno.cpp
   )
 
 add_library(
-  ghs_seque 
+  dle_ghs 
+  SHARED 
+  ghs.cpp 
+  ghs_msg.cpp
+  errno.cpp
+  )
+
+add_library(
+  dle_seque 
   SHARED 
   seque.cpp
   errno.cpp
   )
 
-target_link_libraries(ghs ghs_seque)
+target_link_libraries(dle_ghs dle_seque dle_graph)
 

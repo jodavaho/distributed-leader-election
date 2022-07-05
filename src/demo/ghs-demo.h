@@ -45,26 +45,23 @@
 #include "ghs-demo-msgutils.h"
 #include "ghs-demo-comms.h"
 
-#include "ghs/ghs.h"
-#include "ghs/ghs_printer.h" //dump_edges
-#include "ghs/msg_printer.h" //for printing GHS msgs.
-#include "ghs/agent.h"
-#include "ghs/edge.h"
-#include "seque/static_queue.h"
+#include <dle/ghs.h>
+#include <dle/ghs_printer.h> //dump_edges
+#include <dle/msg_printer.h> //for printing GHS msgs.
+#include <dle/agent.h>
+#include <dle/edge.h>
+#include <dle/static_queue.h>
 
-using le::ghs::GhsState;
-using le::ghs::metric_t;
-using le::ghs::agent_t;
-using le::ghs::Edge;
-using le::ghs::Msg;
+using namespace dle;
+using namespace dle::ghs_msg;
 
 ///
 namespace demo{
 
   /**
-   * @brief **The main demo logic** for executing le::ghs::GhsState across a network
+   * @brief **The main demo logic** for executing dle::GhsState across a network
    *
-   * A configurable multi-agent/multi-process executable built on nng that uses le::ghs::GhsState
+   * A configurable multi-agent/multi-process executable built on nng that uses dle::GhsState
    *
    */
   class GhsDemoExec{
@@ -77,17 +74,17 @@ namespace demo{
        * 1. Reading demo::Config information about the peers and their tcp endpoints from an ini file and from stdin
        * 2. Initializing all the nng sockets inside a demo::Comms object from that config
        * 3. Using Comms::little_iperf() and Comms::exchange_iperf() to create link metrics
-       * 4. Populating a le::ghs::GhsState object from the Config object and link information gathered by demo::Comms
-       * 5. Calling le::ghs::GhsState::start_round() to get the first set of messages, and feeding those into Comms
-       * 6. Spinning on Comms::has_msg() and calling Comms::get_next() to retrieve a message, then pushing that message payload into le::ghs::GhsState::process() to get the next set of message to send
-       * 7. Continuing that process until le::ghs::GhsState::is_converged() returns true
+       * 4. Populating a dle::GhsState object from the Config object and link information gathered by demo::Comms
+       * 5. Calling dle::GhsState::start_round() to get the first set of messages, and feeding those into Comms
+       * 6. Spinning on Comms::has_msg() and calling Comms::get_next() to retrieve a message, then pushing that message payload into dle::GhsState::process() to get the next set of message to send
+       * 7. Continuing that process until dle::GhsState::is_converged() returns true
        * 8. Printing stuff
        *
        * If you want to replicate this, study this loop, and pay close attention to how little_iperf() does its work **and especially sym_metric()**.
        *
        * @see demo::Config
-       * @see le::ghs::GhsState
-       * @see le::ghs::Msg
+       * @see dle::GhsState
+       * @see dle::GhsMsg
        * @see demo::WireMessage
        * @see sym_metric()
        *
@@ -173,11 +170,11 @@ namespace demo{
     //initialize the buffer used for input & output to get response messages from
     //those state machines. 
     //Use your own here ... 
-    seque::StaticQueue<Msg,COMMS_Q_SZ> buf;
+    dle::StaticQueue<GhsMsg,COMMS_Q_SZ> buf;
 
 
     //here's the queue to/from ghs TODO: unify message types.
-    seque::StaticQueue<Msg,COMMS_Q_SZ> ghs_buf;
+    dle::StaticQueue<GhsMsg,COMMS_Q_SZ> ghs_buf;
 
     demo::Comms comms;
     comms.with_config(config);
@@ -221,7 +218,7 @@ namespace demo{
       ghsp =  demo::initialize_ghs<MAX_N,COMMS_Q_SZ>(config,comms);
       size_t sent;
       auto ret = ghsp.start_round(ghs_buf, sent);
-      if (ret != le::OK){
+      if (ret != dle::OK){
         printf("[error] could not start ghs! (%d)\n", ret);
         return 1;
       }
@@ -250,17 +247,17 @@ namespace demo{
           case demo::PAYLOAD_TYPE_GHS:
             {
               //with static size checking:
-              //Msg payload_msg=from_bytes<MAX_MSG_SZ>(in.bytes); 
+              //GhsMsg payload_msg=from_bytes<MAX_MSG_SZ>(in.bytes); 
               //or with compression / variable sizes
-              Msg payload_msg = from_bytes(in.bytes, in.header.payload_size);
+              GhsMsg payload_msg = from_bytes(in.bytes, in.header.payload_size);
               //push msg to the subsystem
               std::stringstream ss;
               ss<<payload_msg;
               printf("[info] received GHS msg: %s\n",ss.str().c_str());
               size_t new_msg_ct=0;
-              le::Errno retval = ghsp.process(payload_msg,ghs_buf, new_msg_ct);
-              if (retval != le::OK){
-                printf("[error] could not call ghsp.process():%s",le::strerror(retval));
+              dle::Errno retval = ghsp.process(payload_msg,ghs_buf, new_msg_ct);
+              if (retval != dle::OK){
+                printf("[error] could not call ghsp.process():%s",dle::strerror(retval));
                 return 1;
               }
               printf("[info] # response msgs: %zu\n", new_msg_ct);
@@ -286,10 +283,10 @@ namespace demo{
       //You don't really *need* to wrap messages like this ... 
       while(ghs_buf.size()>0){
         demo::WireMessage out;
-        le::ghs::Msg out_pld;
+        GhsMsg out_pld;
 
         printf("[info] Have %u msgs to send\n", ghs_buf.size());
-        if (seque::OK!=ghs_buf.pop(out_pld)){
+        if (dle::OK!=ghs_buf.pop(out_pld)){
           wegood=false;
           break;
         }
