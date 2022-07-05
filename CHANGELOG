@@ -11,9 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Header files are re-orged to be in `le/*` instead of some deep heirarchy
-- Created le/graph.h to include all the edge, agent types, since that semantically matches uses better
-- moved seque into le/seque.h
+- Header files are re-orged to be in `dle/*` instead of some deep heirarchy
+- moved seque into dle/seque.h
 - Other build target changes that should be transparent (better organization, that's all)
 - Renamed Msg to be GhsMsg, which is probably an unstable name ...
 
